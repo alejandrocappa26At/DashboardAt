@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive AT Sur - Dashboard de Ventas</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>Drive AT Sur</h1>
+            <span class="sidebar-badge">Dashboard de Ventas · Julio 2026</span>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item active" data-page="resumen">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                </span>
+                Resumen Ejecutivo
+            </div>
+            <div class="nav-item" data-page="avance">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/></svg>
+                </span>
+                Avance por PDV
+            </div>
+            <div class="nav-item" data-page="ranking">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24"><path d="M7.5 21H2V9l6-2 4 3 4-3 6 2v12h-5.5c-.9 0-2.1-.4-2.5-1-.4.6-1.6 1-2.5 1s-2.1-.4-2.5-1c-.4.6-1.6 1-2.5 1z"/></svg>
+                </span>
+                Ranking de Tiendas
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="btn-spotify" onclick="abrirModalVenta()">
+                <span class="btn-icon">
+                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </span>
+                Registrar ventas
+            </button>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <header class="top-bar">
+            <div class="flex items-center gap-4">
+                <button class="mobile-toggle" id="mobile-toggle">&#9776;</button>
+                <h2 id="page-title">Resumen Ejecutivo</h2>
+            </div>
+            <div class="top-bar-info">
+                <span>Julio 2026</span>
+                <span>D&iacute;a: <strong id="dia-actual"></strong></span>
+            </div>
+        </header>
+
+        <div id="notificacion-container"></div>
+
+        <!-- ===== PAGINA 1: RESUMEN EJECUTIVO ===== -->
+        <section class="page active" id="page-resumen">
+            <div class="kpi-row" id="kpi-row">
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <div>
+                            <div class="kpi-label">Venta Total Acumulada</div>
+                            <div class="kpi-value green" id="kpi-venta-total">$0</div>
+                        </div>
+                        <div class="kpi-icon green">$</div>
+                    </div>
+                    <div class="kpi-sub" id="kpi-venta-sub">vs cuota total</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <div>
+                            <div class="kpi-label">Avance General</div>
+                            <div class="kpi-value" id="kpi-avance">0%</div>
+                        </div>
+                        <div class="kpi-icon blue">%</div>
+                    </div>
+                    <div class="kpi-sub" id="kpi-avance-sub">de la meta cumplida</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <div>
+                            <div class="kpi-label">Proyecci&oacute;n Cierre</div>
+                            <div class="kpi-value" id="kpi-proyeccion">$0</div>
+                        </div>
+                        <div class="kpi-icon purple">&#9650;</div>
+                    </div>
+                    <div class="kpi-sub" id="kpi-proyeccion-sub">estimado fin de mes</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <div>
+                            <div class="kpi-label">PDV Cumplen Meta</div>
+                            <div class="kpi-value green" id="kpi-cumplen">0</div>
+                        </div>
+                        <div class="kpi-icon green">&#10003;</div>
+                    </div>
+                    <div class="kpi-sub" id="kpi-cumplen-sub">proyectan cumplir</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <div>
+                            <div class="kpi-label">PDV en Riesgo</div>
+                            <div class="kpi-value red" id="kpi-riesgo">0</div>
+                        </div>
+                        <div class="kpi-icon red">!</div>
+                    </div>
+                    <div class="kpi-sub" id="kpi-riesgo-sub">no proyectan cumplir</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <div>
+                            <div class="kpi-label">Mejor PDV</div>
+                            <div class="kpi-value" id="kpi-mejor-pdv" style="font-size:18px;">-</div>
+                        </div>
+                        <div class="kpi-icon yellow">&#9733;</div>
+                    </div>
+                    <div class="kpi-sub">mayor cumplimiento</div>
+                </div>
+            </div>
+
+            <div class="overall-progress" id="overall-progress">
+                <div class="op-number" id="op-number">0%</div>
+                <div class="op-info">
+                    <div class="op-label">Avance General</div>
+                    <div class="op-bar">
+                        <div class="op-bar-fill" id="op-bar-fill" style="width:0%;"></div>
+                    </div>
+                </div>
+                <div class="op-status" id="op-status">Cargando...</div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-header">Evoluci&oacute;n Diaria de Ventas</div>
+                    <div class="chart-container">
+                        <canvas id="chartEvolucion"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">Participaci&oacute;n por Producto</div>
+                    <div class="chart-container chart-container-sm">
+                        <canvas id="chartParticipacion"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Avance por Producto</div>
+                <div class="chart-container" style="height:auto;min-height:250px;" id="avance-producto-container">
+                    <div class="progress-list" id="progress-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA 2: AVANCE POR PDV ===== -->
+        <section class="page" id="page-avance">
+            <div class="flex gap-2 items-center" style="margin-bottom:16px;flex-wrap:wrap;">
+                <select id="pdv-select" style="min-width:250px;padding:10px 14px;">
+                    <option value="">Seleccionar punto de venta...</option>
+                </select>
+            </div>
+            <div class="mt-4">
+                <h3 style="font-size:18px;font-weight:600;margin-bottom:16px;color:var(--text-primary);" id="pdv-nombre"></h3>
+                <div id="pdv-content"></div>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA 3: RANKING ===== -->
+        <section class="page" id="page-ranking">
+            <div class="grid grid-2">
+                <div class="card" style="grid-column:1/-1;">
+                    <div class="card-header">Ranking General de Tiendas</div>
+                    <div class="table-responsive">
+                        <table id="tabla-ranking"></table>
+                    </div>
+                </div>
+                <div class="card" style="grid-column:1/-1;">
+                    <div class="card-header">Top 10 PDV - % Cumplimiento</div>
+                    <div class="chart-container" style="height:350px;">
+                        <canvas id="chartRanking"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Calendario de Ventas -->
+    <div class="modal-overlay" id="modal-venta" onclick="if(event.target===this)cerrarModalVenta()">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>Registro de Ventas por D&iacute;a</h3>
+                <button class="modal-close" onclick="cerrarModalVenta()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="modal-pdv">Punto de Venta</label>
+                <select id="modal-pdv" onchange="cargarVentasCalendario()" required></select>
+            </div>
+            <div class="calendario-wrapper">
+                <table class="calendario-tabla" id="tabla-calendario">
+                    <thead>
+                        <tr>
+                            <th class="calendario-th-producto">Producto</th>
+                            <th class="calendario-th-dia">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-calendario"></tbody>
+                </table>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalVenta()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarVentasCalendario()">Guardar Ventas</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
