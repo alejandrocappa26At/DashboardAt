@@ -182,8 +182,8 @@ function cambiarPagina(pagina) {
 
     document.getElementById('page-title').textContent =
         pagina === 'resumen' ? 'Resumen Ejecutivo' :
-        pagina === 'avance' ? 'Avance por Punto de Venta' :
-        pagina === 'ranking' ? 'Ranking de Tiendas' : 'Dashboard';
+            pagina === 'avance' ? 'Avance por Punto de Venta' :
+                pagina === 'ranking' ? 'Ranking de Tiendas' : 'Dashboard';
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
@@ -315,26 +315,27 @@ function guardarVentasCalendario() {
     }
 
     const registrosEliminados = DataStore.actualizarVentasCalendario(pdv, datos);
+    guardarVentasFirebase(datos);
     cerrarModalVenta();
     recargarDashboard();
     const msg = `Ventas guardadas para ${pdv} (${datos.length} registros)`;
     mostrarNotificacion(registrosEliminados > 0 ? msg + `, ${registrosEliminados} eliminados` : msg, 'success');
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function () {
             cambiarPagina(this.dataset.page);
         });
     });
 
-    document.getElementById('mobile-toggle').addEventListener('click', function() {
+    document.getElementById('mobile-toggle').addEventListener('click', function () {
         document.getElementById('sidebar').classList.toggle('open');
     });
 
     const pdvSelect = document.getElementById('pdv-select');
     if (pdvSelect) {
-        pdvSelect.addEventListener('change', function() {
+        pdvSelect.addEventListener('change', function () {
             renderizarAvancePDV(this.value);
         });
     }

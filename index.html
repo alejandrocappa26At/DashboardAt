@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
     <script src="js/charts.js"></script>
     <script src="js/app.js"></script>
 </head>
+
 <body>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -20,19 +22,27 @@
         <nav class="sidebar-nav">
             <div class="nav-item active" data-page="resumen">
                 <span class="nav-icon">
-                    <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                    </svg>
                 </span>
                 Resumen Ejecutivo
             </div>
             <div class="nav-item" data-page="avance">
                 <span class="nav-icon">
-                    <svg viewBox="0 0 24 24"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/></svg>
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z" />
+                    </svg>
                 </span>
                 Avance por PDV
             </div>
             <div class="nav-item" data-page="ranking">
                 <span class="nav-icon">
-                    <svg viewBox="0 0 24 24"><path d="M7.5 21H2V9l6-2 4 3 4-3 6 2v12h-5.5c-.9 0-2.1-.4-2.5-1-.4.6-1.6 1-2.5 1s-2.1-.4-2.5-1c-.4.6-1.6 1-2.5 1z"/></svg>
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M7.5 21H2V9l6-2 4 3 4-3 6 2v12h-5.5c-.9 0-2.1-.4-2.5-1-.4.6-1.6 1-2.5 1s-2.1-.4-2.5-1c-.4.6-1.6 1-2.5 1z" />
+                    </svg>
                 </span>
                 Ranking de Tiendas
             </div>
@@ -40,7 +50,9 @@
         <div class="sidebar-footer">
             <button class="btn-spotify" onclick="abrirModalVenta()">
                 <span class="btn-icon">
-                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
                 </span>
                 Registrar ventas
             </button>
@@ -168,7 +180,8 @@
                 </select>
             </div>
             <div class="mt-4">
-                <h3 style="font-size:18px;font-weight:600;margin-bottom:16px;color:var(--text-primary);" id="pdv-nombre"></h3>
+                <h3 style="font-size:18px;font-weight:600;margin-bottom:16px;color:var(--text-primary);"
+                    id="pdv-nombre"></h3>
                 <div id="pdv-content"></div>
             </div>
         </section>
@@ -216,9 +229,16 @@
             </div>
             <div class="form-actions">
                 <button type="button" class="btn btn-secondary" onclick="cerrarModalVenta()">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="guardarVentasCalendario()">Guardar Ventas</button>
+                <button type="button" class="btn btn-primary" onclick="guardarVentasCalendario()">Guardar
+                    Ventas</button>
             </div>
         </div>
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firestore.js"></script>
 </body>
+
 </html>

@@ -70,14 +70,13 @@ const DataStore = {
     initialized: false,
 
     init() {
-    if (this._cargar()) return;
-    const mock = generarMockData();
-    this.ventas = mock.ventas;
-    this.cuotas = mock.cuotas;
-    this.promotores = mock.promotores;
-    this.diaActual = mock.diaActual;
-    this.initialized = true;
-    this._persistir();
+        const mock = generarMockData();
+        this.ventas = mock.ventas;
+        this.cuotas = mock.cuotas;
+        this.promotores = mock.promotores;
+        this.diaActual = mock.diaActual;
+        this.initialized = true;
+        this._iniciarFirestore();
     },
 
     parseExcel(data) {
@@ -118,7 +117,7 @@ const DataStore = {
         const hoy = new Date();
         this.diaActual = Math.min(hoy.getDate(), DIAS_MES);
 
-        this._persistir();
+        this._guardarEnFirestore();
     },
 
     getVentas() { return this.ventas; },
@@ -370,13 +369,58 @@ const DataStore = {
             });
         }
 
-        this._persistir();
+        this._guardarEnFirestore();
 
         return aEliminar.length;
     },
 
-    _persistir() {
-        const data = {
+
+
+    _iniciarFirestore() {
+        db.collection('dashboard').doc('datos').get().then(snap => {
+            if (snap.exists) {
+                const data = snap.data();
+
+                this.ventas = data.ventas.map(v => ({
+                    ...v,
+                    fecha: new Date(v.fecha)
+                }));
+
+                this.cuotas = data.cuotas;
+                this.promotores = data.promotores;
+                this.diaActual = data.diaActual;
+
+                if (typeof recargarDashboard === 'function') {
+                    recargarDashboard();
+                }
+            } else {
+                this._guardarEnFirestore();
+            }
+        });
+
+        db.collection('dashboard').doc('datos')
+            .onSnapshot(snap => {
+                if (!snap.exists) return;
+
+                const data = snap.data();
+
+                this.ventas = data.ventas.map(v => ({
+                    ...v,
+                    fecha: new Date(v.fecha)
+                }));
+
+                this.cuotas = data.cuotas;
+                this.promotores = data.promotores;
+                this.diaActual = data.diaActual;
+
+                if (typeof recargarDashboard === 'function') {
+                    recargarDashboard();
+                }
+            });
+    },
+
+    _guardarEnFirestore() {
+        db.collection('dashboard').doc('datos').set({
             ventas: this.ventas.map(v => ({
                 ...v,
                 fecha: v.fecha.toISOString()
@@ -384,36 +428,11 @@ const DataStore = {
             cuotas: this.cuotas,
             promotores: this.promotores,
             diaActual: this.diaActual
-        };
-
-        localStorage.setItem(
-            'dashboard-ventas-data',
-            JSON.stringify(data)
-        );
-    },
-
-    _cargar() {
-        const raw = localStorage.getItem('dashboard-ventas-data');
-        if (!raw) return false;
-
-        try {
-            const data = JSON.parse(raw);
-
-            this.ventas = data.ventas.map(v => ({
-                ...v,
-                fecha: new Date(v.fecha)
-            }));
-
-            this.cuotas = data.cuotas;
-            this.promotores = data.promotores;
-            this.diaActual = data.diaActual;
-            this.initialized = true;
-
-            return true;
-        } catch {
-            return false;
-        }
+        });
     }
-};
+
+
+
+}
 
 DataStore.init();
