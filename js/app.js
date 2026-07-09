@@ -223,17 +223,86 @@ function mostrarNotificacion(mensaje, tipo) {
     setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 4000);
 }
 
-function abrirModalCuotas() {
-    const password = prompt('Ingrese la contrase\u00f1a para editar cuotas:');
-    if (password !== 'Adecco2019@') {
-        if (password !== null) {
-            mostrarNotificacion('Contrase\u00f1a incorrecta', 'error');
-        }
-        return;
-    }
+let intentosPassword = 0;
 
-    const mesesSel = document.getElementById('cuotas-mes');
-    const mesActual = parseInt(mesesSel.value);
+function abrirModalPassword() {
+    intentosPassword = 0;
+    document.getElementById('password-error').textContent = '';
+    document.getElementById('password-error').style.display = 'none';
+    document.getElementById('password-input').value = '';
+    document.getElementById('password-field-wrapper').classList.remove('shake');
+    document.getElementById('password-input').type = 'password';
+    document.getElementById('password-toggle').innerHTML = `
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>`;
+    document.getElementById('modal-password').classList.add('open');
+    setTimeout(() => document.getElementById('password-input').focus(), 300);
+}
+
+function cerrarModalPassword() {
+    document.getElementById('modal-password').classList.remove('open');
+}
+
+function togglePasswordVisibility() {
+    const input = document.getElementById('password-input');
+    const btn = document.getElementById('password-toggle');
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>`;
+    } else {
+        input.type = 'password';
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>`;
+    }
+}
+
+function confirmarPassword() {
+    const input = document.getElementById('password-input');
+    const password = input.value;
+    const btn = document.getElementById('btn-confirmar-password');
+    btn.classList.add('loading');
+
+    setTimeout(() => {
+        if (password === 'Adecco2019@') {
+            btn.classList.remove('loading');
+            cerrarModalPassword();
+            abrirModalCuotasSinPassword();
+        } else {
+            intentosPassword++;
+            btn.classList.remove('loading');
+            document.getElementById('password-field-wrapper').classList.add('shake');
+            input.focus();
+            const errorEl = document.getElementById('password-error');
+            errorEl.style.display = 'flex';
+            if (intentosPassword >= 3) {
+                errorEl.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Contrase\u00f1a incorrecta. Acceso bloqueado.';
+                errorEl.style.color = '#EF4444';
+                setTimeout(() => cerrarModalPassword(), 1500);
+            } else {
+                errorEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Contrase\u00f1a incorrecta. Intento ${intentosPassword} de 3.`;
+                errorEl.style.color = '#EF4444';
+            }
+            setTimeout(() => document.getElementById('password-field-wrapper').classList.remove('shake'), 600);
+        }
+    }, 600);
+}
+
+function abrirModalCuotas() {
+    abrirModalPassword();
+}
+
+function abrirModalCuotasSinPassword() {
+    const mesActual = parseInt(document.getElementById('cuotas-mes').value);
     const anioActual = parseInt(document.getElementById('cuotas-anio').value);
 
     const tbody = document.getElementById('tbody-cuotas');
@@ -267,7 +336,7 @@ function abrirModalCuotas() {
 
 function cambiarMesCuotas() {
     if (document.getElementById('modal-cuotas').classList.contains('open')) {
-        abrirModalCuotas();
+        abrirModalCuotasSinPassword();
     }
 }
 

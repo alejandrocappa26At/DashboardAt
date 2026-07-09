@@ -362,6 +362,68 @@
     </div>
 
 
+    <!-- Modal de Seguridad - Acceso Restringido -->
+    <div class="modal-overlay" id="modal-password" onclick="if(event.target===this)cerrarModalPassword()">
+        <div class="modal modal-password">
+            <div class="password-accent-bar"></div>
+            <button class="modal-close password-close-btn" onclick="cerrarModalPassword()" aria-label="Cerrar">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
+            <div class="password-icon-wrapper">
+                <svg class="password-warning-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="1.8" fill="rgba(245,158,11,0.08)"/>
+                    <line x1="12" y1="9" x2="12" y2="13" stroke-width="2"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2"/>
+                </svg>
+            </div>
+
+            <h2 class="password-title">Acceso Restringido</h2>
+            <p class="password-subtitle">Esta secci&oacute;n solo puede ser modificada por personal autorizado. El ingreso de credenciales incorrectas quedar&aacute; registrado.</p>
+
+            <div class="password-field-wrapper" id="password-field-wrapper">
+                <svg class="password-field-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input type="password" id="password-input" class="password-input" placeholder="Ingresa la contrase&ntilde;a de autorizaci&oacute;n" autocomplete="off" onkeydown="if(event.key==='Enter')confirmarPassword()">
+                <button class="password-toggle-btn" id="password-toggle" onclick="togglePasswordVisibility()" type="button" aria-label="Mostrar/ocultar contrase&ntilde;a">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="password-error" id="password-error"></div>
+
+            <div class="password-actions">
+                <button type="button" class="btn btn-password-secondary" onclick="cerrarModalPassword()">Cancelar</button>
+                <button type="button" class="btn btn-password-primary" id="btn-confirmar-password" onclick="confirmarPassword()">
+                    <span class="btn-save-content">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Confirmar acceso
+                    </span>
+                    <span class="btn-spinner">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" stroke-linecap="round">
+                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                                <animate attributeName="stroke-dashoffset" values="32;0;32" dur="1.5s" repeatCount="indefinite"/>
+                            </circle>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+
+            <p class="password-disclaimer">Este acceso queda registrado por motivos de seguridad.</p>
+        </div>
+    </div>
+
     <!-- Modal Editar Cuotas -->
     <div class="modal-overlay" id="modal-cuotas" onclick="if(event.target===this)cerrarModalCuotas()">
         <div class="modal modal-lg">
