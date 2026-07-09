@@ -5,12 +5,12 @@ const DIAS_MES = 31;
 
 function generarMockData() {
     const pdvs = [
-        'Red AT Repsol Umacollo', 'Red AT Cayma', 'Red AT Repsol Progreso',
+        'Red At La Joya', 'Red AT Cayma', 'Red AT Repsol Progreso',
         'Red AT Atlas', 'Red AT Progreso', 'Red AT Bustamante y Rivero',
-        'Red AT Alto Selva Alegre', 'Red AT Dolores', 'Red AT Rivero'
+        'Red AT Alto Selva Alegre', 'Red AT Dolores', 'Red AT Rivero', 'Red At Camaná'
     ];
     const cadenas = {
-        'Red AT Repsol Umacollo': 'Principal',
+        'Red At La Joya': 'Principal',
         'Red AT Cayma': 'Principal',
         'Red AT Repsol Progreso': 'Secundaria',
         'Red AT Atlas': 'Secundaria',
@@ -18,7 +18,8 @@ function generarMockData() {
         'Red AT Bustamante y Rivero': 'Express',
         'Red AT Alto Selva Alegre': 'Premium',
         'Red AT Dolores': 'Deportes',
-        'Red AT Rivero': 'Premium'
+        'Red AT Rivero': 'Premium',
+        'Red At Camaná': 'Secundaria'
     };
 
     const ventas = [];

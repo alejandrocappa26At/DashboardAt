@@ -1,7 +1,7 @@
 ﻿let chartInstances = {};
 
 function formatCurrency(value) {
-    return 'S/' + value.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return 'S/ ' + value.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function formatPercent(value) {
