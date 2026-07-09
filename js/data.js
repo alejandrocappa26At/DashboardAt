@@ -375,6 +375,11 @@ const DataStore = {
         return aEliminar.length;
     },
 
+    actualizarCuotas(nuevasCuotas) {
+        this.cuotas = nuevasCuotas;
+        this._guardarEnFirestore();
+    },
+
 
 
     _iniciarFirestore() {

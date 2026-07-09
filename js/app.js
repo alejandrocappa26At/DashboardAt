@@ -223,6 +223,63 @@ function mostrarNotificacion(mensaje, tipo) {
     setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 4000);
 }
 
+function abrirModalCuotas() {
+    const tbody = document.getElementById('tbody-cuotas');
+    const thead = document.querySelector('#tabla-cuotas thead tr');
+    const pdvs = DataStore.getPDVs();
+    const productos = DataStore.getProductos();
+    const cuotas = DataStore.getCuotas();
+
+    thead.innerHTML = '<th class="cuotas-th-pdv">Punto de Venta</th>';
+    for (let prod of productos) {
+        thead.innerHTML += `<th class="cuotas-th-prod">${prod}</th>`;
+    }
+
+    tbody.innerHTML = '';
+    for (let pdv of pdvs) {
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td>${pdv}</td>`;
+        for (let prod of productos) {
+            const cuota = cuotas.find(c => c.punto_venta === pdv && c.producto === prod);
+            const val = cuota ? cuota.cuota : 0;
+            tr.innerHTML += `<td><input class="cuotas-input" type="number" min="0" step="1" value="${val}" data-pdv="${pdv}" data-prod="${prod}"></td>`;
+        }
+        tbody.appendChild(tr);
+    }
+
+    document.getElementById('modal-cuotas').classList.add('open');
+}
+
+function cerrarModalCuotas() {
+    document.getElementById('modal-cuotas').classList.remove('open');
+}
+
+function guardarCuotas() {
+    const inputs = document.querySelectorAll('.cuotas-input');
+    const nuevasCuotas = [];
+
+    inputs.forEach(inp => {
+        const val = parseFloat(inp.value);
+        if (!isNaN(val) && val >= 0) {
+            nuevasCuotas.push({
+                punto_venta: inp.dataset.pdv,
+                producto: inp.dataset.prod,
+                cuota: val
+            });
+        }
+    });
+
+    if (nuevasCuotas.length === 0) {
+        mostrarNotificacion('No hay cuotas para guardar', 'error');
+        return;
+    }
+
+    DataStore.actualizarCuotas(nuevasCuotas);
+    cerrarModalCuotas();
+    recargarDashboard();
+    mostrarNotificacion(`Cuotas actualizadas (${nuevasCuotas.length} registros)`, 'success');
+}
+
 function abrirModalVenta() {
     const pdvSel = document.getElementById('modal-pdv');
     pdvSel.innerHTML = DataStore.getPDVs().map(p => `<option value="${p}">${p}</option>`).join('');

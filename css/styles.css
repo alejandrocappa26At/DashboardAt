@@ -818,6 +818,100 @@ select option {
     background: var(--bg-elevated);
 }
 
+.cuotas-wrapper {
+    overflow-x: auto;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.cuotas-tabla {
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 100%;
+    table-layout: auto;
+}
+
+.cuotas-tabla th,
+.cuotas-tabla td {
+    border: 1px solid var(--border);
+    padding: 4px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.cuotas-tabla thead th {
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 8px 6px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.cuotas-th-pdv {
+    min-width: 160px;
+    text-align: left !important;
+    padding-left: 10px !important;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--bg-hover) !important;
+}
+
+.cuotas-th-prod {
+    min-width: 100px;
+}
+
+.cuotas-tabla tbody td:first-child {
+    text-align: left;
+    padding-left: 10px;
+    font-weight: 500;
+    font-size: 12px;
+    background: var(--bg-elevated);
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    color: var(--text-primary);
+}
+
+.cuotas-tabla tbody tr:hover td {
+    background: var(--bg-hover);
+}
+
+.cuotas-tabla tbody tr:hover td:first-child {
+    background: var(--bg-elevated);
+}
+
+.cuotas-input {
+    width: 80px;
+    padding: 6px 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 12px;
+    background: transparent;
+    transition: all 0.15s;
+    color: var(--text-primary);
+    font-family: inherit;
+}
+
+.cuotas-input:hover {
+    border-color: var(--border);
+    background: var(--bg-hover);
+}
+
+.cuotas-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-hover);
+}
+
 @media (max-width: 1200px) {
     .kpi-row {
         grid-template-columns: repeat(2, 1fr);

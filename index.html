@@ -46,7 +46,15 @@
             </div>
         </nav>
         <div class="sidebar-footer">
-            <button class="btn-spotify" onclick="abrirModalVenta()">
+            <button class="btn-spotify" onclick="abrirModalCuotas()">
+                <span class="btn-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                </span>
+                Editar cuotas
+            </button>
+            <button class="btn-spotify" onclick="abrirModalVenta()" style="margin-top:8px;">
                 <span class="btn-icon">
                     <svg viewBox="0 0 24 24">
                         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
@@ -233,6 +241,30 @@
         </div>
     </div>
 
+
+    <!-- Modal Editar Cuotas -->
+    <div class="modal-overlay" id="modal-cuotas" onclick="if(event.target===this)cerrarModalCuotas()">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3>Editar Cuotas por Producto y Tienda</h3>
+                <button class="modal-close" onclick="cerrarModalCuotas()">&times;</button>
+            </div>
+            <div class="cuotas-wrapper">
+                <table class="cuotas-tabla" id="tabla-cuotas">
+                    <thead>
+                        <tr>
+                            <th class="cuotas-th-pdv">Punto de Venta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-cuotas"></tbody>
+                </table>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalCuotas()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCuotas()">Guardar Cuotas</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
