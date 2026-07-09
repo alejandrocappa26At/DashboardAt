@@ -226,24 +226,27 @@ function mostrarNotificacion(mensaje, tipo) {
 function abrirModalCuotas() {
     const tbody = document.getElementById('tbody-cuotas');
     const thead = document.querySelector('#tabla-cuotas thead tr');
+
     const pdvs = DataStore.getPDVs();
     const productos = DataStore.getProductos();
     const cuotas = DataStore.getCuotas();
 
-    thead.innerHTML = '<th class="cuotas-th-pdv">Punto de Venta</th>';
+    let headHtml = '<th class="cuotas-th-pdv">Punto de Venta</th>';
     for (let prod of productos) {
-        thead.innerHTML += `<th class="cuotas-th-prod">${prod}</th>`;
+        headHtml += `<th class="cuotas-th-prod">${prod}</th>`;
     }
+    thead.innerHTML = headHtml;
 
     tbody.innerHTML = '';
     for (let pdv of pdvs) {
         let tr = document.createElement('tr');
-        tr.innerHTML = `<td>${pdv}</td>`;
+        let rowHtml = `<td>${pdv}</td>`;
         for (let prod of productos) {
             const cuota = cuotas.find(c => c.punto_venta === pdv && c.producto === prod);
             const val = cuota ? cuota.cuota : 0;
-            tr.innerHTML += `<td><input class="cuotas-input" type="number" min="0" step="1" value="${val}" data-pdv="${pdv}" data-prod="${prod}"></td>`;
+            rowHtml += `<td><input class="cuotas-input" type="number" min="0" step="1" value="${val}" data-pdv="${pdv}" data-prod="${prod}"></td>`;
         }
+        tr.innerHTML = rowHtml;
         tbody.appendChild(tr);
     }
 
