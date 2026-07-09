@@ -11,13 +11,13 @@
     document.getElementById('kpi-venta-total').textContent = formatCurrency(ventaTotal);
     document.getElementById('kpi-venta-sub').textContent = 'de ' + formatCurrency(cuotaTotal) + ' meta total';
     document.getElementById('kpi-avance').textContent = formatPercent(avance);
-    document.getElementById('kpi-avance-sub').textContent = avance >= 100 ? '¡Meta alcanzada!' : 'Falta ' + formatPercent(100 - avance) + ' para la meta';
+    document.getElementById('kpi-avance-sub').textContent = avance >= 100 ? '\u00a1Meta alcanzada!' : 'Falta ' + formatPercent(100 - avance) + ' para la meta';
     document.getElementById('kpi-proyeccion').textContent = formatCurrency(proyeccion);
     document.getElementById('kpi-proyeccion-sub').textContent = proyeccion >= cuotaTotal ? 'Supera la meta mensual' : 'Por debajo de la meta';
     document.getElementById('kpi-cumplen').textContent = pdvCumplen + ' / ' + totalPDVs;
-    document.getElementById('kpi-cumplen-sub').textContent = totalPDVs > 0 ? Math.round((pdvCumplen / totalPDVs) * 100) + '% de PDVs' : '';
+    document.getElementById('kpi-cumplen-sub').textContent = totalPDVs > 0 ? Math.round((pdvCumplen / totalPDVs) * 100) + '% de PDVs cumplen' : '';
     document.getElementById('kpi-riesgo').textContent = pdvRiesgo;
-    document.getElementById('kpi-riesgo-sub').textContent = totalPDVs > 0 ? Math.round((pdvRiesgo / totalPDVs) * 100) + '% de PDVs' : '';
+    document.getElementById('kpi-riesgo-sub').textContent = totalPDVs > 0 ? Math.round((pdvRiesgo / totalPDVs) * 100) + '% de PDVs en riesgo' : '';
     document.getElementById('kpi-mejor-pdv').textContent = mejorPDV.replace('Red AT ', '');
 
     const opNum = document.getElementById('op-number');
@@ -25,11 +25,13 @@
     const opStatus = document.getElementById('op-status');
     const cls = avance >= 100 ? 'green' : avance >= 80 ? 'yellow' : 'red';
     opNum.textContent = formatPercent(avance);
-    opNum.className = 'op-number ' + cls;
+    opNum.className = 'resumen-progress-number ' + cls;
     opBar.style.width = Math.min(avance, 100) + '%';
-    opBar.className = 'op-bar-fill ' + cls;
-    opStatus.textContent = avance >= 100 ? 'Meta alcanzada' : avance >= 80 ? 'Cerca de la meta' : 'Requiere atenci\u00f3n';
-    opStatus.className = 'op-status ' + cls;
+    opBar.className = 'resumen-progress-fill ' + cls;
+
+    const badgeText = avance >= 100 ? 'Meta alcanzada' : avance >= 80 ? 'En buen camino' : 'Requiere atenci\u00f3n';
+    opStatus.className = 'resumen-progress-badge ' + cls;
+    opStatus.innerHTML = '<span class="resumen-progress-badge-dot"></span> ' + badgeText;
 
     actualizarGraficos();
 }
@@ -208,7 +210,7 @@ function cambiarPagina(pagina) {
     if (navItem) navItem.classList.add('active');
 
     document.getElementById('page-title').textContent =
-        pagina === 'resumen' ? 'Resumen Ejecutivo' :
+        pagina === 'resumen' ? 'Resumen Zona' :
             pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' : 'Dashboard';
 

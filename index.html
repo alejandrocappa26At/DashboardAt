@@ -91,111 +91,189 @@
         <header class="top-bar">
             <div class="flex items-center gap-4">
                 <button class="mobile-toggle" id="mobile-toggle">&#9776;</button>
-                <h2 id="page-title">Resumen Ejecutivo</h2>
+                <h2 id="page-title">Resumen Zona</h2>
             </div>
             <div class="top-bar-info">
-                <span>Julio 2026</span>
-                <span>D&iacute;a: <strong id="dia-actual"></strong></span>
+                <span class="top-bar-badge">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    Julio 2026
+                </span>
+                <span class="top-bar-badge">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                    </svg>
+                    D&iacute;a: <strong id="dia-actual"></strong> / 31
+                </span>
             </div>
         </header>
 
         <div id="notificacion-container"></div>
 
-        <!-- ===== PAGINA 1: RESUMEN EJECUTIVO ===== -->
+        <!-- ===== PAGINA 1: RESUMEN ZONA ===== -->
         <section class="page active" id="page-resumen">
-            <div class="kpi-row" id="kpi-row">
-                <div class="kpi-card">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">Venta Total Acumulada</div>
-                            <div class="kpi-value green" id="kpi-venta-total">$0</div>
-                        </div>
-                        <div class="kpi-icon green">$</div>
+
+            <div class="resumen-header">
+                <div class="resumen-header-left">
+                    <svg class="resumen-header-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <div>
+                        <h3 class="resumen-header-title">Panel General</h3>
+                        <span class="resumen-header-sub">Resumen de ventas y cumplimiento de metas</span>
                     </div>
-                    <div class="kpi-sub" id="kpi-venta-sub">vs cuota total</div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">Avance General</div>
-                            <div class="kpi-value" id="kpi-avance">0%</div>
-                        </div>
-                        <div class="kpi-icon blue">%</div>
+                <div class="resumen-header-legend">
+                    <div class="resumen-header-legend-item" title="Cumplimiento ≥ 80% - Buen estado">
+                        <span class="resumen-header-dot green"></span> Bueno
                     </div>
-                    <div class="kpi-sub" id="kpi-avance-sub">de la meta cumplida</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">Proyecci&oacute;n Cierre</div>
-                            <div class="kpi-value" id="kpi-proyeccion">$0</div>
-                        </div>
-                        <div class="kpi-icon purple">&#9650;</div>
+                    <div class="resumen-header-legend-item" title="Cumplimiento entre 50% y 79% - Alerta">
+                        <span class="resumen-header-dot yellow"></span> Alerta
                     </div>
-                    <div class="kpi-sub" id="kpi-proyeccion-sub">estimado fin de mes</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">PDV Cumplen Meta</div>
-                            <div class="kpi-value green" id="kpi-cumplen">0</div>
-                        </div>
-                        <div class="kpi-icon green">&#10003;</div>
+                    <div class="resumen-header-legend-item" title="Cumplimiento menor a 50% - Crítico">
+                        <span class="resumen-header-dot red"></span> Cr&iacute;tico
                     </div>
-                    <div class="kpi-sub" id="kpi-cumplen-sub">proyectan cumplir</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">PDV en Riesgo</div>
-                            <div class="kpi-value red" id="kpi-riesgo">0</div>
-                        </div>
-                        <div class="kpi-icon red">!</div>
-                    </div>
-                    <div class="kpi-sub" id="kpi-riesgo-sub">no proyectan cumplir</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">Mejor PDV</div>
-                            <div class="kpi-value" id="kpi-mejor-pdv" style="font-size:18px;">-</div>
-                        </div>
-                        <div class="kpi-icon yellow">&#9733;</div>
-                    </div>
-                    <div class="kpi-sub">mayor cumplimiento</div>
                 </div>
             </div>
 
-            <div class="overall-progress" id="overall-progress">
-                <div class="op-number" id="op-number">0%</div>
-                <div class="op-info">
-                    <div class="op-label">Avance General</div>
-                    <div class="op-bar">
-                        <div class="op-bar-fill" id="op-bar-fill" style="width:0%;"></div>
+            <!-- KPI Cards -->
+            <div class="resumen-kpi-grid" id="kpi-row">
+                <div class="resumen-kpi-card">
+                    <div class="resumen-kpi-icon-box green">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23"/>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                    </div>
+                    <div class="resumen-kpi-info">
+                        <div class="resumen-kpi-value green" id="kpi-venta-total">$0</div>
+                        <div class="resumen-kpi-label" id="kpi-venta-sub">vs cuota total</div>
                     </div>
                 </div>
-                <div class="op-status" id="op-status">Cargando...</div>
+                <div class="resumen-kpi-card">
+                    <div class="resumen-kpi-icon-box blue">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </div>
+                    <div class="resumen-kpi-info">
+                        <div class="resumen-kpi-value" id="kpi-avance">0%</div>
+                        <div class="resumen-kpi-label" id="kpi-avance-sub">de la meta cumplida</div>
+                    </div>
+                </div>
+                <div class="resumen-kpi-card">
+                    <div class="resumen-kpi-icon-box purple">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </div>
+                    <div class="resumen-kpi-info">
+                        <div class="resumen-kpi-value" id="kpi-proyeccion">$0</div>
+                        <div class="resumen-kpi-label" id="kpi-proyeccion-sub">estimado fin de mes</div>
+                    </div>
+                </div>
+                <div class="resumen-kpi-card">
+                    <div class="resumen-kpi-icon-box green">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <div class="resumen-kpi-info">
+                        <div class="resumen-kpi-value green" id="kpi-cumplen">0</div>
+                        <div class="resumen-kpi-label" id="kpi-cumplen-sub">PDVs cumplen meta</div>
+                    </div>
+                </div>
+                <div class="resumen-kpi-card">
+                    <div class="resumen-kpi-icon-box red">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+                    <div class="resumen-kpi-info">
+                        <div class="resumen-kpi-value red" id="kpi-riesgo">0</div>
+                        <div class="resumen-kpi-label" id="kpi-riesgo-sub">PDVs en riesgo</div>
+                    </div>
+                </div>
+                <div class="resumen-kpi-card">
+                    <div class="resumen-kpi-icon-box yellow">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                    </div>
+                    <div class="resumen-kpi-info">
+                        <div class="resumen-kpi-value" id="kpi-mejor-pdv">-</div>
+                        <div class="resumen-kpi-label">Mejor PDV</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="charts-grid">
-                <div class="card">
-                    <div class="card-header">Evoluci&oacute;n Diaria de Ventas</div>
-                    <div class="chart-container">
+            <!-- Progress Banner -->
+            <div class="resumen-progress-banner" id="overall-progress">
+                <div class="resumen-progress-left">
+                    <div class="resumen-progress-number" id="op-number">0%</div>
+                    <div class="resumen-progress-info">
+                        <div class="resumen-progress-label">Avance General</div>
+                        <div class="resumen-progress-track">
+                            <div class="resumen-progress-fill" id="op-bar-fill" style="width:0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="resumen-progress-badge" id="op-status">
+                    <span class="resumen-progress-badge-dot"></span>
+                    Cargando...
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="resumen-charts-grid">
+                <div class="resumen-chart-card">
+                    <div class="resumen-chart-header">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        Evoluci&oacute;n Diaria de Ventas
+                    </div>
+                    <div class="resumen-chart-body">
                         <canvas id="chartEvolucion"></canvas>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-header">Participaci&oacute;n por Producto</div>
-                    <div class="chart-container chart-container-sm">
+                <div class="resumen-chart-card">
+                    <div class="resumen-chart-header">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 2a10 10 0 0 1 10 10"/>
+                        </svg>
+                        Participaci&oacute;n por Producto
+                    </div>
+                    <div class="resumen-chart-body resumen-chart-body-sm">
                         <canvas id="chartParticipacion"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">Avance por Producto</div>
-                <div class="chart-container" style="height:auto;min-height:250px;" id="avance-producto-container">
-                    <div class="progress-list" id="progress-list"></div>
+            <div class="resumen-chart-card resumen-chart-card-full">
+                <div class="resumen-chart-header">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/>
+                    </svg>
+                    Avance por Producto
+                </div>
+                <div class="resumen-chart-body" style="height:auto;min-height:220px;">
+                    <div class="resumen-progress-list" id="progress-list"></div>
                 </div>
             </div>
         </section>
