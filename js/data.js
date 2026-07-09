@@ -162,12 +162,20 @@ const DataStore = {
     },
 
     getFechas() {
-        const fechas = [...new Set(this.ventas.map(v => v.fecha.toISOString().split('T')[0]))].sort();
+        const ventasMes = this.getVentasDelMes();
+        const fechas = [...new Set(ventasMes.map(v => v.fecha.toISOString().split('T')[0]))].sort();
         return fechas.map(f => new Date(f));
     },
 
+    getVentasDelMes(mes, anio) {
+        return this.ventas.filter(v =>
+            v.fecha.getMonth() + 1 === (mes || MES) &&
+            v.fecha.getFullYear() === (anio || ANIO)
+        );
+    },
+
     getVentasFiltradas({ pdv, producto, cadena, fechaDesde, fechaHasta } = {}) {
-        let filtered = [...this.ventas];
+        let filtered = this.getVentasDelMes();
 
         if (pdv && pdv !== 'todos') {
             filtered = filtered.filter(v => v.punto_venta === pdv);
@@ -191,15 +199,16 @@ const DataStore = {
     },
 
     getVentaTotal() {
-        return this.ventas
+        return this.getVentasDelMes()
             .filter(v => v.dia <= this.diaActual)
             .reduce((s, v) => s + v.venta, 0);
     },
 
     getVentaPorProducto() {
         const result = {};
+        const ventasMes = this.getVentasDelMes();
         for (let prod of this.getProductos()) {
-            result[prod] = this.ventas
+            result[prod] = ventasMes
                 .filter(v => v.producto === prod && v.dia <= this.diaActual)
                 .reduce((s, v) => s + v.venta, 0);
         }
@@ -208,8 +217,9 @@ const DataStore = {
 
     getVentaPorPDV() {
         const result = {};
+        const ventasMes = this.getVentasDelMes();
         for (let pdv of this.getPDVs()) {
-            result[pdv] = this.ventas
+            result[pdv] = ventasMes
                 .filter(v => v.punto_venta === pdv && v.dia <= this.diaActual)
                 .reduce((s, v) => s + v.venta, 0);
         }
@@ -218,10 +228,11 @@ const DataStore = {
 
     getVentaDiaria() {
         const result = {};
+        const ventasMes = this.getVentasDelMes();
         for (let prod of this.getProductos()) {
             result[prod] = [];
             for (let d = 1; d <= this.diaActual; d++) {
-                const total = this.ventas
+                const total = ventasMes
                     .filter(v => v.producto === prod && v.dia === d)
                     .reduce((s, v) => s + v.venta, 0);
                 result[prod].push(total);
@@ -250,8 +261,9 @@ const DataStore = {
     getCumplimientoPorProducto() {
         const result = {};
         const cuotasFiltradas = this.getCuotas();
+        const ventasMes = this.getVentasDelMes();
         for (let prod of this.getProductos()) {
-            const venta = this.ventas
+            const venta = ventasMes
                 .filter(v => v.producto === prod && v.dia <= this.diaActual)
                 .reduce((s, v) => s + v.venta, 0);
             const cuota = cuotasFiltradas
@@ -272,11 +284,12 @@ const DataStore = {
         const diaHasta = filtros.fechaHasta ? new Date(filtros.fechaHasta).getDate() : this.diaActual;
         const filtrarFecha = v => v.dia >= diaDesde && v.dia <= diaHasta;
         const cuotasFiltradas = this.getCuotas();
+        const ventasMes = this.getVentasDelMes();
         for (let pdv of this.getPDVs()) {
             let ventaTotal = 0, cuotaTotal = 0;
             const productos = {};
             for (let prod of this.getProductos()) {
-                const venta = this.ventas
+                const venta = ventasMes
                     .filter(v => v.punto_venta === pdv && v.producto === prod && v.dia <= this.diaActual && filtrarFecha(v))
                     .reduce((s, v) => s + v.venta, 0);
                 const cuota = cuotasFiltradas
@@ -359,11 +372,15 @@ const DataStore = {
     },
 
     actualizarVentasCalendario(pdv, datos) {
-        const diasEnviados = new Set(datos.map(d => `${d.producto}|${d.dia}`));
+        const mes = datos.length > 0 ? datos[0].mes : MES;
+        const anio = datos.length > 0 ? datos[0].anio : ANIO;
+        const key = d => `${d.producto}|${d.dia}|${d.mes || mes}|${d.anio || anio}`;
+        const diasEnviados = new Set(datos.map(key));
         const aEliminar = this.ventas.filter(v =>
             v.punto_venta === pdv &&
-            v.dia <= DIAS_MES &&
-            !diasEnviados.has(`${v.producto}|${v.dia}`)
+            v.fecha.getMonth() + 1 === mes &&
+            v.fecha.getFullYear() === anio &&
+            !diasEnviados.has(`${v.producto}|${v.dia}|${mes}|${anio}`)
         );
         for (let del of aEliminar) {
             const idx = this.ventas.indexOf(del);
@@ -371,16 +388,20 @@ const DataStore = {
         }
 
         for (let d of datos) {
+            const itemMes = d.mes || mes;
+            const itemAnio = d.anio || anio;
             const existente = this.ventas.find(v =>
                 v.punto_venta === d.pdv &&
                 v.producto === d.producto &&
-                v.dia === d.dia
+                v.dia === d.dia &&
+                v.fecha.getMonth() + 1 === itemMes &&
+                v.fecha.getFullYear() === itemAnio
             );
             if (existente) {
                 existente.venta = d.monto;
             } else {
                 this.ventas.push({
-                    fecha: new Date(ANIO, MES - 1, d.dia),
+                    fecha: new Date(itemAnio, itemMes - 1, d.dia),
                     dia: d.dia,
                     punto_venta: d.pdv,
                     producto: d.producto,

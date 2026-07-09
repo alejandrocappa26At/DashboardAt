@@ -319,19 +319,25 @@ function cerrarModalVenta() {
 
 function cargarVentasCalendario() {
     const pdv = document.getElementById('modal-pdv').value;
+    const mes = parseInt(document.getElementById('venta-mes').value);
+    const anio = parseInt(document.getElementById('venta-anio').value);
     const tbody = document.getElementById('tbody-calendario');
     const thead = document.querySelector('#tabla-calendario thead tr');
     const productos = DataStore.getProductos();
     const diaActual = DataStore.getDiaActual();
+    const diasMes = new Date(anio, mes, 0).getDate();
 
     thead.innerHTML = '<th class="calendario-th-producto">Producto</th>';
-    for (let d = 1; d <= 31; d++) {
+    for (let d = 1; d <= diasMes; d++) {
         const cls = d <= diaActual ? '' : 'style="opacity:0.4;"';
         thead.innerHTML += `<th class="calendario-th-dia" ${cls}>${d}</th>`;
     }
     thead.innerHTML += '<th class="calendario-th-dia">Total</th>';
 
-    const ventas = DataStore.getVentas().filter(v => v.punto_venta === pdv && v.dia <= 31);
+    const ventas = DataStore.getVentas().filter(v =>
+        v.punto_venta === pdv && v.dia <= diasMes &&
+        v.fecha.getMonth() + 1 === mes && v.fecha.getFullYear() === anio
+    );
 
     tbody.innerHTML = '';
     for (let prod of productos) {
@@ -340,7 +346,7 @@ function cargarVentasCalendario() {
 
         let suma = 0;
         const celdas = [];
-        for (let d = 1; d <= 31; d++) {
+        for (let d = 1; d <= diasMes; d++) {
             const venta = ventas.find(v => v.producto === prod && v.dia === d);
             const val = venta ? venta.venta : '';
             suma += venta ? venta.venta : 0;
@@ -377,6 +383,8 @@ function actualizarTotalesCalendario() {
 
 function guardarVentasCalendario() {
     const pdv = document.getElementById('modal-pdv').value;
+    const mes = parseInt(document.getElementById('venta-mes').value);
+    const anio = parseInt(document.getElementById('venta-anio').value);
     const inputs = document.querySelectorAll('.calendario-input');
     const datos = [];
 
@@ -387,7 +395,9 @@ function guardarVentasCalendario() {
                 pdv,
                 producto: inp.dataset.prod,
                 dia: parseInt(inp.dataset.dia),
-                monto: val
+                monto: val,
+                mes,
+                anio
             });
         }
     });
