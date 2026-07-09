@@ -224,6 +224,14 @@ function mostrarNotificacion(mensaje, tipo) {
 }
 
 function abrirModalCuotas() {
+    const password = prompt('Ingrese la contrase\u00f1a para editar cuotas:');
+    if (password !== 'Adecco2019@') {
+        if (password !== null) {
+            mostrarNotificacion('Contrase\u00f1a incorrecta', 'error');
+        }
+        return;
+    }
+
     const tbody = document.getElementById('tbody-cuotas');
     const thead = document.querySelector('#tabla-cuotas thead tr');
 
