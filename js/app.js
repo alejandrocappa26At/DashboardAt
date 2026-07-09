@@ -44,13 +44,22 @@ function renderizarAvancePDV(pdvSeleccionado) {
     }
     select.value = pdvSeleccionado;
 
+    document.getElementById('pdv-dia-actual').textContent = DataStore.getDiaActual();
+
     const data = DataStore.getProyeccionPDV(pdvSeleccionado);
     if (!data) {
         document.getElementById('pdv-content').innerHTML = '<div class="empty-state"><p>Selecciona un punto de venta</p></div>';
         return;
     }
 
-    document.getElementById('pdv-nombre').textContent = pdvSeleccionado;
+    const iconMap = {
+        'Apuestas Deportivas': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+        'Lottingo': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>',
+        'Hípica': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3L3 17l4 4L21 7l-4-4z"/><path d="M8 8l4-4"/><path d="M16 16l-4 4"/></svg>',
+        'Juegos Virtuales': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h.01M14 12h.01M18 12h.01"/></svg>',
+        'Torito': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/></svg>',
+        'VLT': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>'
+    };
 
     let html = '';
     for (let prod of DataStore.getProductos()) {
@@ -60,59 +69,77 @@ function renderizarAvancePDV(pdvSeleccionado) {
         const proyCumple = proyPDV >= p.cuota;
 
         html += `
-        <div class="card mb-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 style="font-size:15px;font-weight:600;color:var(--text-primary);">${prod}</h3>
-                <span class="badge badge-${semaforoCls}">${formatPercent(p.cumplimiento)}</span>
+        <div class="pdv-card card-${semaforoCls}">
+            <div class="pdv-card-header">
+                <div class="pdv-card-title-group">
+                    <div class="pdv-card-icon ${semaforoCls}">${iconMap[prod] || ''}</div>
+                    <span class="pdv-card-title">${prod}</span>
+                </div>
+                <span class="pdv-pct-badge ${semaforoCls}">${formatPercent(p.cumplimiento)}</span>
             </div>
-            <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">
-                <div class="card" style="padding:12px;">
-                    <div style="font-size:11px;color:var(--text-subdued);">Cuota</div>
-                    <div style="font-size:17px;font-weight:700;color:var(--text-primary);">${formatCurrency(p.cuota)}</div>
+
+            <div class="pdv-stats-row">
+                <div class="pdv-stat-card">
+                    <div class="pdv-stat-label">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        Cuota
+                    </div>
+                    <div class="pdv-stat-value">${formatCurrency(p.cuota)}</div>
                 </div>
-                <div class="card" style="padding:12px;">
-                    <div style="font-size:11px;color:var(--text-subdued);">Venta Acumulada</div>
-                    <div style="font-size:17px;font-weight:700;color:var(--text-primary);">${formatCurrency(p.venta)}</div>
+                <div class="pdv-stat-card">
+                    <div class="pdv-stat-label">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        Venta Acumulada
+                    </div>
+                    <div class="pdv-stat-value">${formatCurrency(p.venta)}</div>
                 </div>
-                <div class="card" style="padding:12px;">
-                    <div style="font-size:11px;color:var(--text-subdued);">Diferencia</div>
-                    <div style="font-size:17px;font-weight:700;color:${p.venta >= p.cuota ? 'var(--accent)' : 'var(--danger)'}">
+                <div class="pdv-stat-card">
+                    <div class="pdv-stat-label">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        Diferencia
+                    </div>
+                    <div class="pdv-stat-value ${p.venta >= p.cuota ? 'green' : 'red'}">
                         ${p.venta >= p.cuota ? '\u2713 ' : ''}${formatCurrency(Math.abs(p.cuota - p.venta))}
                     </div>
                 </div>
-                <div class="card" style="padding:12px;">
-                    <div style="font-size:11px;color:var(--text-subdued);">Proyecci\u00f3n</div>
-                    <div style="font-size:17px;font-weight:700;color:var(--text-primary);">${formatCurrency(proyPDV)}</div>
+                <div class="pdv-stat-card">
+                    <div class="pdv-stat-label">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Proyecci\u00f3n
+                    </div>
+                    <div class="pdv-stat-value">${formatCurrency(proyPDV)}</div>
                 </div>
             </div>
 
-            <div style="margin-bottom:8px;">
-                <div class="flex justify-between mb-2" style="font-size:12px;color:var(--text-subdued);">
-                    <span>Avance: <strong style="color:var(--text-primary);">${formatPercent(p.cumplimiento)}</strong></span>
-                    <span style="color:${p.venta >= p.cuota ? 'var(--accent)' : 'var(--text-subdued)'}">${p.venta >= p.cuota ? 'Meta alcanzada \u2713' : 'Faltan: ' + formatCurrency(p.cuota - p.venta)}</span>
+            <div class="pdv-progress-section">
+                <div class="pdv-progress-header">
+                    <span class="pdv-progress-label">Avance: <strong style="color:#ffffff;">${formatPercent(p.cumplimiento)}</strong></span>
+                    <span class="pdv-progress-faltan ${semaforoCls}">${p.venta >= p.cuota ? 'Meta alcanzada \u2713' : 'Faltan: ' + formatCurrency(p.cuota - p.venta)}</span>
                 </div>
-                <div class="progress-bar-track" style="height:10px;">
-                    <div class="progress-bar-fill ${semaforoCls}" style="width:${Math.min(p.cumplimiento, 100)}%;height:100%;">
-                    </div>
+                <div class="pdv-progress-track">
+                    <div class="pdv-progress-fill ${semaforoCls}" style="width:${Math.min(p.cumplimiento, 100)}%;"></div>
                 </div>
             </div>
 
-            <div class="mt-4">
-                <div class="flex justify-between mb-2" style="font-size:12px;color:var(--text-subdued);">
-                    <span>Proyecci\u00f3n fin de mes</span>
-                    <span class="font-bold" style="color:${proyCumple ? 'var(--accent)' : 'var(--danger)'}">
-                        ${proyCumple ? '\u2713 Se proyecta cumplir la meta' : '\u2717 No se proyecta cumplir la meta'}
-                    </span>
+            <div class="pdv-projection">
+                <div class="pdv-projection-label">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                    Proyecci\u00f3n fin de mes
                 </div>
-                <div class="flex gap-4" style="margin-top:10px;">
-                    <div class="flex items-center gap-2" style="font-size:11px;color:var(--text-subdued);">
-                        <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;"></span> \u2265 100%
+                <span class="pdv-projection-badge ${proyCumple ? 'green' : 'red'}">
+                    ${proyCumple
+                        ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Se proyecta cumplir la meta'
+                        : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> No se proyecta cumplir la meta'}
+                </span>
+                <div class="pdv-legend">
+                    <div class="pdv-legend-item" title="Cumplimiento ≥ 100%">
+                        <span class="pdv-legend-dot green"></span> \u2265 100%
                     </div>
-                    <div class="flex items-center gap-2" style="font-size:11px;color:var(--text-subdued);">
-                        <span style="width:10px;height:10px;border-radius:50%;background:var(--warning);display:inline-block;"></span> 80-99%
+                    <div class="pdv-legend-item" title="Cumplimiento entre 80% y 99%">
+                        <span class="pdv-legend-dot yellow"></span> 80-99%
                     </div>
-                    <div class="flex items-center gap-2" style="font-size:11px;color:var(--text-subdued);">
-                        <span style="width:10px;height:10px;border-radius:50%;background:var(--danger);display:inline-block;"></span> &lt; 80%
+                    <div class="pdv-legend-item" title="Cumplimiento menor a 80%">
+                        <span class="pdv-legend-dot red"></span> &lt; 80%
                     </div>
                 </div>
             </div>

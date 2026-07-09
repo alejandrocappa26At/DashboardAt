@@ -202,16 +202,37 @@
 
         <!-- ===== PAGINA 2: AVANCE POR PDV ===== -->
         <section class="page" id="page-avance">
-            <div class="flex gap-2 items-center" style="margin-bottom:16px;flex-wrap:wrap;">
-                <select id="pdv-select" style="min-width:250px;padding:10px 14px;">
+            <div class="pdv-header">
+                <div class="pdv-header-left">
+                    <svg class="pdv-header-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <h2 class="pdv-header-title">Avance por Punto de Venta</h2>
+                </div>
+                <div class="pdv-header-right">
+                    <span class="pdv-date-badge" id="pdv-date-badge">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                        </svg>
+                        <span>Julio 2026 · Día <strong id="pdv-dia-actual"></strong>/31</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="pdv-selector-wrapper">
+                <svg class="pdv-selector-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <select id="pdv-select">
                     <option value="">Seleccionar punto de venta...</option>
                 </select>
             </div>
-            <div class="mt-4">
-                <h3 style="font-size:18px;font-weight:600;margin-bottom:16px;color:var(--text-primary);"
-                    id="pdv-nombre"></h3>
-                <div id="pdv-content"></div>
-            </div>
+
+            <div class="pdv-content" id="pdv-content"></div>
         </section>
 
         <!-- ===== PAGINA 3: RANKING ===== -->
