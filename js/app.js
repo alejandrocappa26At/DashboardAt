@@ -334,9 +334,8 @@ function cargarVentasCalendario() {
     }
     thead.innerHTML += '<th class="calendario-th-dia">Total</th>';
 
-    const ventas = DataStore.getVentas().filter(v =>
-        v.punto_venta === pdv && v.dia <= diasMes &&
-        v.fecha.getMonth() + 1 === mes && v.fecha.getFullYear() === anio
+    const ventas = DataStore.getVentasDelMes(mes, anio).filter(v =>
+        v.punto_venta === pdv && v.dia <= diaActual
     );
 
     tbody.innerHTML = '';
@@ -347,7 +346,7 @@ function cargarVentasCalendario() {
         let suma = 0;
         const celdas = [];
         for (let d = 1; d <= diasMes; d++) {
-            const venta = ventas.find(v => v.producto === prod && v.dia === d);
+            const venta = d <= diaActual ? ventas.find(v => v.producto === prod && v.dia === d) : null;
             const val = venta ? venta.venta : '';
             suma += venta ? venta.venta : 0;
             const cls = d <= diaActual ? '' : 'style="opacity:0.4;"';
