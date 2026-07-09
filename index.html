@@ -14,56 +14,78 @@
 <body>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h1>Drive AT Sur</h1>
-            <span class="sidebar-badge">Dashboard de Ventas · Julio 2026</span>
+            <div class="sidebar-brand">
+                <div class="sidebar-avatar">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="4" stroke-width="1.5" fill="rgba(29,185,84,0.15)"/>
+                        <path d="M20 21a8 8 0 1 0-16 0" stroke-width="1.5" fill="rgba(29,185,84,0.08)"/>
+                    </svg>
+                    <div class="sidebar-avatar-dot"></div>
+                </div>
+                <div class="sidebar-brand-text">
+                    <h1>Drive AT Sur</h1>
+                    <span class="sidebar-badge">Dashboard de Ventas &middot; Julio 2026</span>
+                </div>
+            </div>
         </div>
+
         <nav class="sidebar-nav">
             <div class="nav-item active" data-page="resumen">
+                <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24">
                         <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
                     </svg>
                 </span>
-                Resumen Ejecutivo
+                <span class="nav-label">Resumen Ejecutivo</span>
+                <div class="nav-equalizer" id="eq-resumen">
+                    <span></span><span></span><span></span>
+                </div>
             </div>
             <div class="nav-item" data-page="avance">
+                <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24">
-                        <path
-                            d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z" />
+                        <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z" />
                     </svg>
                 </span>
-                Avance por PDV
+                <span class="nav-label">Avance por PDV</span>
+                <div class="nav-equalizer" id="eq-avance">
+                    <span></span><span></span><span></span>
+                </div>
             </div>
             <div class="nav-item" data-page="ranking">
+                <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24">
-                        <path
-                            d="M7.5 21H2V9l6-2 4 3 4-3 6 2v12h-5.5c-.9 0-2.1-.4-2.5-1-.4.6-1.6 1-2.5 1s-2.1-.4-2.5-1c-.4.6-1.6 1-2.5 1z" />
+                        <path d="M7.5 21H2V9l6-2 4 3 4-3 6 2v12h-5.5c-.9 0-2.1-.4-2.5-1-.4.6-1.6 1-2.5 1s-2.1-.4-2.5-1c-.4.6-1.6 1-2.5 1z" />
                     </svg>
                 </span>
-                Ranking de Tiendas
+                <span class="nav-label">Ranking de Tiendas</span>
+                <div class="nav-equalizer" id="eq-ranking">
+                    <span></span><span></span><span></span>
+                </div>
             </div>
         </nav>
+
         <div class="sidebar-footer">
-            <button class="btn-spotify" onclick="abrirModalCuotas()">
-                <span class="btn-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                    </svg>
-                </span>
+            <button class="btn-sidebar btn-sidebar-secondary" onclick="abrirModalCuotas()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9" stroke-width="2"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke-width="1.8"/>
+                </svg>
                 Editar cuotas
             </button>
-            <button class="btn-spotify" onclick="abrirModalVenta()" style="margin-top:8px;">
-                <span class="btn-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                    </svg>
-                </span>
-                Registrar ventas
+            <button class="btn-sidebar btn-sidebar-primary" onclick="abrirModalVenta()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Registrar ventas</span>
             </button>
         </div>
     </aside>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="document.getElementById('sidebar').classList.remove('open')"></div>
 
     <div class="main-content">
         <header class="top-bar">

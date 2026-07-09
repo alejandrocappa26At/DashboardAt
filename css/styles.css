@@ -10,6 +10,7 @@
     --accent: #1DB954;
     --accent-hover: #1ed760;
     --accent-dark: #169c46;
+    --accent-glow: rgba(29,185,84,0.15);
     --danger: #e74c3c;
     --danger-bg: #3a1a1a;
     --warning: #f59e0b;
@@ -18,11 +19,12 @@
     --success-bg: #1a3a1a;
     --border: #2a2a2a;
     --border-light: #333333;
-    --sidebar-width: 240px;
+    --sidebar-width: 260px;
     --header-height: 60px;
     --radius: 8px;
     --radius-sm: 6px;
     --radius-lg: 12px;
+    --radius-pill: 999px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -36,9 +38,13 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* ============================================
+   SIDEBAR — Spotify Redesign
+   ============================================ */
+
 .sidebar {
     width: var(--sidebar-width);
-    background: var(--bg-sidebar);
+    background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%);
     position: fixed;
     top: 0;
     left: 0;
@@ -46,77 +52,196 @@ body {
     z-index: 100;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease;
-    border-right: 1px solid var(--border);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 4px 0 30px rgba(0,0,0,0.6);
 }
 
+/* Header / Brand */
 .sidebar-header {
-    padding: 20px 20px 16px;
+    padding: 24px 20px 20px;
+    background: linear-gradient(180deg, rgba(29,185,84,0.06) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
-.sidebar-header h1 {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.3px;
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.sidebar-avatar {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(29,185,84,0.2), rgba(29,185,84,0.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid rgba(29,185,84,0.3);
+    box-shadow: 0 0 20px rgba(29,185,84,0.1);
+    color: var(--accent);
+}
+
+.sidebar-avatar-dot {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border: 2.5px solid #000000;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(29,185,84,0.4);
+}
+
+.sidebar-brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.sidebar-brand-text h1 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar-badge {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-subdued);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: block;
-    margin-top: 2px;
+    letter-spacing: 0.3px;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+/* Navigation */
 .sidebar-nav {
-    padding: 8px 0;
+    padding: 14px 10px;
     flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 2px;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 10px 20px;
+    padding: 12px 14px;
+    margin-bottom: 2px;
     color: var(--text-secondary);
-    text-decoration: none;
     cursor: pointer;
-    transition: all 0.2s;
-    font-size: 13px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 13.5px;
     font-weight: 500;
     border: none;
-    background: none;
+    background: transparent;
     width: 100%;
     text-align: left;
     position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.nav-item:hover {
-    color: var(--text-primary);
-    background: var(--bg-hover);
+.nav-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background: transparent;
+    transition: background 0.25s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.nav-item:hover::after {
+    background: rgba(255,255,255,0.06);
+}
+
+.nav-item:active::after {
+    background: rgba(255,255,255,0.1);
+    transition: background 0.05s ease;
+}
+
+.nav-item > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ripple effect via pseudo-element */
+.nav-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(29,185,84,0.25) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.nav-item:active::before {
+    opacity: 1;
+    transition: opacity 0.05s ease;
+}
+
+.nav-indicator {
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    background: transparent;
+    border-radius: 0 4px 4px 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-item.active .nav-indicator {
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(29,185,84,0.4);
 }
 
 .nav-item.active {
-    color: var(--text-primary);
+    color: var(--accent);
     font-weight: 600;
+    background: rgba(29,185,84,0.08);
 }
 
-.nav-item.active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--accent);
-    border-radius: 0 3px 3px 0;
+.nav-item.active:hover::after {
+    background: rgba(29,185,84,0.04);
 }
 
 .nav-item .nav-icon {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -124,52 +249,123 @@ body {
 }
 
 .nav-item .nav-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     fill: currentColor;
+    transition: fill 0.2s ease;
 }
 
-.sidebar-footer {
-    padding: 16px 20px;
-    border-top: 1px solid var(--border);
+.nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.btn-spotify {
+/* Equalizer animation for active item */
+.nav-equalizer {
+    display: none;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+    margin-left: auto;
+    padding-left: 8px;
+}
+
+.nav-item.active .nav-equalizer {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    background: transparent;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius);
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s;
-    width: 100%;
-    font-family: inherit;
 }
 
-.btn-spotify:hover {
-    color: var(--text-primary);
-    border-color: var(--text-subdued);
-    background: var(--bg-hover);
+.nav-equalizer span {
+    display: block;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: equalizer 1.2s ease-in-out infinite;
+    transform-origin: bottom;
 }
 
-.btn-spotify .btn-icon {
-    width: 18px;
-    height: 18px;
+.nav-equalizer span:nth-child(1) { height: 6px; animation-delay: 0s; }
+.nav-equalizer span:nth-child(2) { height: 10px; animation-delay: 0.2s; }
+.nav-equalizer span:nth-child(3) { height: 8px; animation-delay: 0.4s; }
+
+@keyframes equalizer {
+    0%, 100% { transform: scaleY(1); }
+    25% { transform: scaleY(0.5); }
+    50% { transform: scaleY(1.2); }
+    75% { transform: scaleY(0.7); }
+}
+
+/* Footer with buttons */
+.sidebar-footer {
+    padding: 16px 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-sidebar {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 10px;
+    padding: 13px 20px;
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    font-family: inherit;
+    letter-spacing: 0.2px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Primary CTA — green pill */
+.btn-sidebar-primary {
+    background: var(--accent);
+    color: #000000;
+    box-shadow: 0 2px 12px rgba(29,185,84,0.25);
+}
+
+.btn-sidebar-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(29,185,84,0.35);
+}
+
+.btn-sidebar-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 6px rgba(29,185,84,0.2);
+}
+
+/* Secondary outline button */
+.btn-sidebar-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+.btn-sidebar-secondary:hover {
+    color: #ffffff;
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.04);
+}
+
+.btn-sidebar-secondary:active {
+    background: rgba(255,255,255,0.08);
+    transform: scale(0.98);
+}
+
+.btn-sidebar svg {
     flex-shrink: 0;
 }
 
-.btn-spotify .btn-icon svg {
-    width: 16px;
-    height: 16px;
-    fill: currentColor;
+.btn-sidebar-primary svg {
+    stroke-width: 2.5;
 }
 
 .main-content {
@@ -1198,12 +1394,24 @@ select option {
     .grid-4 { grid-template-columns: repeat(2, 1fr); }
 }
 
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+}
+
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
     }
     .sidebar.open {
         transform: translateX(0);
+    }
+    .sidebar.open ~ .sidebar-backdrop {
+        display: block;
     }
     .main-content {
         margin-left: 0;

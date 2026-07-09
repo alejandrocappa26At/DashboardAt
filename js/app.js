@@ -476,13 +476,22 @@ function guardarVentasCalendario() {
 
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', function () {
+        item.addEventListener('click', function (e) {
+            const rect = this.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            this.style.setProperty('--ripple-x', x + '%');
+            this.style.setProperty('--ripple-y', y + '%');
             cambiarPagina(this.dataset.page);
         });
     });
 
     document.getElementById('mobile-toggle').addEventListener('click', function () {
         document.getElementById('sidebar').classList.toggle('open');
+    });
+
+    document.getElementById('sidebar-backdrop').addEventListener('click', function () {
+        document.getElementById('sidebar').classList.remove('open');
     });
 
     const pdvSelect = document.getElementById('pdv-select');
