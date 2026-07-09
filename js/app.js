@@ -306,15 +306,33 @@ function guardarCuotas() {
     mostrarNotificacion(`Cuotas de ${nombreMes} ${anio} actualizadas (${nuevasCuotas.length} registros)`, 'success');
 }
 
+let ventasModificadas = false;
+let ventasFullscreen = false;
+
 function abrirModalVenta() {
     const pdvSel = document.getElementById('modal-pdv');
     pdvSel.innerHTML = DataStore.getPDVs().map(p => `<option value="${p}">${p}</option>`).join('');
     document.getElementById('modal-venta').classList.add('open');
+    ventasModificadas = false;
+    document.getElementById('ventas-unsaved-bar').classList.remove('visible');
     cargarVentasCalendario();
 }
 
 function cerrarModalVenta() {
     document.getElementById('modal-venta').classList.remove('open');
+    document.getElementById('modal-venta').classList.remove('ventas-fullscreen');
+    ventasFullscreen = false;
+}
+
+function toggleVentasFullscreen() {
+    ventasFullscreen = !ventasFullscreen;
+    document.getElementById('modal-venta').classList.toggle('ventas-fullscreen', ventasFullscreen);
+    const btn = document.getElementById('ventas-expand-btn');
+    if (ventasFullscreen) {
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 4 20 10 20"></polyline><polyline points="20 10 20 4 14 4"></polyline><line x1="14" y1="10" x2="20" y2="4"></line><line x1="4" y1="20" x2="10" y2="14"></line></svg>`;
+    } else {
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`;
+    }
 }
 
 function cargarVentasCalendario() {
@@ -330,7 +348,7 @@ function cargarVentasCalendario() {
     thead.innerHTML = '<th class="calendario-th-producto">Producto</th>';
     for (let d = 1; d <= diasMes; d++) {
         const cls = d <= diaActual ? '' : 'style="opacity:0.4;"';
-        thead.innerHTML += `<th class="calendario-th-dia" ${cls}>${d}</th>`;
+        thead.innerHTML += `<th class="calendario-th-dia ${d === diaActual ? 'calendario-th-hoy' : ''}" ${cls}>${d}</th>`;
     }
     thead.innerHTML += '<th class="calendario-th-dia">Total</th>';
 
@@ -339,6 +357,7 @@ function cargarVentasCalendario() {
     );
 
     tbody.innerHTML = '';
+    let totalDiasConDatos = 0;
     for (let prod of productos) {
         let tr = document.createElement('tr');
         tr.innerHTML = `<td>${prod}</td>`;
@@ -347,22 +366,47 @@ function cargarVentasCalendario() {
         const celdas = [];
         for (let d = 1; d <= diasMes; d++) {
             const venta = d <= diaActual ? ventas.find(v => v.producto === prod && v.dia === d) : null;
-            const val = venta ? venta.venta : '';
+            const val = venta !== null && venta !== undefined ? venta.venta : '';
             suma += venta ? venta.venta : 0;
             const cls = d <= diaActual ? '' : 'style="opacity:0.4;"';
             const disabled = d > diaActual ? 'readonly' : '';
-            celdas.push({ d, val, cls, disabled });
+            const valCls = val === '' || val === 0 ? 'calendario-input-zero' : 'calendario-input-filled';
+            celdas.push({ d, val, cls, disabled, valCls });
         }
 
         for (let c of celdas) {
-            tr.innerHTML += `<td ${c.cls}><input class="calendario-input" type="number" min="0" step="1" value="${c.val}" data-prod="${prod}" data-dia="${c.d}" ${c.disabled}></td>`;
+            let tooltip = '';
+            if (c.val !== '' && c.d > 1) {
+                const cAnterior = ventas.find(v => v.producto === prod && v.dia === c.d - 1);
+                if (cAnterior && cAnterior.venta > 0) {
+                    const variacion = ((c.val - cAnterior.venta) / cAnterior.venta * 100).toFixed(1);
+                    tooltip = ` title="Variaci\u00f3n: ${variacion > 0 ? '+' : ''}${variacion}% vs d\u00eda ${c.d - 1}"`;
+                }
+            }
+            tr.innerHTML += `<td ${c.cls}><input class="calendario-input ${c.valCls}" type="number" min="0" step="1" value="${c.val}" data-prod="${prod}" data-dia="${c.d}"${tooltip} ${c.disabled}></td>`;
         }
         tr.innerHTML += `<td class="calendario-total"><span class="total-prod">${suma.toLocaleString('es-CL')}</span></td>`;
         tbody.appendChild(tr);
     }
 
+    const totalRegistros = ventas.length;
+    const maxRegistros = productos.length * diaActual;
+    document.getElementById('ventas-progress-text').textContent = `${totalRegistros} / ${maxRegistros}`;
+
     document.querySelectorAll('.calendario-input').forEach(inp => {
-        inp.addEventListener('input', actualizarTotalesCalendario);
+        inp.addEventListener('input', function(e) {
+            ventasModificadas = true;
+            document.getElementById('ventas-unsaved-bar').classList.add('visible');
+            const val = parseFloat(this.value);
+            if (val > 0) {
+                this.classList.remove('calendario-input-zero');
+                this.classList.add('calendario-input-filled');
+            } else {
+                this.classList.remove('calendario-input-filled');
+                this.classList.add('calendario-input-zero');
+            }
+            actualizarTotalesCalendario();
+        });
     });
 }
 
@@ -381,37 +425,53 @@ function actualizarTotalesCalendario() {
 }
 
 function guardarVentasCalendario() {
-    const pdv = document.getElementById('modal-pdv').value;
-    const mes = parseInt(document.getElementById('venta-mes').value);
-    const anio = parseInt(document.getElementById('venta-anio').value);
-    const inputs = document.querySelectorAll('.calendario-input');
-    const datos = [];
+    const btn = document.getElementById('btn-guardar-ventas');
+    btn.classList.add('loading');
 
-    inputs.forEach(inp => {
-        const val = parseFloat(inp.value);
-        if (!isNaN(val) && val >= 0) {
-            datos.push({
-                pdv,
-                producto: inp.dataset.prod,
-                dia: parseInt(inp.dataset.dia),
-                monto: val,
-                mes,
-                anio
-            });
+    setTimeout(() => {
+        const pdv = document.getElementById('modal-pdv').value;
+        const mes = parseInt(document.getElementById('venta-mes').value);
+        const anio = parseInt(document.getElementById('venta-anio').value);
+        const inputs = document.querySelectorAll('.calendario-input');
+        const datos = [];
+
+        inputs.forEach(inp => {
+            const val = parseFloat(inp.value);
+            if (!isNaN(val) && val >= 0) {
+                datos.push({
+                    pdv,
+                    producto: inp.dataset.prod,
+                    dia: parseInt(inp.dataset.dia),
+                    monto: val,
+                    mes,
+                    anio
+                });
+            }
+        });
+
+        if (datos.length === 0) {
+            mostrarNotificacion('No hay ventas para guardar', 'error');
+            btn.classList.remove('loading');
+            return;
         }
-    });
 
-    if (datos.length === 0) {
-        mostrarNotificacion('No hay ventas para guardar', 'error');
-        return;
-    }
+        const registrosEliminados = DataStore.actualizarVentasCalendario(pdv, datos);
+        guardarVentasFirebase(datos);
 
-    const registrosEliminados = DataStore.actualizarVentasCalendario(pdv, datos);
-    guardarVentasFirebase(datos);
-    cerrarModalVenta();
-    recargarDashboard();
-    const msg = `Ventas guardadas para ${pdv} (${datos.length} registros)`;
-    mostrarNotificacion(registrosEliminados > 0 ? msg + `, ${registrosEliminados} eliminados` : msg, 'success');
+        inputs.forEach(inp => {
+            inp.classList.add('venta-guardada-anim');
+            setTimeout(() => inp.classList.remove('venta-guardada-anim'), 500);
+        });
+
+        btn.classList.remove('loading');
+        ventasModificadas = false;
+        document.getElementById('ventas-unsaved-bar').classList.remove('visible');
+        cerrarModalVenta();
+        recargarDashboard();
+
+        const msg = `Ventas guardadas para ${pdv} (${datos.length} registros)`;
+        mostrarNotificacion(registrosEliminados > 0 ? msg + `, ${registrosEliminados} eliminados` : msg, 'success');
+    }, 400);
 }
 
 document.addEventListener('DOMContentLoaded', function () {

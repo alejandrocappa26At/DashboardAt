@@ -213,18 +213,39 @@
 
     <!-- Modal Calendario de Ventas -->
     <div class="modal-overlay" id="modal-venta" onclick="if(event.target===this)cerrarModalVenta()">
-        <div class="modal modal-lg">
+        <div class="modal modal-ventas">
             <div class="modal-header">
-                <h3>Registro de Ventas por D&iacute;a</h3>
-                <button class="modal-close" onclick="cerrarModalVenta()">&times;</button>
+                <div class="modal-header-left">
+                    <svg class="modal-header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"></path>
+                    </svg>
+                    <h3>Registro de Ventas por D&iacute;a</h3>
+                </div>
+                <button class="modal-close" onclick="cerrarModalVenta()" aria-label="Cerrar">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
-            <div class="form-group">
-                <label for="modal-pdv">Punto de Venta</label>
-                <select id="modal-pdv" onchange="cargarVentasCalendario()" required></select>
-            </div>
-            <div class="form-row" style="display:flex;gap:12px;margin-bottom:12px;">
-                <div class="form-group" style="flex:1;">
-                    <label for="venta-mes">Mes</label>
+
+            <div class="ventas-filters">
+                <div class="ventas-filter-group">
+                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <select id="modal-pdv" onchange="cargarVentasCalendario()" required></select>
+                </div>
+                <div class="ventas-filter-group">
+                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
                     <select id="venta-mes" onchange="cargarVentasCalendario()">
                         <option value="1">Enero</option>
                         <option value="2">Febrero</option>
@@ -240,15 +261,36 @@
                         <option value="12">Diciembre</option>
                     </select>
                 </div>
-                <div class="form-group" style="flex:1;">
-                    <label for="venta-anio">A&ntilde;o</label>
+                <div class="ventas-filter-group">
+                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                    </svg>
                     <select id="venta-anio" onchange="cargarVentasCalendario()">
                         <option value="2026" selected>2026</option>
                         <option value="2027">2027</option>
                     </select>
                 </div>
+                <div class="ventas-progress-badge" id="ventas-progress-badge">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                    </svg>
+                    <span id="ventas-progress-text">0 / 0</span>
+                </div>
+                <button class="ventas-expand-btn" id="ventas-expand-btn" onclick="toggleVentasFullscreen()" title="Pantalla completa">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                </button>
             </div>
-            <div class="calendario-wrapper">
+
+            <div class="calendario-wrapper" id="calendario-wrapper">
                 <table class="calendario-tabla" id="tabla-calendario">
                     <thead>
                         <tr>
@@ -259,10 +301,40 @@
                     <tbody id="tbody-calendario"></tbody>
                 </table>
             </div>
+
+            <div class="ventas-unsaved-bar" id="ventas-unsaved-bar">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>Tienes cambios sin guardar</span>
+            </div>
+
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="cerrarModalVenta()">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="guardarVentasCalendario()">Guardar
-                    Ventas</button>
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalVenta()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary btn-save-ventas" id="btn-guardar-ventas" onclick="guardarVentasCalendario()">
+                    <span class="btn-save-content" id="btn-save-content">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Guardar Ventas
+                    </span>
+                    <span class="btn-spinner" id="btn-save-spinner">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" stroke-linecap="round">
+                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                                <animate attributeName="stroke-dashoffset" values="32;0;32" dur="1.5s" repeatCount="indefinite"/>
+                            </circle>
+                        </svg>
+                    </span>
+                </button>
             </div>
         </div>
     </div>
