@@ -232,12 +232,16 @@ function abrirModalCuotas() {
         return;
     }
 
+    const mesesSel = document.getElementById('cuotas-mes');
+    const mesActual = parseInt(mesesSel.value);
+    const anioActual = parseInt(document.getElementById('cuotas-anio').value);
+
     const tbody = document.getElementById('tbody-cuotas');
     const thead = document.querySelector('#tabla-cuotas thead tr');
 
     const pdvs = DataStore.getPDVs();
     const productos = DataStore.getProductos();
-    const cuotas = DataStore.getCuotas();
+    const cuotas = DataStore.getCuotas(mesActual, anioActual);
 
     let headHtml = '<th class="cuotas-th-pdv">Punto de Venta</th>';
     for (let prod of productos) {
@@ -261,12 +265,20 @@ function abrirModalCuotas() {
     document.getElementById('modal-cuotas').classList.add('open');
 }
 
+function cambiarMesCuotas() {
+    if (document.getElementById('modal-cuotas').classList.contains('open')) {
+        abrirModalCuotas();
+    }
+}
+
 function cerrarModalCuotas() {
     document.getElementById('modal-cuotas').classList.remove('open');
 }
 
 function guardarCuotas() {
     const inputs = document.querySelectorAll('.cuotas-input');
+    const mes = parseInt(document.getElementById('cuotas-mes').value);
+    const anio = parseInt(document.getElementById('cuotas-anio').value);
     const nuevasCuotas = [];
 
     inputs.forEach(inp => {
@@ -275,7 +287,9 @@ function guardarCuotas() {
             nuevasCuotas.push({
                 punto_venta: inp.dataset.pdv,
                 producto: inp.dataset.prod,
-                cuota: val
+                cuota: val,
+                mes,
+                anio
             });
         }
     });
@@ -285,10 +299,11 @@ function guardarCuotas() {
         return;
     }
 
-    DataStore.actualizarCuotas(nuevasCuotas);
+    DataStore.actualizarCuotas(nuevasCuotas, mes, anio);
     cerrarModalCuotas();
     recargarDashboard();
-    mostrarNotificacion(`Cuotas actualizadas (${nuevasCuotas.length} registros)`, 'success');
+    const nombreMes = MESES.find(m => m.valor === mes)?.nombre || mes;
+    mostrarNotificacion(`Cuotas de ${nombreMes} ${anio} actualizadas (${nuevasCuotas.length} registros)`, 'success');
 }
 
 function abrirModalVenta() {

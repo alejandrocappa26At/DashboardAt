@@ -2,6 +2,14 @@ const PRODUCTOS = ['Apuestas Deportivas', 'Lottingo', 'Hípica', 'Juegos Virtual
 const MES = 7;
 const ANIO = 2026;
 const DIAS_MES = 31;
+const MESES = [
+    { valor: 1, nombre: 'Enero' }, { valor: 2, nombre: 'Febrero' },
+    { valor: 3, nombre: 'Marzo' }, { valor: 4, nombre: 'Abril' },
+    { valor: 5, nombre: 'Mayo' }, { valor: 6, nombre: 'Junio' },
+    { valor: 7, nombre: 'Julio' }, { valor: 8, nombre: 'Agosto' },
+    { valor: 9, nombre: 'Setiembre' }, { valor: 10, nombre: 'Octubre' },
+    { valor: 11, nombre: 'Noviembre' }, { valor: 12, nombre: 'Diciembre' }
+];
 
 function generarMockData() {
     const pdvs = [
@@ -50,7 +58,7 @@ function generarMockData() {
                 .filter(v => v.punto_venta === pdv && v.producto === prod)
                 .reduce((s, v) => s + v.venta, 0);
             const cuota = Math.round(totalVentas * (0.85 + Math.random() * 0.3));
-            cuotas.push({ punto_venta: pdv, producto: prod, cuota });
+            cuotas.push({ punto_venta: pdv, producto: prod, cuota, mes: MES, anio: ANIO });
         }
     }
 
@@ -101,7 +109,9 @@ const DataStore = {
             this.cuotas = json.map(row => ({
                 punto_venta: row['Punto de Venta'] || row.punto_venta,
                 producto: row.Producto || row.producto,
-                cuota: parseFloat(row.Cuota || row.cuota || row.CUOTA || 0)
+                cuota: parseFloat(row.Cuota || row.cuota || row.CUOTA || 0),
+                mes: parseInt(row.Mes || row.mes || row.MES || MES),
+                anio: parseInt(row.Año || row.anio || row.ANIO || row['A\u00f1o'] || ANIO)
             }));
         }
 
@@ -122,9 +132,22 @@ const DataStore = {
     },
 
     getVentas() { return this.ventas; },
-    getCuotas() { return this.cuotas; },
+    getCuotas(mes, anio) {
+        if (mes && anio) {
+            return this.cuotas.filter(c => c.mes === mes && c.anio === anio);
+        }
+        return this.cuotas.filter(c => c.mes === MES && c.anio === ANIO);
+    },
+    getCuotasCompletas() { return this.cuotas; },
     getPromotores() { return this.promotores; },
     getDiaActual() { return this.diaActual; },
+    getMesesConCuotas() {
+        const meses = [...new Set(this.cuotas.map(c => `${c.mes}-${c.anio}`))];
+        return meses.map(m => {
+            const [mes, anio] = m.split('-').map(Number);
+            return { mes, anio, nombre: MESES.find(mm => mm.valor === mes)?.nombre || mes };
+        }).sort((a, b) => a.anio !== b.anio ? a.anio - b.anio : a.mes - b.mes);
+    },
 
     getPDVs() {
         return [...new Set(this.ventas.map(v => v.punto_venta))].sort();
@@ -208,7 +231,8 @@ const DataStore = {
     },
 
     getCuotaTotal() {
-        return this.cuotas.reduce((s, c) => s + c.cuota, 0);
+        const cuotasFiltradas = this.getCuotas();
+        return cuotasFiltradas.reduce((s, c) => s + c.cuota, 0);
     },
 
     getAvanceGeneral() {
@@ -225,11 +249,12 @@ const DataStore = {
 
     getCumplimientoPorProducto() {
         const result = {};
+        const cuotasFiltradas = this.getCuotas();
         for (let prod of this.getProductos()) {
             const venta = this.ventas
                 .filter(v => v.producto === prod && v.dia <= this.diaActual)
                 .reduce((s, v) => s + v.venta, 0);
-            const cuota = this.cuotas
+            const cuota = cuotasFiltradas
                 .filter(c => c.producto === prod)
                 .reduce((s, c) => s + c.cuota, 0);
             result[prod] = {
@@ -246,6 +271,7 @@ const DataStore = {
         const diaDesde = filtros.fechaDesde ? new Date(filtros.fechaDesde).getDate() : 1;
         const diaHasta = filtros.fechaHasta ? new Date(filtros.fechaHasta).getDate() : this.diaActual;
         const filtrarFecha = v => v.dia >= diaDesde && v.dia <= diaHasta;
+        const cuotasFiltradas = this.getCuotas();
         for (let pdv of this.getPDVs()) {
             let ventaTotal = 0, cuotaTotal = 0;
             const productos = {};
@@ -253,7 +279,7 @@ const DataStore = {
                 const venta = this.ventas
                     .filter(v => v.punto_venta === pdv && v.producto === prod && v.dia <= this.diaActual && filtrarFecha(v))
                     .reduce((s, v) => s + v.venta, 0);
-                const cuota = this.cuotas
+                const cuota = cuotasFiltradas
                     .filter(c => c.punto_venta === pdv && c.producto === prod)
                     .reduce((s, c) => s + c.cuota, 0);
                 ventaTotal += venta;
@@ -375,8 +401,9 @@ const DataStore = {
         return aEliminar.length;
     },
 
-    actualizarCuotas(nuevasCuotas) {
-        this.cuotas = nuevasCuotas;
+    actualizarCuotas(nuevasCuotas, mes, anio) {
+        const otrasCuotas = this.cuotas.filter(c => c.mes !== mes || c.anio !== anio);
+        this.cuotas = [...otrasCuotas, ...nuevasCuotas];
         this._guardarEnFirestore();
     },
 
@@ -397,7 +424,12 @@ const DataStore = {
                     fecha: new Date(v.fecha)
                 }));
 
-                this.cuotas = data.cuotas;
+                let cuotasCargadas = (data.cuotas || []).map(c => ({
+                    ...c,
+                    mes: c.mes || MES,
+                    anio: c.anio || ANIO
+                }));
+                this.cuotas = cuotasCargadas;
                 this.promotores = data.promotores;
                 this.diaActual = (mesHoy === MES && anioHoy === ANIO) ? Math.max(data.diaActual, diaHoy) : data.diaActual;
 
@@ -424,7 +456,12 @@ const DataStore = {
                     fecha: new Date(v.fecha)
                 }));
 
-                this.cuotas = data.cuotas;
+                let cuotasCargadas = (data.cuotas || []).map(c => ({
+                    ...c,
+                    mes: c.mes || MES,
+                    anio: c.anio || ANIO
+                }));
+                this.cuotas = cuotasCargadas;
                 this.promotores = data.promotores;
                 this.diaActual = (hoyMes === MES && hoyAnio === ANIO) ? Math.max(data.diaActual, hoyDia) : data.diaActual;
 

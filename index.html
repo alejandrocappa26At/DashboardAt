@@ -249,6 +249,28 @@
                 <h3>Editar Cuotas por Producto y Tienda</h3>
                 <button class="modal-close" onclick="cerrarModalCuotas()">&times;</button>
             </div>
+            <div class="cuotas-selector-mes">
+                <label>Mes:</label>
+                <select id="cuotas-mes" onchange="cambiarMesCuotas()">
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7" selected>Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Setiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                </select>
+                <label>Año:</label>
+                <select id="cuotas-anio" onchange="cambiarMesCuotas()">
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                </select>
+            </div>
             <div class="cuotas-wrapper">
                 <table class="cuotas-tabla" id="tabla-cuotas">
                     <thead>

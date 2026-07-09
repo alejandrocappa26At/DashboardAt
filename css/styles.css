@@ -818,6 +818,36 @@ select option {
     background: var(--bg-elevated);
 }
 
+.cuotas-selector-mes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    flex-wrap: wrap;
+}
+
+.cuotas-selector-mes label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.cuotas-selector-mes select {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.cuotas-selector-mes select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
 .cuotas-wrapper {
     overflow-x: auto;
     margin-bottom: 16px;
