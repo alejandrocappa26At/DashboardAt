@@ -387,6 +387,11 @@ const DataStore = {
             if (snap.exists) {
                 const data = snap.data();
 
+                const hoy = new Date();
+                const diaHoy = Math.min(hoy.getDate(), DIAS_MES);
+                const mesHoy = hoy.getMonth() + 1;
+                const anioHoy = hoy.getFullYear();
+
                 this.ventas = data.ventas.map(v => ({
                     ...v,
                     fecha: new Date(v.fecha)
@@ -394,7 +399,7 @@ const DataStore = {
 
                 this.cuotas = data.cuotas;
                 this.promotores = data.promotores;
-                this.diaActual = data.diaActual;
+                this.diaActual = (mesHoy === MES && anioHoy === ANIO) ? Math.max(data.diaActual, diaHoy) : data.diaActual;
 
                 if (typeof recargarDashboard === 'function') {
                     recargarDashboard();
@@ -409,6 +414,10 @@ const DataStore = {
                 if (!snap.exists) return;
 
                 const data = snap.data();
+                const hoy = new Date();
+                const hoyDia = Math.min(hoy.getDate(), DIAS_MES);
+                const hoyMes = hoy.getMonth() + 1;
+                const hoyAnio = hoy.getFullYear();
 
                 this.ventas = data.ventas.map(v => ({
                     ...v,
@@ -417,7 +426,7 @@ const DataStore = {
 
                 this.cuotas = data.cuotas;
                 this.promotores = data.promotores;
-                this.diaActual = data.diaActual;
+                this.diaActual = (hoyMes === MES && hoyAnio === ANIO) ? Math.max(data.diaActual, hoyDia) : data.diaActual;
 
                 if (typeof recargarDashboard === 'function') {
                     recargarDashboard();
