@@ -10,5 +10,3 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 window.db = firebase.firestore();
-
-console.log("FIREBASE OK VERSION 2");
