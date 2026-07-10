@@ -1,4 +1,4 @@
-const PRODUCTOS = ['Apuestas Deportivas', 'Lottingo', 'Hípica', 'Juegos Virtuales', 'Torito', 'VLT'];
+const PRODUCTOS = ['Apuestas Deportivas', 'Lottingo', 'Hípica', 'Juegos Virtuales', 'Torito', 'VLT', 'LOTOBOLA'];
 const MES = 7;
 const ANIO = 2026;
 const DIAS_MES = 31;
