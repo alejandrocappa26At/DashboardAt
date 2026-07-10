@@ -158,7 +158,9 @@ const DataStore = {
     },
 
     getProductos() {
-        return [...new Set(this.ventas.map(v => v.producto))].sort();
+        const productos = new Set(this.ventas.map(v => v.producto));
+        for (let p of PRODUCTOS) productos.add(p);
+        return [...productos].sort();
     },
 
     getFechas() {
