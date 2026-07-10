@@ -877,8 +877,43 @@ body {
 .pdv-progress-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 8px;
+    gap: 12px;
+}
+
+.pdv-progress-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.pdv-progress-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.pdv-daily-required {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: help;
+    white-space: nowrap;
+}
+
+.pdv-daily-required-mobile {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    cursor: help;
 }
 
 .pdv-progress-label {
@@ -1034,6 +1069,30 @@ body {
     }
     .pdv-selector-wrapper {
         max-width: 100%;
+    }
+
+    .pdv-progress-header {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .pdv-progress-header-left {
+        width: 100%;
+    }
+
+    .pdv-progress-header-right {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .pdv-daily-required {
+        display: none;
+    }
+
+    .pdv-daily-required-mobile {
+        display: inline-flex;
     }
 }
 

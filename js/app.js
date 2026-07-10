@@ -63,12 +63,57 @@ function renderizarAvancePDV(pdvSeleccionado) {
         'VLT': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>'
     };
 
+    const mesNumero = MES;
+    const anio = ANIO;
+    const diaActual = DataStore.getDiaActual();
+    const diasDelMes = new Date(anio, mesNumero, 0).getDate();
+
     let html = '';
     for (let prod of DataStore.getProductos()) {
         const p = data.productos[prod];
         const semaforoCls = p.cumplimiento >= 100 ? 'green' : p.cumplimiento >= 80 ? 'yellow' : 'red';
-        const proyPDV = DataStore.diaActual > 0 ? (p.venta / DataStore.getDiaActual()) * 31 : 0;
+        const proyPDV = diaActual > 0 ? (p.venta / diaActual) * diasDelMes : 0;
         const proyCumple = proyPDV >= p.cuota;
+        const diferencia = p.cuota - p.venta;
+
+        const vdrResult = DataStore.calcularVentaDiariaRequerida({ diferencia, anio, mesNumero, diaActual });
+
+        let dailyRequiredDesktop = '';
+        let dailyRequiredMobile = '';
+        let dailyRequiredColor = '#b3b3b3';
+
+        if (vdrResult.estado === 'meta_cumplida') {
+            dailyRequiredDesktop = '<span class="pdv-daily-required" style="color:#1DB954;">✓ Meta cumplida</span>';
+            dailyRequiredMobile = '<span class="pdv-daily-required-mobile" style="color:#1DB954;font-size:11px;">✓ Meta cumplida</span>';
+        } else if (vdrResult.estado === 'mes_finalizado') {
+            dailyRequiredDesktop = '<span class="pdv-daily-required" style="color:#5A5A5A;">Mes finalizado</span>';
+            dailyRequiredMobile = '<span class="pdv-daily-required-mobile" style="color:#5A5A5A;font-size:11px;">Mes finalizado</span>';
+        } else {
+            const vdr = vdrResult.ventaDiariaRequerida;
+            const promedioDiarioActual = diaActual > 0 ? p.venta / diaActual : 0;
+
+            let urgenciaLabel = '';
+            if (promedioDiarioActual > 0 && vdr > 0) {
+                const factorUrgencia = vdr / promedioDiarioActual;
+                if (factorUrgencia <= 1) {
+                    dailyRequiredColor = '#1DB954';
+                    urgenciaLabel = 'Ritmo actual suficiente';
+                } else if (factorUrgencia <= 1.5) {
+                    dailyRequiredColor = '#F5A623';
+                    urgenciaLabel = 'Necesitas acelerar el ritmo';
+                } else {
+                    dailyRequiredColor = '#E74C3C';
+                    const pctExtra = Math.round((factorUrgencia - 1) * 100);
+                    urgenciaLabel = `Ritmo insuficiente, +${pctExtra}% requerido`;
+                }
+            }
+
+            const tooltipText = `${formatCurrency(diferencia)} ÷ ${vdrResult.diasRestantes} días restantes${urgenciaLabel ? ' · ' + urgenciaLabel : ''}`;
+            const clockIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+
+            dailyRequiredDesktop = `<span class="pdv-daily-required" style="color:${dailyRequiredColor};" title="${tooltipText}">${clockIcon} ${formatCurrency(vdr)}/día requerido</span>`;
+            dailyRequiredMobile = `<span class="pdv-daily-required-mobile" style="color:${dailyRequiredColor};font-size:11px;" title="${tooltipText}">→ ${formatCurrency(vdr)}/día para cumplir</span>`;
+        }
 
         html += `
         <div class="pdv-card card-${semaforoCls}">
@@ -101,7 +146,7 @@ function renderizarAvancePDV(pdvSeleccionado) {
                         Diferencia
                     </div>
                     <div class="pdv-stat-value ${p.venta >= p.cuota ? 'green' : 'red'}">
-                        ${p.venta >= p.cuota ? '\u2713 ' : ''}${formatCurrency(Math.abs(p.cuota - p.venta))}
+                        ${p.venta >= p.cuota ? '\u2713 ' : ''}${formatCurrency(Math.abs(diferencia))}
                     </div>
                 </div>
                 <div class="pdv-stat-card">
@@ -115,8 +160,14 @@ function renderizarAvancePDV(pdvSeleccionado) {
 
             <div class="pdv-progress-section">
                 <div class="pdv-progress-header">
-                    <span class="pdv-progress-label">Avance: <strong style="color:#ffffff;">${formatPercent(p.cumplimiento)}</strong></span>
-                    <span class="pdv-progress-faltan ${semaforoCls}">${p.venta >= p.cuota ? 'Meta alcanzada \u2713' : 'Faltan: ' + formatCurrency(p.cuota - p.venta)}</span>
+                    <div class="pdv-progress-header-left">
+                        <span class="pdv-progress-label">Avance: <strong style="color:#ffffff;">${formatPercent(p.cumplimiento)}</strong></span>
+                        ${dailyRequiredDesktop}
+                    </div>
+                    <div class="pdv-progress-header-right">
+                        <span class="pdv-progress-faltan ${semaforoCls}">${p.venta >= p.cuota ? 'Meta alcanzada \u2713' : 'Faltan: ' + formatCurrency(diferencia)}</span>
+                        ${dailyRequiredMobile}
+                    </div>
                 </div>
                 <div class="pdv-progress-track">
                     <div class="pdv-progress-fill ${semaforoCls}" style="width:${Math.min(p.cumplimiento, 100)}%;"></div>
@@ -134,7 +185,7 @@ function renderizarAvancePDV(pdvSeleccionado) {
                         : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> No se proyecta cumplir la meta'}
                 </span>
                 <div class="pdv-legend">
-                    <div class="pdv-legend-item" title="Cumplimiento ≥ 100%">
+                    <div class="pdv-legend-item" title="Cumplimiento \u2265 100%">
                         <span class="pdv-legend-dot green"></span> \u2265 100%
                     </div>
                     <div class="pdv-legend-item" title="Cumplimiento entre 80% y 99%">

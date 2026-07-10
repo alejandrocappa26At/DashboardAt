@@ -354,6 +354,25 @@ const DataStore = {
         return data[pdv] || null;
     },
 
+    calcularVentaDiariaRequerida({ diferencia, anio, mesNumero, diaActual }) {
+        const diasDelMes = new Date(anio, mesNumero, 0).getDate();
+        const diasRestantes = diasDelMes - diaActual + 1;
+
+        if (diferencia <= 0) {
+            return { estado: 'meta_cumplida', ventaDiariaRequerida: 0, diasRestantes: 0, diasDelMes };
+        }
+        if (diasRestantes <= 0) {
+            return { estado: 'mes_finalizado', ventaDiariaRequerida: 0, diasRestantes: 0, diasDelMes };
+        }
+
+        return {
+            estado: 'en_progreso',
+            ventaDiariaRequerida: Math.round((diferencia / diasRestantes) * 100) / 100,
+            diasRestantes,
+            diasDelMes,
+        };
+    },
+
     getEvolucionDiaria() {
         return this.getVentaDiaria();
     },
