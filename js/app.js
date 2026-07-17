@@ -205,28 +205,83 @@ function renderizarAvancePDV(pdvSeleccionado) {
 
 function renderizarRanking() {
     const ranking = DataStore.getRanking();
-    const tabla = document.getElementById('tabla-ranking');
-    if (!tabla) return;
+    if (!document.getElementById('page-ranking')) return;
 
-    const medals = { 1: '\ud83e\udd47', 2: '\ud83e\udd48', 3: '\ud83e\udd49' };
+    const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
+    const podiumColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
 
-    let html = '<thead><tr><th>Puesto</th><th>Punto de Venta</th><th>Puntaje</th><th>Cumplimiento</th><th>Venta Total</th><th>Proyecci\u00f3n</th></tr></thead><tbody>';
+    const top3 = ranking.slice(0, 3);
+    const rest = ranking.slice(3);
 
-    for (let r of ranking) {
-        const medal = medals[r.puesto] || '';
-        const cls = r.cumplimiento >= 100 ? 'badge-green' : r.cumplimiento >= 80 ? 'badge-yellow' : 'badge-red';
-        html += `<tr>
-            <td class="text-center">${medal ? `<span class="ranking-medal">${medal}</span>` : `<span class="ranking-number">#${r.puesto}</span>`}</td>
-            <td><strong>${r.punto_venta}</strong></td>
-            <td class="font-bold" style="color:var(--text-primary);">${r.puntaje.toFixed(1)}</td>
-            <td><span class="badge ${cls}">${formatPercent(r.cumplimiento)}</span></td>
-            <td>${formatCurrency(r.venta_total)}</td>
-            <td>${formatCurrency(r.proyeccion)}</td>
-        </tr>`;
-    }
+    const podiumHtml = top3.map((r, i) => {
+        const hue = i === 0 ? 45 : i === 1 ? 0 : 30;
+        const sat = i === 0 ? 100 : i === 1 ? 40 : 60;
+        const light = i === 0 ? 55 : i === 1 ? 75 : 55;
+        return `
+            <div class="podium-card podium-${['gold','silver','bronze'][i]}">
+                <div class="podium-medal">${medals[i]}</div>
+                <div class="podium-position">#${r.puesto}</div>
+                <div class="podium-name">${r.punto_venta}</div>
+                <div class="podium-score">${r.puntaje.toFixed(1)}%</div>
+                <div class="podium-bar-track">
+                    <div class="podium-bar-fill" style="width:${Math.min(r.cumplimiento, 100)}%;background:hsl(${hue},${sat}%,${light}%);"></div>
+                </div>
+                <div class="podium-stats">
+                    <div class="podium-stat">
+                        <span class="podium-stat-label">Venta</span>
+                        <span class="podium-stat-value">${formatCurrency(r.venta_total)}</span>
+                    </div>
+                    <div class="podium-stat">
+                        <span class="podium-stat-label">Proy.</span>
+                        <span class="podium-stat-value">${formatCurrency(r.proyeccion)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 
-    html += '</tbody>';
-    tabla.innerHTML = html;
+    document.getElementById('ranking-podium').innerHTML = podiumHtml;
+
+    const listHtml = rest.map((r, i) => {
+        const pc = r.cumplimiento;
+        const barColor = pc >= 100 ? 'var(--accent)' : pc >= 80 ? 'var(--warning)' : 'var(--danger)';
+        const rowClass = pc >= 100 ? 'rank-row-green' : pc >= 80 ? 'rank-row-yellow' : 'rank-row-red';
+        return `
+            <div class="rank-row ${rowClass}" style="animation-delay:${i * 0.04}s">
+                <div class="rank-row-pos">#${r.puesto}</div>
+                <div class="rank-row-info">
+                    <div class="rank-row-name">${r.punto_venta}</div>
+                    <div class="rank-row-bar-track">
+                        <div class="rank-row-bar-fill" style="width:${Math.min(pc, 100)}%;background:${barColor};"></div>
+                    </div>
+                </div>
+                <div class="rank-row-data">
+                    <div class="rank-row-pct" style="color:${barColor}">${formatPercent(pc)}</div>
+                    <div class="rank-row-sub">${formatCurrency(r.venta_total)}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('ranking-list').innerHTML = listHtml;
+    document.getElementById('ranking-list-count').textContent = `${ranking.length} tiendas`;
+
+    const cumplen = ranking.filter(r => r.cumplimiento >= 100).length;
+    const riesgo = ranking.filter(r => r.cumplimiento < 80).length;
+    document.getElementById('ranking-hero-stats').innerHTML = `
+        <div class="ranking-hero-stat">
+            <span class="ranking-hero-stat-value" style="color:var(--accent)">${cumplen}</span>
+            <span class="ranking-hero-stat-label">Cumplen meta</span>
+        </div>
+        <div class="ranking-hero-stat">
+            <span class="ranking-hero-stat-value" style="color:var(--warning)">${ranking.length - cumplen - riesgo}</span>
+            <span class="ranking-hero-stat-label">En observación</span>
+        </div>
+        <div class="ranking-hero-stat">
+            <span class="ranking-hero-stat-value" style="color:var(--danger)">${riesgo}</span>
+            <span class="ranking-hero-stat-label">En riesgo</span>
+        </div>
+    `;
 
     createRankingChart();
 }

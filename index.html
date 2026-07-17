@@ -315,18 +315,41 @@
 
         <!-- ===== PAGINA 3: RANKING ===== -->
         <section class="page" id="page-ranking">
-            <div class="grid grid-2">
-                <div class="card" style="grid-column:1/-1;">
-                    <div class="card-header">Ranking General de Tiendas</div>
-                    <div class="table-responsive">
-                        <table id="tabla-ranking"></table>
-                    </div>
+            <div class="ranking-hero">
+                <div class="ranking-hero-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7"/>
+                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7"/>
+                        <path d="M4 22h16"/>
+                        <path d="M10 22V12"/>
+                        <path d="M14 22V12"/>
+                        <path d="M12 22V2"/>
+                    </svg>
                 </div>
-                <div class="card" style="grid-column:1/-1;">
-                    <div class="card-header">Top 10 PDV - % Cumplimiento</div>
-                    <div class="chart-container" style="height:350px;">
-                        <canvas id="chartRanking"></canvas>
-                    </div>
+                <div>
+                    <div class="ranking-hero-title">Ranking General de Tiendas</div>
+                    <div class="ranking-hero-sub">Desempeño y cumplimiento por punto de venta</div>
+                </div>
+                <div class="ranking-hero-stats" id="ranking-hero-stats"></div>
+            </div>
+
+            <div class="ranking-podium" id="ranking-podium"></div>
+
+            <div class="ranking-list-header">
+                <span class="ranking-list-title">Tabla Completa</span>
+                <span class="ranking-list-count" id="ranking-list-count"></span>
+            </div>
+            <div class="ranking-list" id="ranking-list"></div>
+
+            <div class="ranking-chart-card">
+                <div class="ranking-chart-header">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+                    </svg>
+                    Top 10 - % Cumplimiento
+                </div>
+                <div class="ranking-chart-body">
+                    <canvas id="chartRanking"></canvas>
                 </div>
             </div>
         </section>
