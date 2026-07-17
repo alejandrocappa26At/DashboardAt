@@ -287,156 +287,188 @@ function renderizarRanking() {
 }
 
 function renderizarResumenGeneralPDV() {
-    const pdvs = DataStore.getCumplimientoPorPDV();
-    const entries = Object.entries(pdvs).map(([pdv, data]) => ({
-        punto_venta: pdv,
-        cuota: data.cuota,
-        venta: data.venta,
-        cumplimiento: data.cumplimiento,
-        proyeccion: data.proyeccion,
-        diferencia: data.diferencia,
-        cadena: data.cadena || 'General'
-    }));
+    try {
+        const container = document.getElementById('rpdv-hero-kpis');
+        if (!container) return;
 
-    // Global KPIs
-    const cuotaGlobal = entries.reduce((s, e) => s + e.cuota, 0);
-    const ventaGlobal = entries.reduce((s, e) => s + e.venta, 0);
-    const cumplimientoGlobal = cuotaGlobal > 0 ? (ventaGlobal / cuotaGlobal) * 100 : 0;
-    const proyeccionGlobal = entries.reduce((s, e) => s + e.proyeccion, 0);
+        const pdvs = DataStore.getCumplimientoPorPDV();
+        const entries = Object.entries(pdvs).map(([pdv, data]) => ({
+            punto_venta: pdv,
+            cuota: data.cuota || 0,
+            venta: data.venta || 0,
+            cumplimiento: data.cumplimiento || 0,
+            proyeccion: data.proyeccion || 0,
+            diferencia: data.diferencia || 0,
+            cadena: data.cadena || 'General'
+        }));
 
-    document.getElementById('rpdv-hero-kpis').innerHTML = `
-        <div class="rpdv-hero-kpi">
-            <span class="rpdv-hero-kpi-value" style="color:var(--accent)">${formatCurrency(cuotaGlobal)}</span>
-            <span class="rpdv-hero-kpi-label">Cuota Global</span>
-        </div>
-        <div class="rpdv-hero-kpi">
-            <span class="rpdv-hero-kpi-value">${formatCurrency(ventaGlobal)}</span>
-            <span class="rpdv-hero-kpi-label">Venta Acumulada</span>
-        </div>
-        <div class="rpdv-hero-kpi">
-            <span class="rpdv-hero-kpi-value" style="color:${cumplimientoGlobal >= 100 ? 'var(--accent)' : cumplimientoGlobal >= 80 ? 'var(--warning)' : 'var(--danger)'}">${formatPercent(cumplimientoGlobal)}</span>
-            <span class="rpdv-hero-kpi-label">Cumplimiento General</span>
-        </div>
-        <div class="rpdv-hero-kpi">
-            <span class="rpdv-hero-kpi-value" style="color:var(--accent)">${formatCurrency(proyeccionGlobal)}</span>
-            <span class="rpdv-hero-kpi-label">Proyección Global</span>
-        </div>
-    `;
+        const cuotaGlobal = entries.reduce((s, e) => s + e.cuota, 0);
+        const ventaGlobal = entries.reduce((s, e) => s + e.venta, 0);
+        const cumplimientoGlobal = cuotaGlobal > 0 ? (ventaGlobal / cuotaGlobal) * 100 : 0;
+        const proyeccionGlobal = entries.reduce((s, e) => s + e.proyeccion, 0);
 
-    // Populate chain filter
-    const cadenas = [...new Set(entries.map(e => e.cadena))].sort();
-    const cadenaSelect = document.getElementById('rpdv-filter-cadena');
-    cadenaSelect.innerHTML = '<option value="all">Todas las redes</option>' +
-        cadenas.map(c => `<option value="${c}">${c}</option>`).join('');
+        container.innerHTML = `
+            <div class="rpdv-hero-kpi">
+                <span class="rpdv-hero-kpi-value" style="color:var(--accent)">${formatCurrency(cuotaGlobal)}</span>
+                <span class="rpdv-hero-kpi-label">Cuota Global</span>
+            </div>
+            <div class="rpdv-hero-kpi">
+                <span class="rpdv-hero-kpi-value">${formatCurrency(ventaGlobal)}</span>
+                <span class="rpdv-hero-kpi-label">Venta Acumulada</span>
+            </div>
+            <div class="rpdv-hero-kpi">
+                <span class="rpdv-hero-kpi-value" style="color:${cumplimientoGlobal >= 100 ? 'var(--accent)' : cumplimientoGlobal >= 80 ? 'var(--warning)' : 'var(--danger)'}">${formatPercent(cumplimientoGlobal)}</span>
+                <span class="rpdv-hero-kpi-label">Cumplimiento General</span>
+            </div>
+            <div class="rpdv-hero-kpi">
+                <span class="rpdv-hero-kpi-value" style="color:var(--accent)">${formatCurrency(proyeccionGlobal)}</span>
+                <span class="rpdv-hero-kpi-label">Proyección Global</span>
+            </div>
+        `;
 
-    // Render cards
-    function renderCards(data) {
-        const search = (document.getElementById('rpdv-search').value || '').toLowerCase();
-        const filtroCump = document.getElementById('rpdv-filter-cumplimiento').value;
-        const filtroCadena = document.getElementById('rpdv-filter-cadena').value;
-        const sort = document.getElementById('rpdv-sort').value;
+        const cadenaSelect = document.getElementById('rpdv-filter-cadena');
+        if (cadenaSelect) {
+            const cadenas = [...new Set(entries.map(e => e.cadena))].sort();
+            cadenaSelect.innerHTML = '<option value="all">Todas las redes</option>' +
+                cadenas.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
 
-        let filtered = data.filter(e => {
-            if (search && !e.punto_venta.toLowerCase().includes(search)) return false;
-            if (filtroCump === 'green' && e.cumplimiento < 100) return false;
-            if (filtroCump === 'yellow' && (e.cumplimiento < 80 || e.cumplimiento >= 100)) return false;
-            if (filtroCump === 'red' && e.cumplimiento >= 80) return false;
-            if (filtroCadena !== 'all' && e.cadena !== filtroCadena) return false;
-            return true;
+        function renderCards(data) {
+            const search = (document.getElementById('rpdv-search').value || '').toLowerCase();
+            const filtroCump = document.getElementById('rpdv-filter-cumplimiento').value;
+            const filtroCadena = document.getElementById('rpdv-filter-cadena').value;
+            const sort = document.getElementById('rpdv-sort').value;
+
+            let filtered = data.filter(e => {
+                if (search && !e.punto_venta.toLowerCase().includes(search)) return false;
+                if (filtroCump === 'green' && e.cumplimiento < 100) return false;
+                if (filtroCump === 'yellow' && (e.cumplimiento < 80 || e.cumplimiento >= 100)) return false;
+                if (filtroCump === 'red' && e.cumplimiento >= 80) return false;
+                if (filtroCadena !== 'all' && e.cadena !== filtroCadena) return false;
+                return true;
+            });
+
+            const [field, dir] = sort.split('-');
+            filtered.sort((a, b) => {
+                const va = a[field === 'cumplimiento' ? 'cumplimiento' : field === 'venta' ? 'venta' : 'cuota'];
+                const vb = b[field === 'cumplimiento' ? 'cumplimiento' : field === 'venta' ? 'venta' : 'cuota'];
+                return dir === 'desc' ? vb - va : va - vb;
+            });
+
+            const countEl = document.getElementById('rpdv-count');
+            if (countEl) countEl.textContent = `${filtered.length} de ${data.length} tiendas`;
+
+            const gridEl = document.getElementById('rpdv-grid');
+            if (!gridEl) return;
+
+            gridEl.innerHTML = filtered.map((e, i) => {
+                const pct = e.cumplimiento;
+                const color = pct >= 100 ? 'var(--accent)' : pct >= 80 ? 'var(--warning)' : 'var(--danger)';
+                const estado = pct >= 100 ? 'Cumpliendo meta' : pct >= 80 ? 'En seguimiento' : 'En riesgo';
+                const colorClase = pct >= 100 ? 'green' : pct >= 80 ? 'yellow' : 'red';
+                const icono = pct >= 100 ? '\u2705' : pct >= 80 ? '\ud83d\udfe1' : '\ud83d\udd34';
+                return `
+                    <div class="rpdv-card ${colorClase}" style="animation-delay:${i * 0.035}s">
+                        <div class="rpdv-card-top">
+                            <div class="rpdv-card-icon">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            </div>
+                            <div class="rpdv-card-name">${e.punto_venta}</div>
+                            <span class="rpdv-card-badge ${colorClase}">${formatPercent(pct)}</span>
+                        </div>
+                        <div class="rpdv-card-body">
+                            <div class="rpdv-card-metrics">
+                                <div class="rpdv-card-metric">
+                                    <span class="rpdv-metric-label">Cuota Total</span>
+                                    <span class="rpdv-metric-value">${formatCurrency(e.cuota)}</span>
+                                </div>
+                                <div class="rpdv-card-metric">
+                                    <span class="rpdv-metric-label">Venta Acumulada</span>
+                                    <span class="rpdv-metric-value">${formatCurrency(e.venta)}</span>
+                                </div>
+                                <div class="rpdv-card-metric">
+                                    <span class="rpdv-metric-label">Faltante</span>
+                                    <span class="rpdv-metric-value" style="color:${e.diferencia <= 0 ? 'var(--accent)' : 'var(--danger)'}">${formatCurrency(Math.max(e.diferencia, 0))}</span>
+                                </div>
+                                <div class="rpdv-card-metric">
+                                    <span class="rpdv-metric-label">Proyecci\u00f3n</span>
+                                    <span class="rpdv-metric-value" style="color:${e.proyeccion >= e.cuota ? 'var(--accent)' : 'var(--text-secondary)'}">${formatCurrency(e.proyeccion)}</span>
+                                </div>
+                            </div>
+                            <div class="rpdv-card-bar">
+                                <div class="rpdv-bar-track">
+                                    <div class="rpdv-bar-fill ${colorClase}" style="width:${Math.min(pct, 100)}%"></div>
+                                </div>
+                                <div class="rpdv-bar-label" style="color:${color}">${formatPercent(pct)}</div>
+                            </div>
+                            <div class="rpdv-card-status ${colorClase}">${icono} ${estado}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        renderCards(entries);
+
+        ['rpdv-search', 'rpdv-filter-cumplimiento', 'rpdv-filter-cadena', 'rpdv-sort'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el || !el.parentNode) return;
+            const clone = el.cloneNode(true);
+            el.parentNode.replaceChild(clone, el);
         });
 
-        const [field, dir] = sort.split('-');
-        filtered.sort((a, b) => {
-            const va = a[field === 'cumplimiento' ? 'cumplimiento' : field === 'venta' ? 'venta' : 'cuota'];
-            const vb = b[field === 'cumplimiento' ? 'cumplimiento' : field === 'venta' ? 'venta' : 'cuota'];
-            return dir === 'desc' ? vb - va : va - vb;
-        });
+        const searchInput = document.getElementById('rpdv-search');
+        if (searchInput) searchInput.addEventListener('input', () => renderCards(entries));
 
-        document.getElementById('rpdv-count').textContent = `${filtered.length} de ${data.length} tiendas`;
+        const filterCump = document.getElementById('rpdv-filter-cumplimiento');
+        if (filterCump) filterCump.addEventListener('change', () => renderCards(entries));
 
-        const html = filtered.map((e, i) => {
-            const pct = e.cumplimiento;
-            const color = pct >= 100 ? 'var(--accent)' : pct >= 80 ? 'var(--warning)' : 'var(--danger)';
-            const estado = pct >= 100 ? '✅ Cumpliendo meta' : pct >= 80 ? '🟡 En seguimiento' : '🔴 En riesgo';
-            const colorClase = pct >= 100 ? 'green' : pct >= 80 ? 'yellow' : 'red';
-            return `
-                <div class="rpdv-card ${colorClase}" style="animation-delay:${i * 0.035}s">
-                    <div class="rpdv-card-top">
-                        <div class="rpdv-card-icon">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        </div>
-                        <div class="rpdv-card-name">${e.punto_venta}</div>
-                        <span class="rpdv-card-badge ${colorClase}">${formatPercent(pct)}</span>
-                    </div>
-                    <div class="rpdv-card-body">
-                        <div class="rpdv-card-metrics">
-                            <div class="rpdv-card-metric">
-                                <span class="rpdv-metric-label">Cuota Total</span>
-                                <span class="rpdv-metric-value">${formatCurrency(e.cuota)}</span>
-                            </div>
-                            <div class="rpdv-card-metric">
-                                <span class="rpdv-metric-label">Venta Acumulada</span>
-                                <span class="rpdv-metric-value">${formatCurrency(e.venta)}</span>
-                            </div>
-                            <div class="rpdv-card-metric">
-                                <span class="rpdv-metric-label">Faltante</span>
-                                <span class="rpdv-metric-value" style="color:${e.diferencia <= 0 ? 'var(--accent)' : 'var(--danger)'}">${formatCurrency(Math.max(e.diferencia, 0))}</span>
-                            </div>
-                            <div class="rpdv-card-metric">
-                                <span class="rpdv-metric-label">Proyección</span>
-                                <span class="rpdv-metric-value" style="color:${e.proyeccion >= e.cuota ? 'var(--accent)' : 'var(--text-secondary)'}">${formatCurrency(e.proyeccion)}</span>
-                            </div>
-                        </div>
-                        <div class="rpdv-card-bar">
-                            <div class="rpdv-bar-track">
-                                <div class="rpdv-bar-fill ${colorClase}" style="width:${Math.min(pct, 100)}%"></div>
-                            </div>
-                            <div class="rpdv-bar-label" style="color:${color}">${formatPercent(pct)}</div>
-                        </div>
-                        <div class="rpdv-card-status ${colorClase}">${estado}</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        const filterCad = document.getElementById('rpdv-filter-cadena');
+        if (filterCad) filterCad.addEventListener('change', () => renderCards(entries));
 
-        document.getElementById('rpdv-grid').innerHTML = html;
+        const sortEl = document.getElementById('rpdv-sort');
+        if (sortEl) sortEl.addEventListener('change', () => renderCards(entries));
+
+        createResumenPDVCharts(entries);
+    } catch (e) {
+        console.error('Error en Resumen General PDV:', e);
     }
-
-    renderCards(entries);
-
-    // Event listeners (remove old ones first by cloning)
-    ['rpdv-search', 'rpdv-filter-cumplimiento', 'rpdv-filter-cadena', 'rpdv-sort'].forEach(id => {
-        const el = document.getElementById(id);
-        const clone = el.cloneNode(true);
-        el.parentNode.replaceChild(clone, el);
-    });
-
-    document.getElementById('rpdv-search').addEventListener('input', () => renderCards(entries));
-    document.getElementById('rpdv-filter-cumplimiento').addEventListener('change', () => renderCards(entries));
-    document.getElementById('rpdv-filter-cadena').addEventListener('change', () => renderCards(entries));
-    document.getElementById('rpdv-sort').addEventListener('change', () => renderCards(entries));
-
-    // Charts
-    createResumenPDVCharts(entries);
 }
 
 function createResumenPDVCharts(entries) {
+    if (typeof Chart === 'undefined') return;
+    const page = document.getElementById('page-resumen-pdv');
+    if (!page || !page.classList.contains('active')) return;
     const sorted = [...entries].sort((a, b) => b.cumplimiento - a.cumplimiento);
     const top10 = sorted.slice(0, 10);
     const bottom10 = sorted.slice(-10).reverse();
 
-    const colors = sorted.map(e => e.cumplimiento >= 100 ? '#22C55E' : e.cumplimiento >= 80 ? '#F59E0B' : '#EF4444');
+    function safeDestroy(id) {
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        const existing = Chart.getChart(canvas);
+        if (existing) existing.destroy();
+    }
 
-    function makeConfig(data, label, colorSet) {
-        return {
+    function makeChart(id, data, colors) {
+        const canvas = document.getElementById(id);
+        if (!canvas || data.length === 0) return;
+        const labels = data.map(e => {
+            let name = e.punto_venta;
+            name = name.replace(/^Red AT\s+/i, '').replace(/^Red At\s+/i, '');
+            return name.length > 18 ? name.substring(0, 16) + '...' : name;
+        });
+        new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: data.map(e => e.punto_venta.replace('Red AT ', '').replace('Red At ', '')),
+                labels,
                 datasets: [{
-                    label,
-                    data: data.map(e => Math.min(e.cumplimiento, 100)),
-                    backgroundColor: colorSet || data.map(e => e.cumplimiento >= 100 ? '#22C55E' : e.cumplimiento >= 80 ? '#F59E0B' : '#EF4444'),
-                    borderRadius: 6,
+                    label: '% Cumplimiento',
+                    data: data.map(e => Math.min(Math.max(e.cumplimiento, 0), 100)),
+                    backgroundColor: colors || data.map(e =>
+                        e.cumplimiento >= 100 ? '#22C55E' : e.cumplimiento >= 80 ? '#F59E0B' : '#EF4444'
+                    ),
+                    borderRadius: 4,
                     borderSkipped: false,
                 }]
             },
@@ -455,7 +487,7 @@ function createResumenPDVCharts(entries) {
                         cornerRadius: 8,
                         padding: 12,
                         callbacks: {
-                            label: ctx => `${formatPercent(entries.find(e => e.punto_venta.replace('Red AT ', '').replace('Red At ', '') === ctx.label)?.cumplimiento || ctx.raw)}`
+                            label: ctx => 'Cumplimiento: ' + formatPercent(ctx.raw)
                         }
                     }
                 },
@@ -463,7 +495,7 @@ function createResumenPDVCharts(entries) {
                     x: {
                         max: 100,
                         grid: { color: 'rgba(255,255,255,0.04)' },
-                        ticks: { color: '#727272', font: { size: 11 } }
+                        ticks: { color: '#727272', font: { size: 10 }, callback: v => v + '%' }
                     },
                     y: {
                         grid: { display: false },
@@ -471,17 +503,20 @@ function createResumenPDVCharts(entries) {
                     }
                 }
             }
-        };
+        });
     }
 
-    ['chartTop10', 'chartBottom10', 'chartAllPDV'].forEach(id => {
-        const existing = Chart.getChart(id);
-        if (existing) existing.destroy();
-    });
+    safeDestroy('chartTop10');
+    safeDestroy('chartBottom10');
+    safeDestroy('chartAllPDV');
 
-    new Chart(document.getElementById('chartTop10'), makeConfig(top10, 'Top 10'));
-    new Chart(document.getElementById('chartBottom10'), makeConfig(bottom10, 'Últimas 10'));
-    new Chart(document.getElementById('chartAllPDV'), makeConfig(sorted, 'Cumplimiento', colors));
+    const allColors = sorted.map(e =>
+        e.cumplimiento >= 100 ? '#22C55E' : e.cumplimiento >= 80 ? '#F59E0B' : '#EF4444'
+    );
+
+    makeChart('chartTop10', top10);
+    makeChart('chartBottom10', bottom10);
+    makeChart('chartAllPDV', sorted, allColors);
 }
 
 function poblarFiltros() {
