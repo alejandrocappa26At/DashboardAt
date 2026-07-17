@@ -66,6 +66,19 @@
                     <span></span><span></span><span></span>
                 </div>
             </div>
+            <div class="nav-item" data-page="resumen-pdv">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Resumen General PDV</span>
+                <div class="nav-equalizer" id="eq-resumen-pdv">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
         </nav>
 
         <div class="sidebar-footer">
@@ -301,13 +314,22 @@
             </div>
 
             <div class="pdv-selector-wrapper">
+                <div class="pdv-selector-glow"></div>
                 <svg class="pdv-selector-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
                 </svg>
-                <select id="pdv-select">
-                    <option value="">Seleccionar punto de venta...</option>
-                </select>
+                <div class="pdv-selector-field">
+                    <select id="pdv-select">
+                        <option value="">Seleccionar punto de venta...</option>
+                    </select>
+                    <span class="pdv-selector-label" id="pdv-selector-label">Punto de Venta</span>
+                </div>
+                <div class="pdv-selector-arrow">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
             </div>
 
             <div class="pdv-content" id="pdv-content"></div>
@@ -350,6 +372,74 @@
                 </div>
                 <div class="ranking-chart-body">
                     <canvas id="chartRanking"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA 5: RESUMEN GENERAL PDV ===== -->
+        <section class="page" id="page-resumen-pdv">
+            <div class="rpdv-hero">
+                <div class="rpdv-hero-left">
+                    <div class="rpdv-hero-icon">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="rpdv-hero-title">Resumen General de Desempeño por Punto de Venta</div>
+                        <div class="rpdv-hero-sub">Comparativo consolidado de cuotas y ventas acumuladas</div>
+                    </div>
+                </div>
+                <div class="rpdv-hero-kpis" id="rpdv-hero-kpis"></div>
+            </div>
+
+            <div class="rpdv-filters">
+                <div class="rpdv-search">
+                    <svg class="rpdv-search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="rpdv-search" placeholder="Buscar tienda..." autocomplete="off">
+                </div>
+                <select id="rpdv-filter-cumplimiento">
+                    <option value="all">Todos los estados</option>
+                    <option value="green">Cumplen meta (&ge;100%)</option>
+                    <option value="yellow">En seguimiento (80-99%)</option>
+                    <option value="red">En riesgo (&lt;80%)</option>
+                </select>
+                <select id="rpdv-filter-cadena">
+                    <option value="all">Todas las redes</option>
+                </select>
+                <select id="rpdv-sort">
+                    <option value="cumplimiento-desc">Mayor cumplimiento</option>
+                    <option value="cumplimiento-asc">Menor cumplimiento</option>
+                    <option value="venta-desc">Mayor venta</option>
+                    <option value="cuota-desc">Mayor cuota</option>
+                </select>
+                <span class="rpdv-count" id="rpdv-count"></span>
+            </div>
+
+            <div class="rpdv-grid" id="rpdv-grid"></div>
+
+            <div class="rpdv-charts">
+                <div class="rpdv-chart-card">
+                    <div class="rpdv-chart-header">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                        Top 10 Tiendas
+                    </div>
+                    <div class="rpdv-chart-body"><canvas id="chartTop10"></canvas></div>
+                </div>
+                <div class="rpdv-chart-card">
+                    <div class="rpdv-chart-header">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                        Últimas 10 Tiendas
+                    </div>
+                    <div class="rpdv-chart-body"><canvas id="chartBottom10"></canvas></div>
+                </div>
+                <div class="rpdv-chart-card rpdv-chart-card-full">
+                    <div class="rpdv-chart-header">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                        Cumplimiento General por PDV
+                    </div>
+                    <div class="rpdv-chart-body" style="height:400px"><canvas id="chartAllPDV"></canvas></div>
                 </div>
             </div>
         </section>
