@@ -1,0 +1,1189 @@
+:root {
+    --cell-turno: #1a3a1a;
+    --cell-turno-border: #1DB954;
+    --cell-descanso: #3a1a1a;
+    --cell-descanso-border: #EF4444;
+    --cell-sin-asignar: #1a1a1a;
+    --cell-sin-asignar-border: #333;
+    --cell-flotante: #2a1a3a;
+    --cell-flotante-border: #A855F7;
+    --header-domingo: #3a1a1a;
+    --header-domingo-text: #EF4444;
+    --hour-color: var(--accent);
+}
+
+.horarios-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.horarios-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.horarios-header-left h2 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+.horarios-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.horarios-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.horarios-role-badge.supervisor {
+    background: rgba(29,185,84,0.12);
+    color: #1DB954;
+    border: 1px solid rgba(29,185,84,0.2);
+}
+
+.horarios-role-badge.promotor {
+    background: rgba(168,85,247,0.12);
+    color: #A855F7;
+    border: 1px solid rgba(168,85,247,0.2);
+}
+
+/* Week selector */
+.horarios-week-selector {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    background: #181818;
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 16px;
+    padding: 14px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.horarios-week-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.horarios-week-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.horarios-week-btn:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    border-color: rgba(255,255,255,0.2);
+}
+
+.horarios-week-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    min-width: 200px;
+    text-align: center;
+    letter-spacing: -0.2px;
+}
+
+.horarios-week-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.horarios-status-badge {
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.horarios-status-badge.borrador {
+    background: rgba(245,158,11,0.12);
+    color: #F59E0B;
+    border: 1px solid rgba(245,158,11,0.2);
+}
+
+.horarios-status-badge.publicada {
+    background: rgba(29,185,84,0.12);
+    color: #1DB954;
+    border: 1px solid rgba(29,185,84,0.2);
+}
+
+.horarios-btn-publish {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #1DB954, #1ed760);
+    color: #000;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    letter-spacing: 0.3px;
+}
+
+.horarios-btn-publish:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(29,185,84,0.4);
+}
+
+.horarios-btn-publish:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Legend */
+.horarios-legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background: #181818;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.horarios-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: default;
+}
+
+.horarios-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.horarios-legend-dot.turno { background: var(--cell-turno); border: 1.5px solid var(--cell-turno-border); }
+.horarios-legend-dot.descanso { background: var(--cell-descanso); border: 1.5px solid var(--cell-descanso-border); }
+.horarios-legend-dot.sin-asignar { background: var(--cell-sin-asignar); border: 1.5px dashed var(--cell-sin-asignar-border); }
+.horarios-legend-dot.flotante { background: var(--cell-flotante); border: 1.5px solid var(--cell-flotante-border); }
+
+/* Table container */
+.horarios-table-wrapper {
+    overflow: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    background: #0f0f0f;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+}
+
+.horarios-table-wrapper::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.horarios-table-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.horarios-table-wrapper::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+}
+
+.horarios-table {
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 100%;
+    table-layout: fixed;
+}
+
+.horarios-table th,
+.horarios-table td {
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.horarios-table thead th {
+    background: #121212;
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 10px 6px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(255,255,255,0.06);
+}
+
+.horarios-th-zona {
+    min-width: 140px;
+    text-align: left !important;
+    padding-left: 14px !important;
+    position: sticky;
+    left: 0;
+    z-index: 12;
+    background: #121212 !important;
+}
+
+.horarios-th-dia {
+    min-width: 100px;
+    width: 100px;
+}
+
+.horarios-th-dia.domingo {
+    background: var(--header-domingo) !important;
+    color: var(--header-domingo-text) !important;
+}
+
+.horarios-th-total {
+    min-width: 70px;
+    width: 70px;
+    position: sticky;
+    right: 0;
+    z-index: 11;
+    background: #121212 !important;
+    border-left: 2px solid rgba(255,255,255,0.06);
+}
+
+.horarios-th-total::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.4));
+    pointer-events: none;
+}
+
+.horarios-th-zona-header {
+    font-size: 10px;
+    color: var(--text-subdued) !important;
+    font-weight: 500 !important;
+}
+
+.horarios-td-zona {
+    min-width: 140px;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: #0f0f0f !important;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    padding: 8px 14px !important;
+    text-align: left !important;
+}
+
+.horarios-td-zona-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.horarios-td-zona-toggle {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.horarios-td-zona-toggle:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+}
+
+.horarios-td-promotor {
+    min-width: 140px;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: #0f0f0f !important;
+    padding: 6px 14px !important;
+    text-align: left !important;
+}
+
+.horarios-promotor-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.horarios-promotor-type {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.horarios-promotor-type.fijo {
+    background: rgba(29,185,84,0.1);
+    color: #1DB954;
+}
+
+.horarios-promotor-type.flotante {
+    background: rgba(168,85,247,0.12);
+    color: #A855F7;
+}
+
+.horarios-promotor-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Cell styles */
+.horarios-cell {
+    width: 100%;
+    height: 48px;
+    padding: 4px 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+}
+
+.horarios-cell:hover {
+    filter: brightness(1.15);
+}
+
+.horarios-cell:active {
+    transform: scale(0.97);
+}
+
+.horarios-cell.turno {
+    background: var(--cell-turno);
+}
+
+.horarios-cell.turno .horarios-cell-time {
+    color: var(--cell-turno-border);
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.horarios-cell.descanso {
+    background: var(--cell-descanso);
+}
+
+.horarios-cell.descanso .horarios-cell-time {
+    color: var(--cell-descanso-border);
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.horarios-cell.sin-asignar {
+    background: var(--cell-sin-asignar);
+}
+
+.horarios-cell.sin-asignar .horarios-cell-time {
+    color: var(--text-subdued);
+    font-size: 10px;
+}
+
+.horarios-cell.flotante {
+    background: var(--cell-flotante);
+}
+
+.horarios-cell.flotante .horarios-cell-time {
+    color: var(--cell-flotante-border);
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.horarios-cell .horarios-cell-hours {
+    font-size: 9px;
+    color: var(--text-subdued);
+    font-weight: 500;
+}
+
+.horarios-cell .horarios-cell-zone {
+    font-size: 8px;
+    color: var(--cell-flotante-border);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90px;
+}
+
+/* Hours row */
+.horarios-row-hours td {
+    padding: 4px 6px !important;
+    background: rgba(29,185,84,0.03);
+    border-bottom: 2px solid rgba(29,185,84,0.08);
+}
+
+.horarios-cell-hours-display {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--hour-color);
+    letter-spacing: -0.3px;
+}
+
+.horarios-cell-total-week {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.horarios-cell-total-week.alert {
+    color: var(--warning);
+    animation: horariosPulse 1.5s ease-in-out infinite;
+}
+
+.horarios-cell-total-week.danger {
+    color: var(--danger);
+    animation: horariosPulse 1s ease-in-out infinite;
+}
+
+@keyframes horariosPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Zone totals row */
+.horarios-row-zona-total td {
+    padding: 6px 8px !important;
+    background: rgba(255,255,255,0.02);
+    border-top: 2px solid rgba(255,255,255,0.06);
+    font-weight: 700;
+}
+
+.horarios-zona-total-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-subdued);
+}
+
+.horarios-zona-total-value {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+/* Zona block separator */
+.horarios-zona-separator td {
+    padding: 0 !important;
+    height: 4px;
+    background: rgba(255,255,255,0.02);
+}
+
+/* Flotante section label */
+.horarios-flotante-label td {
+    padding: 6px 14px !important;
+    background: rgba(168,85,247,0.04);
+    border-top: 1px solid rgba(168,85,247,0.15);
+}
+
+.horarios-flotante-label-text {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #A855F7;
+}
+
+/* Cell editor popover */
+.horarios-editor-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+}
+
+.horarios-editor-overlay.open {
+    display: block;
+}
+
+.horarios-editor {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    background: #191414;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 20px;
+    min-width: 280px;
+    max-width: 320px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+    animation: horariosEditorIn 0.2s ease;
+}
+
+@keyframes horariosEditorIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.horarios-editor.open {
+    display: block;
+}
+
+.horarios-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.horarios-editor-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.horarios-editor-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.horarios-editor-close:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.horarios-editor-presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.horarios-editor-preset {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.horarios-editor-preset:hover {
+    background: rgba(29,185,84,0.08);
+    border-color: rgba(29,185,84,0.2);
+    color: #fff;
+}
+
+.horarios-editor-preset:active {
+    transform: scale(0.96);
+}
+
+.horarios-editor-preset.active {
+    background: rgba(29,185,84,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.horarios-editor-custom {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.horarios-editor-time-input {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.horarios-editor-time-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+    background: rgba(29,185,84,0.04);
+}
+
+.horarios-editor-time-input::placeholder {
+    color: var(--text-subdued);
+    font-weight: 400;
+}
+
+.horarios-editor-time-sep {
+    color: var(--text-subdued);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.horarios-editor-actions {
+    display: flex;
+    gap: 6px;
+    flex-direction: column;
+}
+
+.horarios-editor-btn {
+    padding: 9px 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.horarios-editor-btn-descanso {
+    background: rgba(239,68,68,0.1);
+    color: #EF4444;
+    border: 1px solid rgba(239,68,68,0.15);
+}
+
+.horarios-editor-btn-descanso:hover {
+    background: rgba(239,68,68,0.2);
+}
+
+.horarios-editor-btn-sin-asignar {
+    background: rgba(255,255,255,0.03);
+    color: var(--text-secondary);
+    border: 1px dashed rgba(255,255,255,0.1);
+}
+
+.horarios-editor-btn-sin-asignar:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+}
+
+.horarios-editor-btn-flotante {
+    background: rgba(168,85,247,0.1);
+    color: #A855F7;
+    border: 1px solid rgba(168,85,247,0.15);
+}
+
+.horarios-editor-btn-flotante:hover {
+    background: rgba(168,85,247,0.2);
+}
+
+/* Meal discount */
+.horarios-editor-discount {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    margin-top: 8px;
+}
+
+.horarios-editor-discount label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.horarios-editor-discount input {
+    width: 50px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: center;
+    outline: none;
+}
+
+.horarios-editor-discount input:focus {
+    border-color: var(--accent);
+}
+
+/* Promotor view */
+.horarios-promotor-hero {
+    background: linear-gradient(135deg, rgba(168,85,247,0.06), rgba(29,185,84,0.03));
+    border: 1px solid rgba(168,85,247,0.1);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.horarios-promotor-hero-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.horarios-promotor-hero-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.horarios-promotor-hero-zone {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.horarios-promotor-hero-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.horarios-promotor-hero-stat {
+    text-align: center;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+}
+
+.horarios-promotor-hero-stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.horarios-promotor-hero-stat-value.green { color: var(--accent); }
+.horarios-promotor-hero-stat-value.yellow { color: var(--warning); }
+.horarios-promotor-hero-stat-value.red { color: var(--danger); }
+
+.horarios-promotor-hero-stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-subdued);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* Progress bar for promoter */
+.horarios-promotor-progress {
+    margin-bottom: 24px;
+}
+
+.horarios-promotor-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.horarios-promotor-progress-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.horarios-promotor-progress-pct {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.horarios-promotor-progress-track {
+    height: 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.horarios-promotor-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.horarios-promotor-progress-fill.green { background: linear-gradient(90deg, #1DB954, #1ed760); }
+.horarios-promotor-progress-fill.yellow { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+.horarios-promotor-progress-fill.red { background: linear-gradient(90deg, #EF4444, #F87171); }
+
+.horarios-promotor-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: horariosShimmer 3s ease-in-out infinite;
+}
+
+@keyframes horariosShimmer {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(200%); }
+}
+
+/* Mobile day cards (promotor view) */
+.horarios-mobile-cards {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.horarios-day-card {
+    background: #181818;
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.04);
+    transition: all 0.25s ease;
+    animation: horariosCardIn 0.3s ease backwards;
+}
+
+.horarios-day-card:hover {
+    border-color: rgba(255,255,255,0.08);
+}
+
+.horarios-day-card.turno { border-left: 3px solid var(--accent); }
+.horarios-day-card.descanso { border-left: 3px solid var(--danger); }
+.horarios-day-card.sin-asignar { border-left: 3px dashed var(--text-subdued); }
+.horarios-day-card.flotante { border-left: 3px solid #A855F7; }
+
+.horarios-day-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.horarios-day-card-day {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.horarios-day-card-date {
+    font-size: 11px;
+    color: var(--text-subdued);
+    font-weight: 500;
+}
+
+.horarios-day-card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.horarios-day-card-time {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.horarios-day-card-time.turno { color: var(--accent); }
+.horarios-day-card-time.descanso { color: var(--danger); }
+.horarios-day-card-time.sin-asignar { color: var(--text-subdued); }
+.horarios-day-card-time.flotante { color: #A855F7; }
+
+.horarios-day-card-hours {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.horarios-day-card-zone {
+    font-size: 10px;
+    color: #A855F7;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+@keyframes horariosCardIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Holiday row */
+.horarios-feriado-row td {
+    background: rgba(245,158,11,0.04) !important;
+    border-bottom: 1px solid rgba(245,158,11,0.15);
+}
+
+.horarios-feriado-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #F59E0B;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(245,158,11,0.1);
+}
+
+/* Real-time update animation */
+@keyframes horariosUpdated {
+    0% { background: rgba(29,185,84,0.2); }
+    100% { background: transparent; }
+}
+
+.horarios-updated {
+    animation: horariosUpdated 1s ease;
+}
+
+/* Update toast */
+.horarios-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #191414;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 2000;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.horarios-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.horarios-toast-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(29,185,84,0.12);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Count-up animation */
+.horarios-count-up {
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+/* Validation warnings */
+.horarios-validations {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.horarios-validation-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    animation: horariosValidationIn 0.3s ease backwards;
+}
+
+@keyframes horariosValidationIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.horarios-validation-item.warning {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.15);
+    color: #F59E0B;
+}
+
+.horarios-validation-item.error {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.15);
+    color: #EF4444;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .horarios-header-left h2 {
+        font-size: 17px;
+    }
+
+    .horarios-week-selector {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px 16px;
+    }
+
+    .horarios-week-label {
+        min-width: 0;
+        font-size: 13px;
+    }
+
+    .horarios-week-status {
+        margin-left: 0;
+        justify-content: space-between;
+    }
+
+    .horarios-table-wrapper {
+        border-radius: 10px;
+    }
+
+    .horarios-table {
+        font-size: 11px;
+    }
+
+    .horarios-th-dia {
+        min-width: 80px;
+        width: 80px;
+    }
+
+    .horarios-cell {
+        height: 40px;
+    }
+
+    .horarios-cell .horarios-cell-time {
+        font-size: 10px;
+    }
+
+    .horarios-promotor-hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .horarios-promotor-hero-stats {
+        width: 100%;
+        justify-content: space-around;
+    }
+
+    .horarios-table-view {
+        display: none;
+    }
+
+    .horarios-mobile-cards {
+        display: flex;
+    }
+
+    .horarios-legend {
+        gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .horarios-editor {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-radius: 16px 16px 0 0;
+        max-width: 100%;
+        min-width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: horariosEditorMobileIn 0.3s ease;
+    }
+
+    @keyframes horariosEditorMobileIn {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .horarios-promotor-hero-stat-value {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .horarios-th-dia {
+        min-width: 70px;
+        width: 70px;
+    }
+
+    .horarios-cell {
+        height: 36px;
+        padding: 2px 4px;
+    }
+
+    .horarios-editor-presets {
+        grid-template-columns: 1fr 1fr;
+    }
+}

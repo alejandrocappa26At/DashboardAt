@@ -554,7 +554,8 @@ function cambiarPagina(pagina) {
         pagina === 'resumen' ? 'Resumen Zona' :
             pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
-                    pagina === 'resumen-pdv' ? 'Resumen General PDV' : 'Dashboard';
+                    pagina === 'resumen-pdv' ? 'Resumen General PDV' :
+                        pagina === 'horarios' ? 'Planificador Semanal' : 'Dashboard';
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
@@ -564,6 +565,12 @@ function cambiarPagina(pagina) {
         renderizarRanking();
     } else if (pagina === 'resumen-pdv') {
         renderizarResumenGeneralPDV();
+    } else if (pagina === 'horarios') {
+        if (!HorariosDataStore.initialized) {
+            initHorarios('supervisor');
+        } else {
+            renderHorarios();
+        }
     }
 
     if (window.innerWidth <= 768) {
