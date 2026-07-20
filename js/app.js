@@ -555,7 +555,8 @@ function cambiarPagina(pagina) {
             pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                     pagina === 'resumen-pdv' ? 'Resumen General PDV' :
-                        pagina === 'horarios' ? 'Planificador Semanal' : 'Dashboard';
+                        pagina === 'horarios' ? 'Planificador Semanal' :
+                            pagina === 'horarios-view' ? 'Horarios Semanales por Tienda' : 'Dashboard';
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
@@ -568,9 +569,21 @@ function cambiarPagina(pagina) {
     } else if (pagina === 'horarios') {
         if (!HorariosDataStore.initialized) {
             initHorarios('supervisor');
-        } else {
-            renderHorarios();
+            HorariosDataStore.onUpdate = function () {
+                renderHorarios();
+                renderHorariosView();
+            };
         }
+        renderHorarios();
+    } else if (pagina === 'horarios-view') {
+        if (!HorariosDataStore.initialized) {
+            initHorarios('supervisor');
+            HorariosDataStore.onUpdate = function () {
+                renderHorarios();
+                renderHorariosView();
+            };
+        }
+        renderHorariosView();
     }
 
     if (window.innerWidth <= 768) {

@@ -1,0 +1,580 @@
+:root {
+    --hv-cell-turno-bg: rgba(29,185,84,0.1);
+    --hv-cell-turno-border: rgba(29,185,84,0.2);
+    --hv-cell-turno-text: #e0e0e0;
+    --hv-cell-descanso-bg: rgba(239,68,68,0.12);
+    --hv-cell-descanso-border: rgba(239,68,68,0.2);
+    --hv-cell-descanso-text: #fca5a5;
+    --hv-cell-empty-text: #555;
+    --hv-card-bg: #181818;
+    --hv-card-border: rgba(255,255,255,0.05);
+}
+
+.hv-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 0 32px;
+}
+
+.hv-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.hv-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.hv-header-left h2 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+.hv-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hv-btn-print {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(29,185,84,0.1);
+    color: #1DB954;
+    border: 1px solid rgba(29,185,84,0.25);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.hv-btn-print:hover {
+    background: rgba(29,185,84,0.18);
+    border-color: rgba(29,185,84,0.4);
+}
+
+.hv-btn-print svg {
+    flex-shrink: 0;
+}
+
+.hv-week-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+    background: #181818;
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 16px;
+    padding: 14px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.hv-week-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hv-week-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.hv-week-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary);
+}
+
+.hv-week-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 200px;
+    text-align: center;
+}
+
+.hv-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: auto;
+}
+
+.hv-status-badge.borrador {
+    background: rgba(245,158,11,0.12);
+    color: #F59E0B;
+    border: 1px solid rgba(245,158,11,0.2);
+}
+
+.hv-status-badge.publicada {
+    background: rgba(29,185,84,0.12);
+    color: #1DB954;
+    border: 1px solid rgba(29,185,84,0.2);
+}
+
+.hv-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-subdued);
+}
+
+.hv-empty-state svg {
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.hv-empty-state p {
+    font-size: 15px;
+}
+
+.hv-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-subdued);
+}
+
+/* Cards */
+.hv-card {
+    background: var(--hv-card-bg);
+    border: 1px solid var(--hv-card-border);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.hv-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(29,185,84,0.04) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.hv-card-header-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(29,185,84,0.1);
+    border-radius: 8px;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.hv-card-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: var(--text-primary);
+}
+
+.hv-card-header .hv-promo-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-subdued);
+    background: rgba(255,255,255,0.04);
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.hv-card-body {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.hv-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+    font-size: 13px;
+}
+
+.hv-table th {
+    padding: 12px 10px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    white-space: nowrap;
+}
+
+.hv-table th.hv-th-promotor {
+    text-align: left;
+    padding-left: 20px;
+    min-width: 180px;
+    position: sticky;
+    left: 0;
+    background: #181818;
+    z-index: 2;
+}
+
+.hv-table th.hv-th-day {
+    min-width: 95px;
+}
+
+.hv-table th .hv-day-sub {
+    display: block;
+    font-weight: 400;
+    font-size: 10px;
+    color: var(--text-subdued);
+    margin-top: 2px;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.hv-table th.hv-th-day.hv-feriado .hv-day-sub::after {
+    content: ' 🎌';
+}
+
+.hv-table td {
+    padding: 10px 8px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
+    transition: background 0.15s ease;
+}
+
+.hv-table tr:last-child td {
+    border-bottom: none;
+}
+
+.hv-td-promotor {
+    text-align: left;
+    padding-left: 20px;
+    position: sticky;
+    left: 0;
+    background: #181818;
+    z-index: 1;
+    white-space: nowrap;
+}
+
+.hv-td-promotor .hv-promo-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.hv-td-promotor .hv-promo-role {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.hv-promo-role-fijo {
+    background: rgba(29,185,84,0.12);
+    color: #1DB954;
+    border: 1px solid rgba(29,185,84,0.2);
+}
+
+.hv-promo-role-flotante {
+    background: rgba(168,85,247,0.12);
+    color: #A855F7;
+    border: 1px solid rgba(168,85,247,0.2);
+}
+
+/* Cell states */
+.hv-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    min-height: 36px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.hv-cell-turno {
+    background: var(--hv-cell-turno-bg);
+    border: 1px solid var(--hv-cell-turno-border);
+    color: var(--hv-cell-turno-text);
+}
+
+.hv-cell-descanso {
+    background: var(--hv-cell-descanso-bg);
+    border: 1px solid var(--hv-cell-descanso-border);
+    color: var(--hv-cell-descanso-text);
+}
+
+.hv-cell-empty {
+    color: var(--hv-cell-empty-text);
+    font-weight: 400;
+}
+
+/* Flotante cells (when a flotante is covering) */
+.hv-cell-flotante {
+    background: rgba(168,85,247,0.1);
+    border: 1px solid rgba(168,85,247,0.2);
+    color: #d8b4fe;
+}
+
+/* Row hover effect */
+.hv-table tbody tr:hover td {
+    background: rgba(255,255,255,0.02);
+}
+
+.hv-table tbody tr:hover .hv-td-promotor {
+    background: #1c1c1c;
+}
+
+/* Print styles */
+@media print {
+    .sidebar,
+    .top-bar,
+    .hv-week-bar .hv-week-btn,
+    .hv-btn-print {
+        display: none !important;
+    }
+
+    .hv-week-bar {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        background: #fff;
+        padding: 10px 16px;
+    }
+
+    .hv-week-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #000;
+    }
+
+    .hv-status-badge {
+        border: 1px solid #ccc;
+    }
+
+    .hv-status-badge.borrador {
+        background: #fff3cd;
+        color: #856404;
+        border-color: #ffc107;
+    }
+
+    .hv-status-badge.publicada {
+        background: #d4edda;
+        color: #155724;
+        border-color: #28a745;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+
+    .hv-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: none;
+        background: #fff;
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+    }
+
+    .hv-card-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .hv-card-header h3 {
+        color: #000;
+    }
+
+    .hv-card-header .hv-promo-count {
+        color: #666;
+        background: #eee;
+    }
+
+    .hv-table th {
+        color: #555;
+        background: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .hv-table th.hv-th-promotor {
+        background: #f8f9fa;
+    }
+
+    .hv-table td {
+        border-bottom: 1px solid #eee;
+        color: #333;
+    }
+
+    .hv-td-promotor {
+        background: #fff;
+    }
+
+    .hv-table tbody tr:hover td {
+        background: #fff;
+    }
+
+    .hv-table tbody tr:hover .hv-td-promotor {
+        background: #fff;
+    }
+
+    .hv-td-promotor .hv-promo-name {
+        color: #000;
+    }
+
+    .hv-promo-role-fijo {
+        background: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+
+    .hv-promo-role-flotante {
+        background: #e8daef;
+        color: #6c3483;
+        border-color: #d2b4de;
+    }
+
+    .hv-cell-turno {
+        background: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .hv-cell-descanso {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .hv-cell-empty {
+        color: #999;
+    }
+
+    .hv-cell-flotante {
+        background: #e8daef;
+        border-color: #d2b4de;
+        color: #6c3483;
+    }
+
+    .hv-card-header-icon {
+        background: #d4edda;
+        color: #28a745;
+    }
+
+    @page {
+        margin: 16mm 14mm;
+    }
+
+    body {
+        background: #fff;
+        color: #000;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hv-header-left h2 {
+        font-size: 18px;
+    }
+
+    .hv-week-bar {
+        flex-wrap: wrap;
+        padding: 12px 16px;
+    }
+
+    .hv-week-label {
+        min-width: 0;
+        flex: 1;
+        font-size: 14px;
+    }
+
+    .hv-card-header {
+        padding: 14px 16px;
+    }
+
+    .hv-card-header h3 {
+        font-size: 14px;
+    }
+
+    .hv-table {
+        min-width: 600px;
+        font-size: 12px;
+    }
+
+    .hv-table th.hv-th-promotor {
+        min-width: 140px;
+    }
+
+    .hv-cell {
+        min-width: 65px;
+        min-height: 32px;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    .hv-btn-print span {
+        display: none;
+    }
+
+    .hv-btn-print {
+        padding: 10px 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hv-table {
+        min-width: 520px;
+        font-size: 11px;
+    }
+
+    .hv-table th.hv-th-promotor {
+        min-width: 120px;
+    }
+
+    .hv-cell {
+        min-width: 55px;
+        min-height: 28px;
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+
+    .hv-td-promotor {
+        padding-left: 12px;
+    }
+
+    .hv-td-promotor .hv-promo-name {
+        font-size: 12px;
+    }
+}
