@@ -225,8 +225,7 @@ function renderPublicRow(weekStart, promotor, zona, semana, esFlotanteEnZona) {
         } else if (turno.estado === 'descanso') {
             cellsHtml += `<td><span class="hp-cell hp-cell-descanso">D</span></td>`;
         } else if (turno.estado === 'turno' || turno.estado === 'flotante') {
-            const esFlotanteCell = turno.estado === 'flotante';
-            const cellClass = esFlotanteCell ? 'hp-cell-flotante' : 'hp-cell-turno';
+            const cellClass = isFlotante ? 'hp-cell-flotante' : 'hp-cell-turno';
             const horaInicio = turno.hora_inicio || '--:--';
             const horaFin = turno.hora_fin || '--:--';
             cellsHtml += `<td><span class="hp-cell ${cellClass}">${horaInicio} – ${horaFin}</span></td>`;

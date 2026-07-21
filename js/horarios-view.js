@@ -169,7 +169,6 @@ function renderPromotorRow(weekStart, promotor, zona, semana, today, esFlotanteE
                 <span>D</span>
             </span></td>`;
         } else if (turno.estado === 'turno' || turno.estado === 'flotante') {
-            const isFlotante = turno.estado === 'flotante';
             const cellClass = isFlotante ? 'hv-cell-flotante' : 'hv-cell-turno';
             const horaInicio = turno.hora_inicio || '--:--';
             const horaFin = turno.hora_fin || '--:--';
