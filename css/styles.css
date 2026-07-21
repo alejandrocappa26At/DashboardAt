@@ -3,7 +3,7 @@
     --bg-elevated: #1a1a1a;
     --bg-card: #1e1e1e;
     --bg-hover: #282828;
-    --bg-sidebar: #000000;
+    --bg-sidebar: #0c0c0c;
     --text-primary: #ffffff;
     --text-secondary: #b3b3b3;
     --text-subdued: #727272;
@@ -44,7 +44,7 @@ body {
 
 .sidebar {
     width: var(--sidebar-width);
-    background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%);
+    background: var(--bg-sidebar);
     position: fixed;
     top: 0;
     left: 0;
@@ -182,7 +182,12 @@ body {
 }
 
 .nav-item:hover::after {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.04);
+}
+
+.nav-item:hover .nav-icon {
+    transform: translateX(3px);
+    color: rgba(255,255,255,0.85);
 }
 
 .nav-item:active::after {
@@ -232,11 +237,16 @@ body {
 .nav-item.active {
     color: var(--accent);
     font-weight: 600;
-    background: rgba(29,185,84,0.08);
+    background: linear-gradient(90deg, rgba(29,185,84,0.12) 0%, transparent 100%);
+}
+
+.nav-item.active .nav-icon {
+    color: var(--accent);
+    filter: drop-shadow(0 0 6px rgba(29,185,84,0.25));
 }
 
 .nav-item.active:hover::after {
-    background: rgba(29,185,84,0.04);
+    background: transparent;
 }
 
 .nav-item .nav-icon {
@@ -246,6 +256,7 @@ body {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .nav-item .nav-icon svg {
@@ -350,27 +361,51 @@ body {
 }
 
 .nav-section-arrow {
-    font-size: 12px;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0.5;
+    color: currentColor;
+}
+
+.nav-section-arrow svg {
+    width: 14px;
+    height: 14px;
 }
 
 .nav-section.open .nav-section-arrow {
-    transform: rotate(90deg);
+    transform: rotate(180deg);
 }
 
 .nav-section-lock {
-    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0.7;
+    color: var(--warning);
+}
+
+.nav-section-lock svg {
+    width: 14px;
+    height: 14px;
+}
+
+.nav-section.unlocked .nav-section-lock .lock-icon {
+    display: none;
+}
+
+.nav-section.unlocked .nav-section-lock .unlock-icon {
+    display: block !important;
 }
 
 /* Sub-items container (collapsible) */
 .nav-sub-items {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    padding-left: 12px;
-    margin-left: 8px;
+    transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding-left: 24px;
+    margin-left: 4px;
     border-left: 1px solid rgba(255,255,255,0.06);
 }
 
@@ -403,6 +438,11 @@ body {
     background: rgba(255,255,255,0.04);
 }
 
+.nav-sub-item:hover .nav-icon {
+    transform: translateX(2px);
+    color: rgba(255,255,255,0.8);
+}
+
 .nav-sub-item:active {
     background: rgba(255,255,255,0.08);
 }
@@ -410,7 +450,12 @@ body {
 .nav-sub-item.active {
     color: var(--accent);
     font-weight: 500;
-    background: rgba(29,185,84,0.08);
+    background: linear-gradient(90deg, rgba(29,185,84,0.1) 0%, transparent 100%);
+}
+
+.nav-sub-item.active .nav-icon {
+    color: var(--accent);
+    filter: drop-shadow(0 0 5px rgba(29,185,84,0.2));
 }
 
 .nav-sub-item .nav-indicator {
@@ -433,6 +478,7 @@ body {
     justify-content: center;
     flex-shrink: 0;
     opacity: 0.6;
+    transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .nav-sub-item .nav-icon svg {
@@ -502,7 +548,7 @@ body {
 }
 
 .btn-sidebar-primary:active {
-    transform: translateY(0) scale(0.98);
+    transform: scale(0.95);
     box-shadow: 0 2px 10px rgba(29,185,84,0.3);
 }
 
@@ -550,13 +596,17 @@ body {
 
 #supervisor-lock-btn.btn-sidebar-secondary {
     color: var(--warning);
-    border-color: rgba(245,158,11,0.3);
+    border-color: rgba(245,158,11,0.25);
 }
 
 #supervisor-lock-btn.btn-sidebar-secondary:hover {
-    color: var(--warning);
-    border-color: rgba(245,158,11,0.6);
-    background: rgba(245,158,11,0.08);
+    color: #fbbf24;
+    border-color: rgba(245,158,11,0.5);
+    background: rgba(245,158,11,0.1);
+}
+
+#supervisor-lock-btn.btn-sidebar-secondary:active {
+    transform: scale(0.95);
 }
 
 .main-content {
@@ -2294,12 +2344,13 @@ select option {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.75);
+    background: rgba(0,0,0,0.7);
     z-index: 1000;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .modal-overlay.open {
@@ -2307,14 +2358,16 @@ select option {
 }
 
 .modal-ventas {
-    background: #191414;
+    background: rgba(24,24,27,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: 16px;
-    border: 1px solid #282828;
+    border: 1px solid rgba(255,255,255,0.06);
     width: fit-content;
     max-width: 98vw;
     min-width: 320px;
     padding: 28px 28px 20px;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+    box-shadow: 0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
     animation: modalFadeIn 0.25s ease;
 }
 
@@ -2371,7 +2424,7 @@ select option {
 .ventas-filters {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 18px;
     flex-wrap: wrap;
 }
@@ -2380,22 +2433,28 @@ select option {
     position: relative;
     display: flex;
     align-items: center;
-    background: #282828;
-    border: 1px solid #333333;
-    border-radius: 12px;
-    padding: 0 10px 0 34px;
-    transition: border-color 0.2s ease;
-    min-height: 40px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 999px;
+    padding: 0 12px 0 36px;
+    transition: all 0.2s ease;
+    min-height: 38px;
+}
+
+.ventas-filter-group:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
 }
 
 .ventas-filter-group:focus-within {
-    border-color: #1DB954;
-    box-shadow: 0 0 0 2px rgba(29,185,84,0.15);
+    border-color: rgba(29,185,84,0.4);
+    background: rgba(29,185,84,0.04);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.08);
 }
 
 .ventas-filter-icon {
     position: absolute;
-    left: 10px;
+    left: 12px;
     color: #727272;
     pointer-events: none;
     flex-shrink: 0;
@@ -2407,16 +2466,16 @@ select option {
     color: #ffffff;
     font-size: 13px;
     font-weight: 500;
-    padding: 9px 12px 9px 0;
-    min-width: 120px;
+    padding: 9px 24px 9px 0;
+    min-width: 110px;
     cursor: pointer;
     font-family: inherit;
     appearance: none;
     -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23727272' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 4px center;
-    padding-right: 22px;
+    background-position: right 6px center;
+    padding-right: 24px;
 }
 
 .ventas-filter-group select:focus {
@@ -2424,7 +2483,7 @@ select option {
 }
 
 .ventas-filter-group select option {
-    background: #191414;
+    background: #18181b;
     color: #ffffff;
 }
 
@@ -2433,13 +2492,13 @@ select option {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
-    background: #1a3a1a;
-    border: 1px solid #1DB954;
-    border-radius: 20px;
+    padding: 7px 14px;
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
-    color: #1DB954;
+    color: #34d399;
     white-space: nowrap;
     margin-left: auto;
 }
@@ -2450,8 +2509,8 @@ select option {
 
 /* Expand button */
 .ventas-expand-btn {
-    background: #282828;
-    border: 1px solid #333333;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 10px;
     color: #727272;
     cursor: pointer;
@@ -2464,42 +2523,48 @@ select option {
 }
 
 .ventas-expand-btn:hover {
-    background: #333333;
+    background: rgba(255,255,255,0.08);
     color: #ffffff;
-    border-color: #727272;
+    border-color: rgba(255,255,255,0.15);
 }
 
 /* Table Wrapper */
 .calendario-wrapper {
     overflow: auto;
     margin-bottom: 12px;
-    border: 1px solid #282828;
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     max-height: 55vh;
     scrollbar-width: thin;
-    scrollbar-color: #1DB954 #191414;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
 }
 
 .calendario-wrapper::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
 }
 
 .calendario-wrapper::-webkit-scrollbar-track {
-    background: #191414;
+    background: transparent;
 }
 
 .calendario-wrapper::-webkit-scrollbar-thumb {
-    background: #1DB954;
-    border-radius: 3px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 4px;
+    transition: background 0.2s ease;
 }
 
 .calendario-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #1ed760;
+    background: rgba(255,255,255,0.25);
+}
+
+.calendario-wrapper::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 .calendario-tabla {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 12px;
     min-width: 100%;
     table-layout: auto;
@@ -2507,16 +2572,27 @@ select option {
 
 .calendario-tabla th,
 .calendario-tabla td {
-    border: 1px solid #282828;
     padding: 3px 4px;
     text-align: center;
     vertical-align: middle;
     white-space: nowrap;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    border-right: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.15s ease;
+}
+
+.calendario-tabla th:last-child,
+.calendario-tabla td:last-child {
+    border-right: none;
+}
+
+.calendario-tabla tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .calendario-tabla thead th {
-    background: #121212;
-    color: #b3b3b3;
+    background: rgba(24,24,27,0.95);
+    color: #a1a1aa;
     font-size: 10px;
     font-weight: 700;
     padding: 10px 6px;
@@ -2525,6 +2601,7 @@ select option {
     z-index: 5;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .calendario-th-producto {
@@ -2533,18 +2610,38 @@ select option {
     padding-left: 14px !important;
     position: sticky;
     left: 0;
-    z-index: 6;
-    background: #121212 !important;
+    z-index: 7;
+    background: rgba(24,24,27,0.95) !important;
 }
 
 .calendario-th-dia {
-    min-width: 50px;
+    min-width: 52px;
+}
+
+/* Total header — sticky right */
+.calendario-tabla thead th:last-child {
+    min-width: 75px;
+    position: sticky;
+    right: 0;
+    z-index: 6;
+    background: rgba(6,78,59,0.25) !important;
+    color: #34d399 !important;
+    border-left: 1px solid rgba(16,185,129,0.15);
 }
 
 .calendario-th-hoy {
-    background: rgba(29,185,84,0.08) !important;
-    color: #1DB954 !important;
-    box-shadow: inset 0 -2px 0 #1DB954;
+    background: rgba(52,211,153,0.06) !important;
+    color: #34d399 !important;
+    box-shadow: inset 0 -2px 0 #34d399;
+}
+
+/* Crosshair column highlight */
+.calendario-tabla td.col-hover {
+    background: rgba(255,255,255,0.025) !important;
+}
+
+.calendario-tabla th.col-hover {
+    background: rgba(255,255,255,0.03) !important;
 }
 
 .calendario-tabla tbody td:first-child {
@@ -2552,27 +2649,30 @@ select option {
     padding-left: 14px;
     font-weight: 600;
     font-size: 12px;
-    background: #1a1a1a;
+    background: rgba(24,24,27,0.8);
     position: sticky;
     left: 0;
     z-index: 3;
     color: #ffffff;
+    border-right: 1px solid rgba(255,255,255,0.04);
 }
 
 .calendario-tabla tbody td.calendario-total {
-    font-weight: 800;
-    font-size: 12px;
-    background: #1a3a1a;
-    color: #1DB954;
+    font-weight: 700;
+    font-size: 13px;
+    background: rgba(6,78,59,0.15);
+    color: #34d399;
     min-width: 75px;
     position: sticky;
     right: 0;
-    z-index: 2;
+    z-index: 3;
+    border-left: 1px solid rgba(16,185,129,0.12);
 }
 
+/* Input cells */
 .calendario-input {
     width: 54px;
-    padding: 5px 2px;
+    padding: 6px 2px;
     border: 1.5px solid transparent;
     border-radius: 6px;
     text-align: center;
@@ -2580,32 +2680,34 @@ select option {
     font-weight: 600;
     background: transparent;
     transition: all 0.2s ease;
-    color: #ffffff;
+    color: #e4e4e7;
     font-family: inherit;
 }
 
 .calendario-input[readonly] {
-    color: #727272;
+    color: #52525b;
 }
 
 .calendario-input:hover:not([readonly]) {
-    border-color: #333333;
+    border-color: rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.04);
 }
 
 .calendario-input:focus {
     outline: none;
-    border-color: #1DB954;
-    background: rgba(29,185,84,0.08);
-    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+    border-color: #10b981;
+    background: rgba(16,185,129,0.06);
+    box-shadow: 0 0 0 2px rgba(16,185,129,0.2), 0 0 12px rgba(16,185,129,0.15);
 }
 
 .calendario-input.calendario-input-zero {
-    color: #727272;
+    color: #52525b;
+    font-weight: 400;
 }
 
 .calendario-input.calendario-input-filled {
-    color: #ffffff;
+    color: #f4f4f5;
+    font-weight: 700;
 }
 
 .calendario-input.venta-guardada-anim {
@@ -2613,24 +2715,36 @@ select option {
 }
 
 @keyframes ventaFlash {
-    0% { background: rgba(29,185,84,0.3); }
-    100% { background: transparent; }
+    0% { background: rgba(16,185,129,0.25); box-shadow: 0 0 12px rgba(16,185,129,0.2); }
+    100% { background: transparent; box-shadow: none; }
 }
 
+/* Row hover */
 .calendario-tabla tbody tr {
-    transition: background 0.15s ease;
+    transition: background 0.12s ease;
 }
 
 .calendario-tabla tbody tr:hover td {
-    background: rgba(29,185,84,0.04);
+    background: rgba(255,255,255,0.02);
 }
 
 .calendario-tabla tbody tr:hover td:first-child {
-    background: #1a1a1a;
+    background: rgba(39,39,42,0.9);
 }
 
 .calendario-tabla tbody tr:hover td.calendario-total {
-    background: #1a3a1a;
+    background: rgba(6,78,59,0.2);
+}
+
+/* Ensure sticky cells stack above hover */
+.calendario-tabla tbody td:first-child,
+.calendario-tabla tbody td.calendario-total {
+    transition: background 0.15s ease;
+}
+
+.calendario-tabla tbody td:first-child.col-hover,
+.calendario-tabla tbody td.calendario-total.col-hover {
+    background: rgba(255,255,255,0.025) !important;
 }
 
 /* Unsaved changes bar */
@@ -2640,11 +2754,11 @@ select option {
     gap: 8px;
     padding: 10px 14px;
     margin-bottom: 10px;
-    background: rgba(29,185,84,0.06);
-    border: 1px solid rgba(29,185,84,0.2);
+    background: rgba(16,185,129,0.04);
+    border: 1px solid rgba(16,185,129,0.12);
     border-radius: 10px;
     font-size: 12px;
-    color: #b3b3b3;
+    color: #a1a1aa;
     font-weight: 500;
 }
 
@@ -2653,7 +2767,7 @@ select option {
 }
 
 .ventas-unsaved-bar svg {
-    color: #727272;
+    color: #34d399;
     flex-shrink: 0;
 }
 
@@ -2680,33 +2794,36 @@ select option {
 }
 
 .btn-primary {
-    background: #1DB954;
+    background: #10b981;
     color: #000000;
+    box-shadow: 0 0 16px rgba(16,185,129,0.15);
 }
 
 .btn-primary:hover {
-    background: #1ed760;
-    transform: scale(1.02);
+    background: #34d399;
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 20px rgba(16,185,129,0.3);
 }
 
 .btn-primary:active {
-    transform: scale(0.98);
+    transform: scale(0.95);
+    box-shadow: 0 0 8px rgba(16,185,129,0.2);
 }
 
 .btn-secondary {
-    background: #282828;
-    color: #b3b3b3;
-    border: 1px solid #333333;
+    background: rgba(255,255,255,0.04);
+    color: #a1a1aa;
+    border: 1px solid rgba(255,255,255,0.06);
 }
 
 .btn-secondary:hover {
-    background: #333333;
+    background: rgba(255,255,255,0.08);
     color: #ffffff;
-    border-color: #727272;
+    border-color: rgba(255,255,255,0.15);
 }
 
 .btn-secondary:active {
-    transform: scale(0.98);
+    transform: scale(0.95);
 }
 
 /* Save button with spinner */
@@ -2748,6 +2865,7 @@ select option {
     height: 100vh;
     max-height: 100vh;
     border-radius: 0;
+    border: none;
     padding: 28px 32px 20px;
 }
 
@@ -3611,25 +3729,29 @@ select option {
         font-size: 15px;
     }
     .ventas-filters {
-        gap: 8px;
+        gap: 6px;
     }
     .ventas-filter-group select {
-        min-width: 80px;
+        min-width: 70px;
         font-size: 12px;
         padding: 7px 20px 7px 0;
     }
     .ventas-filter-group {
-        padding: 0 8px 0 30px;
-        min-height: 36px;
+        padding: 0 8px 0 32px;
+        min-height: 34px;
+    }
+    .ventas-filter-icon {
+        left: 10px;
     }
     .ventas-progress-badge {
         font-size: 11px;
-        padding: 6px 10px;
+        padding: 5px 10px;
     }
     .calendario-input {
-        width: 38px;
+        width: 40px;
         font-size: 11px;
         padding: 4px 1px;
+        border-radius: 4px;
     }
     .calendario-th-producto {
         min-width: 120px;
@@ -3644,6 +3766,9 @@ select option {
     .btn {
         padding: 8px 14px;
         font-size: 12px;
+    }
+    .btn-primary {
+        box-shadow: none;
     }
     .top-bar {
         padding: 12px 16px;

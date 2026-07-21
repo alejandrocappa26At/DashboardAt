@@ -540,10 +540,12 @@ function estaSupervisorDesbloqueado() {
 function desbloquearSupervisor() {
     sessionStorage.setItem('supervisor_unlocked', 'true');
     actualizarSidebarSupervisor();
+    const sectionEl = document.getElementById('nav-section-supervisor');
     const subEl = document.getElementById('nav-sub-supervisor');
+    if (sectionEl) sectionEl.classList.add('open');
     if (subEl) subEl.classList.add('open');
     cerrarModalPassword();
-    mostrarNotificacion('🔓 Modo supervisor activado', 'success');
+    mostrarNotificacion('Modo supervisor activado', 'success');
 }
 
 function bloquearSupervisor() {
@@ -556,26 +558,25 @@ function bloquearSupervisor() {
             cambiarPagina('resumen');
         }
     }
-    mostrarNotificacion('🔒 Modo supervisor bloqueado', 'success');
+    mostrarNotificacion('Modo supervisor bloqueado', 'success');
 }
 
 function actualizarSidebarSupervisor() {
     const unlocked = estaSupervisorDesbloqueado();
-    const lockEl = document.getElementById('nav-supervisor-lock');
-    const arrowEl = document.getElementById('nav-supervisor-arrow');
+    const sectionEl = document.getElementById('nav-section-supervisor');
     const subEl = document.getElementById('nav-sub-supervisor');
     const lockBtn = document.getElementById('supervisor-lock-btn');
 
-    if (lockEl) lockEl.textContent = unlocked ? '🔓' : '🔒';
-    if (subEl) {
+    if (sectionEl) {
+        sectionEl.classList.toggle('unlocked', unlocked);
         if (unlocked) {
-            subEl.classList.add('open');
+            sectionEl.classList.add('open');
         } else {
-            subEl.classList.remove('open');
+            sectionEl.classList.remove('open');
         }
     }
-    if (arrowEl) {
-        arrowEl.style.transform = unlocked ? 'rotate(90deg)' : 'rotate(0deg)';
+    if (subEl) {
+        subEl.classList.toggle('open', unlocked);
     }
     if (lockBtn) lockBtn.style.display = unlocked ? 'flex' : 'none';
 }
@@ -585,13 +586,13 @@ function toggleSupervisorSeccion() {
         abrirModalPassword();
         return;
     }
+    const sectionEl = document.getElementById('nav-section-supervisor');
     const subEl = document.getElementById('nav-sub-supervisor');
-    const arrowEl = document.getElementById('nav-supervisor-arrow');
+    if (sectionEl) {
+        sectionEl.classList.toggle('open');
+    }
     if (subEl) {
         subEl.classList.toggle('open');
-    }
-    if (arrowEl) {
-        arrowEl.style.transform = subEl && subEl.classList.contains('open') ? 'rotate(90deg)' : 'rotate(0deg)';
     }
 }
 
@@ -649,6 +650,7 @@ function cambiarPagina(pagina) {
         subItem.classList.add('active');
         const section = subItem.closest('.nav-section');
         if (section) {
+            section.classList.add('open');
             const indicator = section.querySelector('.nav-section-header .nav-indicator');
             if (indicator) indicator.style.background = 'var(--accent)';
         }
@@ -990,6 +992,40 @@ function cargarVentasCalendario() {
             actualizarTotalesCalendario();
         });
     });
+
+    initCrosshairCalendario();
+}
+
+function initCrosshairCalendario() {
+    const table = document.getElementById('tabla-calendario');
+    if (!table) return;
+    let currentCol = -1;
+    const clearCol = () => {
+        if (currentCol < 0) return;
+        const rows = table.querySelectorAll('tr');
+        for (let r of rows) {
+            const cell = r.cells[currentCol];
+            if (cell) cell.classList.remove('col-hover');
+        }
+        currentCol = -1;
+    };
+    const highlightCol = (idx) => {
+        const rows = table.querySelectorAll('tr');
+        for (let r of rows) {
+            const cell = r.cells[idx];
+            if (cell) cell.classList.add('col-hover');
+        }
+        currentCol = idx;
+    };
+    table.addEventListener('mouseover', function(e) {
+        const td = e.target.closest('td, th');
+        if (!td) { clearCol(); return; }
+        const idx = td.cellIndex;
+        if (idx === currentCol) return;
+        clearCol();
+        highlightCol(idx);
+    });
+    table.addEventListener('mouseleave', clearCol);
 }
 
 function actualizarTotalesCalendario() {

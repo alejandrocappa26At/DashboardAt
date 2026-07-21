@@ -10,6 +10,9 @@ function renderHorariosView() {
     const weekStart = HorariosDataStore.currentWeekStart;
     const semana = HorariosDataStore.getOrCreateSemana(weekStart);
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const fechaLabel = weekStart.toLocaleDateString('es-ES', {
         day: 'numeric', month: 'long', year: 'numeric'
     });
@@ -17,9 +20,11 @@ function renderHorariosView() {
     const diasHeaders = DIAS_SEMANA.map((d, i) => {
         const fecha = getFechaSemana(weekStart, i);
         const esFeriado = (semana.feriados || []).includes(i);
-        return `<th class="hv-th-day${esFeriado ? ' hv-feriado' : ''}">
+        const esHoy = fecha.getTime() === today.getTime();
+        return `<th class="hv-th-day${esFeriado ? ' hv-feriado' : ''}${esHoy ? ' hv-th-today' : ''}">
             ${d}
             <span class="hv-day-sub">${getDiaSemanaLabel(fecha)}</span>
+            ${esHoy ? '<span class="hv-today-dot"></span>' : ''}
         </th>`;
     }).join('');
 
@@ -32,7 +37,7 @@ function renderHorariosView() {
         let rowsHtml = '';
 
         for (let p of promotores) {
-            rowsHtml += renderPromotorRow(weekStart, p, zona, semana);
+            rowsHtml += renderPromotorRow(weekStart, p, zona, semana, today);
         }
 
         const flotantesEnZona = flotantes.filter(f => {
@@ -47,7 +52,7 @@ function renderHorariosView() {
 
         if (flotantesEnZona.length > 0) {
             for (let f of flotantesEnZona) {
-                rowsHtml += renderPromotorRow(weekStart, f, zona, semana, true);
+                rowsHtml += renderPromotorRow(weekStart, f, zona, semana, today, true);
             }
         }
 
@@ -136,34 +141,50 @@ function renderHorariosView() {
     </div>`;
 }
 
-function renderPromotorRow(weekStart, promotor, zona, semana) {
+function renderPromotorRow(weekStart, promotor, zona, semana, today) {
     const roleLabel = promotor.tipo === 'flotante' ? 'FL' : 'F';
     const roleClass = promotor.tipo === 'flotante' ? 'hv-promo-role-flotante' : 'hv-promo-role-fijo';
 
     let cellsHtml = '';
     for (let d = 0; d < 7; d++) {
+        const fecha = getFechaSemana(weekStart, d);
+        const esHoy = fecha.getTime() === today.getTime();
         const turnoKey = `${promotor.id}-${d}`;
         const turno = semana.turnos[turnoKey];
 
+        const tdClass = esHoy ? 'hv-td-today' : '';
+
         if (!turno || turno.estado === 'sin_asignar') {
-            cellsHtml += `<td><span class="hv-cell hv-cell-empty">&mdash;</span></td>`;
+            cellsHtml += `<td class="${tdClass}"><span class="hv-cell hv-cell-empty">&mdash;</span></td>`;
         } else if (turno.estado === 'descanso') {
-            cellsHtml += `<td><span class="hv-cell hv-cell-descanso">D</span></td>`;
+            cellsHtml += `<td class="${tdClass}"><span class="hv-cell hv-cell-descanso" title="Descanso">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                    <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/>
+                    <line x1="14" y1="1" x2="14" y2="4"/>
+                </svg>
+                <span>D</span>
+            </span></td>`;
         } else if (turno.estado === 'turno' || turno.estado === 'flotante') {
             const isFlotante = turno.estado === 'flotante';
             const cellClass = isFlotante ? 'hv-cell-flotante' : 'hv-cell-turno';
             const horaInicio = turno.hora_inicio || '--:--';
             const horaFin = turno.hora_fin || '--:--';
-            cellsHtml += `<td><span class="hv-cell ${cellClass}">${horaInicio} - ${horaFin}</span></td>`;
+            cellsHtml += `<td class="${tdClass}"><span class="hv-cell ${cellClass}">
+                <span class="hv-cell-time-start">${horaInicio}</span>
+                <span class="hv-cell-time-sep">&ndash;</span>
+                <span class="hv-cell-time-end">${horaFin}</span>
+            </span></td>`;
         } else {
-            cellsHtml += `<td><span class="hv-cell hv-cell-empty">&mdash;</span></td>`;
+            cellsHtml += `<td class="${tdClass}"><span class="hv-cell hv-cell-empty">&mdash;</span></td>`;
         }
     }
 
-    return `<tr>
+    return `<tr class="hv-row">
         <td class="hv-td-promotor">
             <span class="hv-promo-name">${escHtml(promotor.nombre)}</span>
-            <span class="hv-promo-role ${roleClass}">[${roleLabel}]</span>
+            <span class="hv-promo-role ${roleClass}">${roleLabel}</span>
         </td>
         ${cellsHtml}
     </tr>`;
