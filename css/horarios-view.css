@@ -316,6 +316,16 @@
     font-size: 13px;
 }
 
+.hv-td-promotor .hv-promo-name-flotante {
+    background: rgba(217,70,239,0.12);
+    color: #e879f9;
+    font-weight: 700;
+    padding: 2px 10px 2px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(217,70,239,0.2);
+    box-shadow: 0 0 12px rgba(217,70,239,0.12);
+}
+
 .hv-td-promotor .hv-promo-role {
     display: inline-flex;
     align-items: center;
@@ -345,15 +355,15 @@
 }
 
 .hv-promo-role-flotante {
-    background: rgba(99,102,241,0.2);
-    color: #818cf8;
-    border: 1px solid rgba(99,102,241,0.15);
-    box-shadow: 0 0 8px rgba(99,102,241,0.1);
+    background: rgba(217,70,239,0.18);
+    color: #e879f9;
+    border: 1px solid rgba(217,70,239,0.2);
+    box-shadow: 0 0 8px rgba(217,70,239,0.1);
 }
 
 .hv-promo-role-flotante:hover {
-    background: rgba(99,102,241,0.3);
-    box-shadow: 0 0 12px rgba(99,102,241,0.2);
+    background: rgba(217,70,239,0.3);
+    box-shadow: 0 0 12px rgba(217,70,239,0.2);
 }
 
 /* Cell states — Modern Chips */
@@ -394,19 +404,19 @@
     transform: scale(0.98);
 }
 
-/* Flotante chip — Indigo */
+/* Flotante chip — Fuchsia Neon */
 .hv-cell-flotante {
-    background: rgba(99,102,241,0.15);
-    border-color: rgba(99,102,241,0.15);
-    color: #818cf8;
-    box-shadow: 0 0 6px rgba(99,102,241,0.05);
+    background: rgba(217,70,239,0.14);
+    border-color: rgba(217,70,239,0.18);
+    color: #e879f9;
+    box-shadow: 0 0 8px rgba(217,70,239,0.08);
 }
 
 .hv-cell-flotante:hover {
-    background: rgba(99,102,241,0.25);
-    border-color: rgba(99,102,241,0.25);
+    background: rgba(217,70,239,0.25);
+    border-color: rgba(217,70,239,0.25);
     transform: scale(1.05);
-    box-shadow: 0 4px 16px rgba(99,102,241,0.15);
+    box-shadow: 0 4px 16px rgba(217,70,239,0.15);
 }
 
 .hv-cell-flotante:active {
@@ -612,9 +622,9 @@
     }
 
     .hv-promo-role-flotante {
-        background: #e8daef;
-        color: #6c3483;
-        border-color: #d2b4de;
+        background: #f0d9f5;
+        color: #a13eaf;
+        border-color: #e0b5e8;
     }
 
     .hv-cell {
@@ -641,9 +651,9 @@
     }
 
     .hv-cell-flotante {
-        background: #e8daef;
-        border-color: #d2b4de;
-        color: #6c3483;
+        background: #f0d9f5;
+        border-color: #e0b5e8;
+        color: #a13eaf;
     }
 
     .hv-cell-time-sep {
@@ -684,9 +694,9 @@
     }
 
     .hv-promo-role-flotante {
-        background: #e8daef;
-        color: #6c3483;
-        border-color: #d2b4de;
+        background: #f0d9f5;
+        color: #a13eaf;
+        border-color: #e0b5e8;
     }
 
     .hv-row:hover td {

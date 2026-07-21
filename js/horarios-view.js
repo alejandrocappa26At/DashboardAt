@@ -141,9 +141,11 @@ function renderHorariosView() {
     </div>`;
 }
 
-function renderPromotorRow(weekStart, promotor, zona, semana, today) {
-    const roleLabel = promotor.tipo === 'flotante' ? 'FL' : 'F';
-    const roleClass = promotor.tipo === 'flotante' ? 'hv-promo-role-flotante' : 'hv-promo-role-fijo';
+function renderPromotorRow(weekStart, promotor, zona, semana, today, esFlotanteEnZona) {
+    const isFlotante = promotor.tipo === 'flotante' || esFlotanteEnZona;
+    const roleLabel = isFlotante ? 'FL' : 'F';
+    const roleClass = isFlotante ? 'hv-promo-role-flotante' : 'hv-promo-role-fijo';
+    const nameClass = isFlotante ? 'hv-promo-name hv-promo-name-flotante' : 'hv-promo-name';
 
     let cellsHtml = '';
     for (let d = 0; d < 7; d++) {
@@ -183,7 +185,7 @@ function renderPromotorRow(weekStart, promotor, zona, semana, today) {
 
     return `<tr class="hv-row">
         <td class="hv-td-promotor">
-            <span class="hv-promo-name">${escHtml(promotor.nombre)}</span>
+            <span class="${nameClass}">${escHtml(promotor.nombre)}</span>
             <span class="hv-promo-role ${roleClass}">${roleLabel}</span>
         </td>
         ${cellsHtml}

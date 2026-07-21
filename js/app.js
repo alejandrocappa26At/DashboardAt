@@ -892,6 +892,8 @@ function guardarCuotas() {
 
 let ventasModificadas = false;
 let ventasFullscreen = false;
+let modoVista = 'mes';
+let diaSeleccionado = new Date().getDate();
 
 function abrirModalVenta() {
     const pdvSel = document.getElementById('modal-pdv');
@@ -899,6 +901,15 @@ function abrirModalVenta() {
     document.getElementById('modal-venta').classList.add('open');
     ventasModificadas = false;
     document.getElementById('ventas-unsaved-bar').classList.remove('visible');
+    modoVista = 'mes';
+    diaSeleccionado = new Date().getDate();
+    const toggleMes = document.querySelector('[data-view="mes"]');
+    const toggleDia = document.querySelector('[data-view="dia"]');
+    if (toggleMes) toggleMes.classList.add('active');
+    if (toggleDia) toggleDia.classList.remove('active');
+    const diaSelect = document.getElementById('ventas-dia-select');
+    if (diaSelect) diaSelect.style.display = 'none';
+    document.getElementById('modal-venta').classList.remove('vista-dia');
     cargarVentasCalendario();
 }
 
@@ -929,10 +940,12 @@ function cargarVentasCalendario() {
     const diaActual = DataStore.getDiaActual();
     const diasMes = new Date(anio, mes, 0).getDate();
 
+    if (diaSeleccionado > diasMes) diaSeleccionado = diasMes;
+
     thead.innerHTML = '<th class="calendario-th-producto">Producto</th>';
     for (let d = 1; d <= diasMes; d++) {
         const cls = d <= diaActual ? '' : 'style="opacity:0.4;"';
-        thead.innerHTML += `<th class="calendario-th-dia ${d === diaActual ? 'calendario-th-hoy' : ''}" ${cls}>${d}</th>`;
+        thead.innerHTML += `<th class="calendario-th-dia ${d === diaActual ? 'calendario-th-hoy' : ''}" data-dia="${d}" ${cls}>${d}</th>`;
     }
     thead.innerHTML += '<th class="calendario-th-dia">Total</th>';
 
@@ -967,7 +980,7 @@ function cargarVentasCalendario() {
                     tooltip = ` title="Variaci\u00f3n: ${variacion > 0 ? '+' : ''}${variacion}% vs d\u00eda ${c.d - 1}"`;
                 }
             }
-            tr.innerHTML += `<td ${c.cls}><input class="calendario-input ${c.valCls}" type="number" min="0" step="1" value="${c.val}" data-prod="${prod}" data-dia="${c.d}"${tooltip} ${c.disabled}></td>`;
+            tr.innerHTML += `<td data-dia="${c.d}" ${c.cls}><input class="calendario-input ${c.valCls}" type="number" min="0" step="1" value="${c.val}" data-prod="${prod}" data-dia="${c.d}"${tooltip} ${c.disabled}></td>`;
         }
         tr.innerHTML += `<td class="calendario-total"><span class="total-prod">${suma.toLocaleString('es-CL')}</span></td>`;
         tbody.appendChild(tr);
@@ -993,7 +1006,66 @@ function cargarVentasCalendario() {
         });
     });
 
+    aplicarFiltroVistaVentas(diasMes);
+
+    document.getElementById('ventas-dia-select').innerHTML =
+        Array.from({ length: diasMes }, (_, i) => `<option value="${i + 1}" ${i + 1 === diaSeleccionado ? 'selected' : ''}>Día ${i + 1}</option>`);
+
     initCrosshairCalendario();
+}
+
+function cambiarModoVista(modo) {
+    modoVista = modo;
+    const toggleMes = document.querySelector('[data-view="mes"]');
+    const toggleDia = document.querySelector('[data-view="dia"]');
+    if (toggleMes) toggleMes.classList.toggle('active', modo === 'mes');
+    if (toggleDia) toggleDia.classList.toggle('active', modo === 'dia');
+    const diaSelect = document.getElementById('ventas-dia-select');
+    if (diaSelect) diaSelect.style.display = modo === 'dia' ? '' : 'none';
+    const modalEl = document.getElementById('modal-venta');
+    modalEl.classList.toggle('vista-dia', modo === 'dia');
+    aplicarFiltroVistaVentas();
+}
+
+function cambiarDiaSeleccionado(dia) {
+    diaSeleccionado = parseInt(dia);
+    aplicarFiltroVistaVentas();
+}
+
+function aplicarFiltroVistaVentas(diasMes) {
+    if (!diasMes) {
+        const anio = parseInt(document.getElementById('venta-anio').value);
+        const mes = parseInt(document.getElementById('venta-mes').value);
+        diasMes = new Date(anio, mes, 0).getDate();
+    }
+
+    const table = document.getElementById('tabla-calendario');
+    if (!table) return;
+
+    const isDia = modoVista === 'dia';
+    const rows = table.querySelectorAll('tr');
+
+    for (let r of rows) {
+        for (let cell of r.cells) {
+            cell.classList.remove('calendario-col-hidden', 'calendario-col-visible');
+        }
+    }
+
+    if (!isDia) return;
+
+    for (let r of rows) {
+        for (let cell of r.cells) {
+            const diaAttr = cell.getAttribute('data-dia');
+            if (diaAttr) {
+                const diaNum = parseInt(diaAttr);
+                if (diaNum === diaSeleccionado) {
+                    cell.classList.add('calendario-col-visible');
+                } else {
+                    cell.classList.add('calendario-col-hidden');
+                }
+            }
+        }
+    }
 }
 
 function initCrosshairCalendario() {

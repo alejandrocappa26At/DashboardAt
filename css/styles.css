@@ -2528,6 +2528,96 @@ select option {
     border-color: rgba(255,255,255,0.15);
 }
 
+/* ===== View Toggle — Segmented Control ===== */
+.ventas-view-toggle {
+    display: flex;
+    background: rgba(39,39,42,0.5);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.ventas-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: #a1a1aa;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.ventas-toggle-btn:hover {
+    color: #e4e4e7;
+}
+
+.ventas-toggle-btn.active {
+    background: #10b981;
+    color: #000000;
+    box-shadow: 0 0 12px rgba(16,185,129,0.2);
+}
+
+.ventas-toggle-btn.active svg {
+    stroke: #000000;
+}
+
+.ventas-toggle-btn svg {
+    flex-shrink: 0;
+    stroke: #727272;
+    transition: stroke 0.25s ease;
+}
+
+.ventas-toggle-btn:hover svg {
+    stroke: #a1a1aa;
+}
+
+/* ===== Day Selector ===== */
+.ventas-dia-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 28px 7px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23727272' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: all 0.2s ease;
+    min-height: 38px;
+    flex-shrink: 0;
+}
+
+.ventas-dia-select:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.ventas-dia-select:focus {
+    outline: none;
+    border-color: rgba(29,185,84,0.4);
+    background: rgba(29,185,84,0.04);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.08);
+}
+
+.ventas-dia-select option {
+    background: #18181b;
+    color: #ffffff;
+}
+
 /* Table Wrapper */
 .calendario-wrapper {
     overflow: auto;
@@ -2717,6 +2807,53 @@ select option {
 @keyframes ventaFlash {
     0% { background: rgba(16,185,129,0.25); box-shadow: 0 0 12px rgba(16,185,129,0.2); }
     100% { background: transparent; box-shadow: none; }
+}
+
+/* ===== Column Hide / Show — Smooth Collapse ===== */
+.calendario-tabla th,
+.calendario-tabla td {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.calendario-col-hidden {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.calendario-col-hidden .calendario-input {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+}
+
+/* ===== Vista por Día — Wider Inputs ===== */
+.vista-dia .calendario-input {
+    width: 100px;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 10px 8px;
+    border-radius: 8px;
+}
+
+.vista-dia .calendario-tabla tbody td {
+    padding: 6px 6px;
+}
+
+.vista-dia .calendario-th-dia {
+    min-width: 0;
+}
+
+.vista-dia .calendario-wrapper {
+    max-height: 65vh;
 }
 
 /* Row hover */
@@ -3743,6 +3880,19 @@ select option {
     .ventas-filter-icon {
         left: 10px;
     }
+    .ventas-view-toggle {
+        order: 10;
+    }
+    .ventas-toggle-btn {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+    .ventas-dia-select {
+        font-size: 12px;
+        padding: 5px 24px 5px 10px;
+        min-height: 34px;
+        order: 11;
+    }
     .ventas-progress-badge {
         font-size: 11px;
         padding: 5px 10px;
@@ -3752,6 +3902,11 @@ select option {
         font-size: 11px;
         padding: 4px 1px;
         border-radius: 4px;
+    }
+    .vista-dia .calendario-input {
+        width: 72px;
+        font-size: 14px;
+        padding: 8px 6px;
     }
     .calendario-th-producto {
         min-width: 120px;
