@@ -296,6 +296,150 @@ body {
     75% { transform: scaleY(0.7); }
 }
 
+/* Section container for sub-items (SUPERVISOR accordion) */
+.nav-section {
+    margin-top: 4px;
+}
+
+.nav-section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 13.5px;
+    font-weight: 500;
+    user-select: none;
+    position: relative;
+}
+
+.nav-section-header:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+.nav-section-header:active {
+    background: rgba(255,255,255,0.1);
+}
+
+.nav-section-header .nav-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.nav-section-header .nav-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.nav-section-header .nav-label {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-subdued);
+}
+
+.nav-section-arrow {
+    font-size: 12px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.5;
+}
+
+.nav-section.open .nav-section-arrow {
+    transform: rotate(90deg);
+}
+
+.nav-section-lock {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* Sub-items container (collapsible) */
+.nav-sub-items {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    padding-left: 12px;
+    margin-left: 8px;
+    border-left: 1px solid rgba(255,255,255,0.06);
+}
+
+.nav-sub-items.open {
+    grid-template-rows: 1fr;
+}
+
+.nav-sub-items > div {
+    overflow: hidden;
+}
+
+.nav-sub-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 400;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    position: relative;
+    user-select: none;
+}
+
+.nav-sub-item:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.04);
+}
+
+.nav-sub-item:active {
+    background: rgba(255,255,255,0.08);
+}
+
+.nav-sub-item.active {
+    color: var(--accent);
+    font-weight: 500;
+    background: rgba(29,185,84,0.08);
+}
+
+.nav-sub-item .nav-indicator {
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    left: -2px;
+    border-radius: 0 3px 3px 0;
+}
+
+.nav-sub-item.active .nav-indicator {
+    background: var(--accent);
+}
+
+.nav-sub-item .nav-icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+.nav-sub-item .nav-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
 /* Footer with buttons */
 .sidebar-footer {
     padding: 16px 16px 20px;
@@ -397,6 +541,22 @@ body {
 
 .btn-sidebar-primary svg {
     stroke-width: 2.5;
+}
+
+/* Lock/unlock button in footer */
+#supervisor-lock-btn {
+    display: none;
+}
+
+#supervisor-lock-btn.btn-sidebar-secondary {
+    color: var(--warning);
+    border-color: rgba(245,158,11,0.3);
+}
+
+#supervisor-lock-btn.btn-sidebar-secondary:hover {
+    color: var(--warning);
+    border-color: rgba(245,158,11,0.6);
+    background: rgba(245,158,11,0.08);
 }
 
 .main-content {

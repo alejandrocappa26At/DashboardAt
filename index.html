@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/horarios.css">
     <link rel="stylesheet" href="css/horarios-view.css">
+    <link rel="stylesheet" href="css/horarios-public.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
@@ -81,7 +82,7 @@
                     <span></span><span></span><span></span>
                 </div>
             </div>
-            <div class="nav-item" data-page="horarios">
+            <div class="nav-item" data-page="horarios-public">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -91,35 +92,67 @@
                         <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
                     </svg>
                 </span>
-                <span class="nav-label">Planificador</span>
-                <div class="nav-equalizer" id="eq-horarios">
+                <span class="nav-label">🗓️ Horarios</span>
+                <div class="nav-equalizer" id="eq-horarios-public">
                     <span></span><span></span><span></span>
                 </div>
             </div>
-            <div class="nav-item" data-page="horarios-view">
-                <div class="nav-indicator"></div>
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
-                    </svg>
-                </span>
-                <span class="nav-label">Horarios</span>
-                <div class="nav-equalizer" id="eq-horarios-view">
-                    <span></span><span></span><span></span>
+            <!-- SUPERVISOR SECTION (password-protected accordion) -->
+            <div class="nav-section" id="nav-section-supervisor">
+                <div class="nav-section-header" onclick="toggleSupervisorSeccion()">
+                    <div class="nav-indicator" id="nav-indicator-supervisor"></div>
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            <circle cx="12" cy="16" r="1"/>
+                        </svg>
+                    </span>
+                    <span class="nav-label">SUPERVISOR</span>
+                    <span class="nav-section-lock" id="nav-supervisor-lock">🔒</span>
+                    <span class="nav-section-arrow" id="nav-supervisor-arrow">▸</span>
+                </div>
+                <div class="nav-sub-items" id="nav-sub-supervisor">
+                    <div class="nav-sub-item" data-page="horarios">
+                        <div class="nav-indicator"></div>
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
+                            </svg>
+                        </span>
+                        <span class="nav-label">📅 Planificador</span>
+                        <div class="nav-equalizer" id="eq-horarios">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="nav-sub-item" onclick="navegarACuotas()">
+                        <div class="nav-indicator"></div>
+                        <span class="nav-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                        </span>
+                        <span class="nav-label">✏️ Editar cuotas</span>
+                        <div class="nav-equalizer" id="eq-cuotas">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
 
         <div class="sidebar-footer">
-            <button class="btn-sidebar btn-sidebar-secondary" onclick="abrirModalCuotas()">
+            <button class="btn-sidebar btn-sidebar-secondary" id="supervisor-lock-btn" onclick="bloquearSupervisor()" style="display:none;">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 20h9" stroke-width="2"/>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke-width="1.8"/>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
                 </svg>
-                Editar cuotas
+                Bloquear supervisor
             </button>
             <button class="btn-sidebar btn-sidebar-primary" onclick="abrirModalVenta()">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -418,6 +451,11 @@
             <div id="horarios-view-content"></div>
         </section>
 
+        <!-- ===== PAGINA: HORARIOS PUBLIC (read-only mirror) ===== -->
+        <section class="page" id="page-horarios-public">
+            <div id="horarios-public-content"></div>
+        </section>
+
         <!-- ===== PAGINA 5: RESUMEN GENERAL PDV ===== -->
         <section class="page" id="page-resumen-pdv">
             <div class="rpdv-hero">
@@ -635,8 +673,8 @@
                 </svg>
             </div>
 
-            <h2 class="password-title">Acceso Restringido</h2>
-            <p class="password-subtitle">Esta secci&oacute;n solo puede ser modificada por personal autorizado. El ingreso de credenciales incorrectas quedar&aacute; registrado.</p>
+            <h2 class="password-title">Acceso de Supervisor</h2>
+            <p class="password-subtitle">Ingresa la clave de supervisor para acceder al Planificador y la edici&oacute;n de cuotas. Los intentos fallidos pueden quedar registrados.</p>
 
             <div class="password-field-wrapper" id="password-field-wrapper">
                 <svg class="password-field-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -733,6 +771,7 @@
     <script src="js/horarios-data.js"></script>
     <script src="js/horarios.js"></script>
     <script src="js/horarios-view.js"></script>
+    <script src="js/horarios-public.js"></script>
     <script src="js/app.js"></script>
 </body>
 

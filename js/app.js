@@ -530,6 +530,79 @@ function poblarFiltros() {
 
 const reporteSort = { sortBy: 'pdv', sortDir: 'asc' };
 
+/* ===== SUPERVISOR SESSION STATE ===== */
+const SUPERVISOR_PASSWORD = 'Adecco2019@';
+
+function estaSupervisorDesbloqueado() {
+    return sessionStorage.getItem('supervisor_unlocked') === 'true';
+}
+
+function desbloquearSupervisor() {
+    sessionStorage.setItem('supervisor_unlocked', 'true');
+    actualizarSidebarSupervisor();
+    const subEl = document.getElementById('nav-sub-supervisor');
+    if (subEl) subEl.classList.add('open');
+    cerrarModalPassword();
+    mostrarNotificacion('🔓 Modo supervisor activado', 'success');
+}
+
+function bloquearSupervisor() {
+    sessionStorage.removeItem('supervisor_unlocked');
+    actualizarSidebarSupervisor();
+    const activePage = document.querySelector('.page.active');
+    if (activePage) {
+        const id = activePage.id.replace('page-', '');
+        if (id === 'horarios' || id === 'horarios-view') {
+            cambiarPagina('resumen');
+        }
+    }
+    mostrarNotificacion('🔒 Modo supervisor bloqueado', 'success');
+}
+
+function actualizarSidebarSupervisor() {
+    const unlocked = estaSupervisorDesbloqueado();
+    const lockEl = document.getElementById('nav-supervisor-lock');
+    const arrowEl = document.getElementById('nav-supervisor-arrow');
+    const subEl = document.getElementById('nav-sub-supervisor');
+    const lockBtn = document.getElementById('supervisor-lock-btn');
+
+    if (lockEl) lockEl.textContent = unlocked ? '🔓' : '🔒';
+    if (subEl) {
+        if (unlocked) {
+            subEl.classList.add('open');
+        } else {
+            subEl.classList.remove('open');
+        }
+    }
+    if (arrowEl) {
+        arrowEl.style.transform = unlocked ? 'rotate(90deg)' : 'rotate(0deg)';
+    }
+    if (lockBtn) lockBtn.style.display = unlocked ? 'flex' : 'none';
+}
+
+function toggleSupervisorSeccion() {
+    if (!estaSupervisorDesbloqueado()) {
+        abrirModalPassword();
+        return;
+    }
+    const subEl = document.getElementById('nav-sub-supervisor');
+    const arrowEl = document.getElementById('nav-supervisor-arrow');
+    if (subEl) {
+        subEl.classList.toggle('open');
+    }
+    if (arrowEl) {
+        arrowEl.style.transform = subEl && subEl.classList.contains('open') ? 'rotate(90deg)' : 'rotate(0deg)';
+    }
+}
+
+function navegarACuotas() {
+    if (!estaSupervisorDesbloqueado()) {
+        abrirModalPassword();
+        return;
+    }
+    abrirModalCuotasSinPassword();
+}
+
 function recargarDashboard() {
     poblarFiltros();
 
@@ -541,6 +614,8 @@ function recargarDashboard() {
                 renderHorarios();
             } else if (activePage.id === 'page-horarios-view') {
                 renderHorariosView();
+            } else if (activePage.id === 'page-horarios-public') {
+                renderizarHorariosPublic();
             }
         }
     }
@@ -554,8 +629,14 @@ function recargarDashboard() {
 }
 
 function cambiarPagina(pagina) {
+    if ((pagina === 'horarios' || pagina === 'horarios-view') && !estaSupervisorDesbloqueado()) {
+        abrirModalPassword();
+        return;
+    }
+
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.nav-sub-item').forEach(n => n.classList.remove('active'));
 
     const pageEl = document.getElementById('page-' + pagina);
     if (pageEl) pageEl.classList.add('active');
@@ -563,13 +644,24 @@ function cambiarPagina(pagina) {
     const navItem = document.querySelector(`.nav-item[data-page="${pagina}"]`);
     if (navItem) navItem.classList.add('active');
 
+    const subItem = document.querySelector(`.nav-sub-item[data-page="${pagina}"]`);
+    if (subItem) {
+        subItem.classList.add('active');
+        const section = subItem.closest('.nav-section');
+        if (section) {
+            const indicator = section.querySelector('.nav-section-header .nav-indicator');
+            if (indicator) indicator.style.background = 'var(--accent)';
+        }
+    }
+
     document.getElementById('page-title').textContent =
         pagina === 'resumen' ? 'Resumen Zona' :
             pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                     pagina === 'resumen-pdv' ? 'Resumen General PDV' :
                         pagina === 'horarios' ? 'Planificador Semanal' :
-                            pagina === 'horarios-view' ? 'Horarios Semanales por Tienda' : 'Dashboard';
+                            pagina === 'horarios-view' ? 'Horarios Semanales por Tienda' :
+                                pagina === 'horarios-public' ? 'Horarios Semanales' : 'Dashboard';
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
@@ -585,6 +677,7 @@ function cambiarPagina(pagina) {
             HorariosDataStore.onUpdate = function () {
                 renderHorarios();
                 renderHorariosView();
+                renderizarHorariosPublic();
             };
         }
         renderHorarios();
@@ -594,9 +687,20 @@ function cambiarPagina(pagina) {
             HorariosDataStore.onUpdate = function () {
                 renderHorarios();
                 renderHorariosView();
+                renderizarHorariosPublic();
             };
         }
         renderHorariosView();
+    } else if (pagina === 'horarios-public') {
+        if (!HorariosDataStore.initialized) {
+            initHorarios('supervisor');
+            HorariosDataStore.onUpdate = function () {
+                renderHorarios();
+                renderHorariosView();
+                renderizarHorariosPublic();
+            };
+        }
+        renderizarHorariosPublic();
     }
 
     if (window.innerWidth <= 768) {
@@ -679,10 +783,9 @@ function confirmarPassword() {
     btn.classList.add('loading');
 
     setTimeout(() => {
-        if (password === 'Adecco2019@') {
+        if (password === SUPERVISOR_PASSWORD) {
             btn.classList.remove('loading');
-            cerrarModalPassword();
-            abrirModalCuotasSinPassword();
+            desbloquearSupervisor();
         } else {
             intentosPassword++;
             btn.classList.remove('loading');
@@ -704,7 +807,11 @@ function confirmarPassword() {
 }
 
 function abrirModalCuotas() {
-    abrirModalPassword();
+    if (!estaSupervisorDesbloqueado()) {
+        abrirModalPassword();
+        return;
+    }
+    abrirModalCuotasSinPassword();
 }
 
 function abrirModalCuotasSinPassword() {
@@ -950,7 +1057,8 @@ function guardarVentasCalendario() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.nav-item').forEach(item => {
+    document.querySelectorAll('.nav-item, .nav-sub-item').forEach(item => {
+        if (!item.dataset.page) return;
         item.addEventListener('click', function (e) {
             const rect = this.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -968,6 +1076,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('sidebar-backdrop').addEventListener('click', function () {
         document.getElementById('sidebar').classList.remove('open');
     });
+
+    actualizarSidebarSupervisor();
 
     const pdvSelect = document.getElementById('pdv-select');
     if (pdvSelect) {
