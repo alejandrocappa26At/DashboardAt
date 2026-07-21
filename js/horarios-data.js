@@ -93,26 +93,34 @@ const HorariosDataStore = {
     },
 
     generarMockData() {
-        this.zonas = [
-            { id: 'zona-1', nombre: 'RED AT ALTO SELVA ALEGRE' },
-            { id: 'zona-2', nombre: 'RED AT CAYMA' },
-            { id: 'zona-3', nombre: 'RED AT PROGRESO' },
-            { id: 'zona-4', nombre: 'RED AT LA JOYA' },
-        ];
+        if (typeof DataStore !== 'undefined' && DataStore.initialized) {
+            const pdvObjects = DataStore.getPDVObjects();
+            this.zonas = pdvObjects.map(pdv => ({
+                id: pdv.id,
+                nombre: pdv.nombre,
+                cadena: pdv.cadena
+            }));
+        } else {
+            this.zonas = [];
+        }
 
-        this.promotores = [
-            { id: 'p1', nombre: 'Carlos Mamani', zona_principal_id: 'zona-1', tipo: 'fijo' },
-            { id: 'p2', nombre: 'Ana Condori', zona_principal_id: 'zona-1', tipo: 'fijo' },
-            { id: 'p3', nombre: 'Luis Quispe', zona_principal_id: 'zona-1', tipo: 'flotante' },
-            { id: 'p4', nombre: 'Maria Huanca', zona_principal_id: 'zona-2', tipo: 'fijo' },
-            { id: 'p5', nombre: 'Jose Lopez', zona_principal_id: 'zona-2', tipo: 'fijo' },
-            { id: 'p6', nombre: 'Rosa Nina', zona_principal_id: 'zona-2', tipo: 'flotante' },
-            { id: 'p7', nombre: 'Pedro Torres', zona_principal_id: 'zona-3', tipo: 'fijo' },
-            { id: 'p8', nombre: 'Sofia Rojas', zona_principal_id: 'zona-3', tipo: 'fijo' },
-            { id: 'p9', nombre: 'Diego Puma', zona_principal_id: 'zona-3', tipo: 'fijo' },
-            { id: 'p10', nombre: 'Lucia Vargas', zona_principal_id: 'zona-4', tipo: 'fijo' },
-            { id: 'p11', nombre: 'Raul Choque', zona_principal_id: 'zona-4', tipo: 'flotante' },
-        ];
+        if (this.promotores.length === 0 && this.zonas.length > 0) {
+            const nombresPromotores = [
+                'Carlos Mamani', 'Ana Condori', 'Luis Quispe', 'Maria Huanca',
+                'Jose Lopez', 'Rosa Nina', 'Pedro Torres', 'Sofia Rojas',
+                'Diego Puma', 'Lucia Vargas', 'Raul Choque'
+            ];
+            this.promotores = [];
+            for (let i = 0; i < Math.min(nombresPromotores.length, this.zonas.length * 2); i++) {
+                const zona = this.zonas[i % this.zonas.length];
+                this.promotores.push({
+                    id: `p${i + 1}`,
+                    nombre: nombresPromotores[i],
+                    zona_principal_id: zona.id,
+                    tipo: i % 4 === 2 ? 'flotante' : 'fijo'
+                });
+            }
+        }
 
         this.semanas = {};
     },
@@ -266,6 +274,70 @@ const HorariosDataStore = {
         }
         this._guardarEnFirestore();
         return semana.feriados || [];
+    },
+
+    _proximoIdPromotor() {
+        let maxNum = 0;
+        for (let p of this.promotores) {
+            const match = p.id.match(/^p(\d+)$/);
+            if (match) {
+                const num = parseInt(match[1]);
+                if (num > maxNum) maxNum = num;
+            }
+        }
+        return `p${maxNum + 1}`;
+    },
+
+    agregarPromotor(nombre, tipo, zonaId) {
+        const id = this._proximoIdPromotor();
+        const promotor = {
+            id,
+            nombre: nombre || 'Nuevo promotor',
+            zona_principal_id: zonaId || null,
+            tipo: tipo || 'fijo'
+        };
+        this.promotores.push(promotor);
+
+        for (let key in this.semanas) {
+            const semana = this.semanas[key];
+            for (let d = 0; d < 7; d++) {
+                const turnoKey = `${id}-${d}`;
+                semana.turnos[turnoKey] = {
+                    promotor_id: id, dia: d,
+                    estado: 'sin_asignar', hora_inicio: null, hora_fin: null,
+                    zona_id: null, descuento_refrigerio: 0, horas_calculadas: 0
+                };
+            }
+        }
+
+        this._guardarEnFirestore();
+        return promotor;
+    },
+
+    editarPromotor(promotorId, cambios) {
+        const promotor = this.promotores.find(p => p.id === promotorId);
+        if (!promotor) return null;
+        if (cambios.nombre !== undefined) promotor.nombre = cambios.nombre;
+        if (cambios.tipo !== undefined) promotor.tipo = cambios.tipo;
+        if (cambios.zona_principal_id !== undefined) promotor.zona_principal_id = cambios.zona_principal_id;
+        this._guardarEnFirestore();
+        return promotor;
+    },
+
+    eliminarPromotor(promotorId) {
+        const idx = this.promotores.findIndex(p => p.id === promotorId);
+        if (idx === -1) return false;
+        this.promotores.splice(idx, 1);
+
+        for (let key in this.semanas) {
+            const semana = this.semanas[key];
+            for (let d = 0; d < 7; d++) {
+                delete semana.turnos[`${promotorId}-${d}`];
+            }
+        }
+
+        this._guardarEnFirestore();
+        return true;
     },
 
     getPromotoresDeZona(zonaId) {
@@ -438,6 +510,61 @@ const HorariosDataStore = {
         };
     },
 
+    _sincronizarZonasConDataStore() {
+        if (typeof DataStore === 'undefined' || !DataStore.initialized) return false;
+
+        const pdvObjects = DataStore.getPDVObjects();
+        const zonasPrevias = [...this.zonas];
+
+        this.zonas = pdvObjects.map(pdv => ({
+            id: pdv.id,
+            nombre: pdv.nombre,
+            cadena: pdv.cadena
+        }));
+
+        for (let p of this.promotores) {
+            if (!p.zona_principal_id) continue;
+
+            const yaValido = this.zonas.some(z => z.id === p.zona_principal_id);
+            if (yaValido) continue;
+
+            const zonaPrevia = zonasPrevias.find(z => z.id === p.zona_principal_id);
+            if (zonaPrevia) {
+                const match = this.zonas.find(z =>
+                    z.nombre.toUpperCase() === zonaPrevia.nombre.toUpperCase()
+                );
+                if (match) { p.zona_principal_id = match.id; continue; }
+            }
+
+            const matchDirecto = this.zonas.find(z =>
+                z.nombre.toUpperCase() === p.zona_principal_id.toUpperCase()
+            );
+            if (matchDirecto) { p.zona_principal_id = matchDirecto.id; continue; }
+
+            p.zona_principal_id = null;
+        }
+
+        for (let key in this.semanas) {
+            const semana = this.semanas[key];
+            for (let turnoKey in semana.turnos) {
+                const turno = semana.turnos[turnoKey];
+                if (turno.zona_id) {
+                    const yaValido = this.zonas.some(z => z.id === turno.zona_id);
+                    if (yaValido) continue;
+                    const zonaPrevia = zonasPrevias.find(z => z.id === turno.zona_id);
+                    if (zonaPrevia) {
+                        const match = this.zonas.find(z =>
+                            z.nombre.toUpperCase() === zonaPrevia.nombre.toUpperCase()
+                        );
+                        if (match) turno.zona_id = match.id;
+                    }
+                }
+            }
+        }
+
+        return true;
+    },
+
     _cargarDatosIniciales() {
         this.generarMockData();
 
@@ -445,10 +572,12 @@ const HorariosDataStore = {
             db.collection(HORARIOS_COLLECTION).doc('config').get().then(snap => {
                 if (snap.exists) {
                     const data = snap.data();
-                    if (data.zonas) this.zonas = data.zonas;
                     if (data.promotores) this.promotores = data.promotores;
                 }
-            }).catch(() => {});
+                this._sincronizarZonasConDataStore();
+            }).catch(() => {
+                this._sincronizarZonasConDataStore();
+            });
 
             db.collection(HORARIOS_COLLECTION).doc('semanas').get().then(snap => {
                 if (snap.exists) {

@@ -153,6 +153,18 @@ const DataStore = {
         return [...new Set(this.ventas.map(v => v.punto_venta))].sort();
     },
 
+    getPDVObjects() {
+        const pdvs = this.getPDVs();
+        return pdvs.map(pdv => {
+            const promInfo = this.promotores.find(p => p.punto_venta === pdv);
+            return {
+                id: pdv,
+                nombre: pdv,
+                cadena: promInfo?.cadena || ''
+            };
+        });
+    },
+
     getCadenas() {
         return [...new Set(this.promotores.map(p => p.cadena).filter(Boolean))].sort();
     },

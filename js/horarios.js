@@ -1,5 +1,11 @@
 let horariosCellEditorActive = null;
 let horariosToastTimer = null;
+let horariosPDVFilter = '';
+
+function filtrarHorariosPorPDV(pdvId) {
+    horariosPDVFilter = pdvId;
+    renderHorarios();
+}
 
 function initHorarios(role, userName) {
     HorariosDataStore.init(role || 'supervisor', userName || null, function (fromRealtime) {
@@ -78,6 +84,15 @@ function renderVistaSupervisor() {
         </div>
         <div class="horarios-header-right">
             <span class="horarios-role-badge supervisor">Supervisor</span>
+            <button class="horarios-btn-manage-promotores" onclick="abrirModalPromotores()" title="Gestionar promotores">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span>Gestionar Promotores</span>
+            </button>
         </div>
     </div>
 
@@ -116,6 +131,22 @@ function renderVistaSupervisor() {
 
     ${validacionesHtml}
 
+    <div class="horarios-pdv-filter-bar">
+        <div class="horarios-pdv-filter-group">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <select id="horarios-pdv-filter" onchange="filtrarHorariosPorPDV(this.value)">
+                <option value="">Todas las tiendas (${HorariosDataStore.zonas.length})</option>
+                ${HorariosDataStore.zonas.map(z =>
+                    `<option value="${z.id}" ${z.id === horariosPDVFilter ? 'selected' : ''}>${z.nombre}${z.cadena ? ' · ' + z.cadena : ''}</option>`
+                ).join('')}
+            </select>
+        </div>
+        ${horariosPDVFilter ? `<button class="horarios-pdv-filter-clear" onclick="filtrarHorariosPorPDV('')">✕ Limpiar filtro</button>` : ''}
+    </div>
+
     <div class="horarios-table-wrapper horarios-table-view">
         <table class="horarios-table">
             <thead>
@@ -128,7 +159,11 @@ function renderVistaSupervisor() {
             <tbody>
     `;
 
-    for (let zona of HorariosDataStore.zonas) {
+    const zonasAMostrar = horariosPDVFilter
+        ? HorariosDataStore.zonas.filter(z => z.id === horariosPDVFilter)
+        : HorariosDataStore.zonas;
+
+    for (let zona of zonasAMostrar) {
         const promotores = HorariosDataStore.getPromotoresDeZona(zona.id);
         const flotantesZona = HorariosDataStore.getPromotoresFlotantes();
         const horasZona = HorariosDataStore.getHorasZonaSemana(weekStart, zona.id);
@@ -179,6 +214,25 @@ function renderVistaSupervisor() {
                     html += renderFilaPromotor(weekStart, f, zona, true);
                 }
             }
+        }
+    }
+
+    const promotoresSinAsignar = HorariosDataStore.promotores.filter(p => !p.zona_principal_id);
+    if (promotoresSinAsignar.length > 0 && !horariosPDVFilter) {
+        html += `<tr class="horarios-zona-separator"><td colspan="9"></td></tr>`;
+        html += `<tr>
+            <td class="horarios-td-zona">
+                <div class="horarios-td-zona-name">
+                    <span style="color:var(--text-subdued);font-size:11px;font-weight:500;">⚠️ Sin tienda asignada (${promotoresSinAsignar.length})</span>
+                </div>
+            </td>`;
+        for (let d = 0; d < 7; d++) {
+            html += `<td style="background:rgba(255,255,255,0.01);"><div style="padding:6px;font-size:13px;font-weight:800;color:var(--text-subdued);">—</div></td>`;
+        }
+        html += `<td style="background:rgba(255,255,255,0.01);position:sticky;right:0;border-left:2px solid rgba(255,255,255,0.06);"><div style="padding:6px;font-size:15px;font-weight:800;color:var(--text-subdued);">—</div></td>`;
+        html += `</tr>`;
+        for (let p of promotoresSinAsignar) {
+            html += renderFilaPromotor(weekStart, p, { id: null, nombre: 'Sin tienda' });
         }
     }
 
@@ -237,7 +291,7 @@ function renderFilaPromotor(weekStart, promotor, zona, esFlotanteEnZona) {
         <td class="horarios-td-promotor">
             <div class="horarios-promotor-info">
                 <span class="horarios-promotor-type ${promotor.tipo}">${promotor.tipo === 'fijo' ? 'F' : 'FL'}</span>
-                <span class="horarios-promotor-name">${promotor.nombre}</span>
+                <span class="horarios-promotor-name" ondblclick="iniciarEdicionInline(this, '${promotor.id}')" title="Doble clic para editar">${promotor.nombre}</span>
             </div>
         </td>
     `;
@@ -672,6 +726,200 @@ function mostrarHorariosToast(mensaje) {
         setTimeout(() => toast.remove(), 400);
         horariosToastTimer = null;
     }, 3500);
+}
+
+/* ===== GESTIÓN DE PROMOTORES (MODAL) ===== */
+
+function escHtml(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+function abrirModalPromotores() {
+    renderizarModalPromotores();
+    const overlay = document.getElementById('modal-promotores-overlay');
+    const modal = document.getElementById('modal-promotores');
+    if (overlay) overlay.classList.add('open');
+    if (modal) modal.classList.add('open');
+}
+
+function cerrarModalPromotores() {
+    const overlay = document.getElementById('modal-promotores-overlay');
+    const modal = document.getElementById('modal-promotores');
+    if (overlay) overlay.classList.remove('open');
+    if (modal) modal.classList.remove('open');
+    renderHorarios();
+}
+
+function renderizarModalPromotores() {
+    let overlay = document.getElementById('modal-promotores-overlay');
+    let modal = document.getElementById('modal-promotores');
+
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'modal-promotores-overlay';
+        overlay.className = 'horarios-modal-overlay';
+        overlay.onclick = function (e) { if (e.target === this) cerrarModalPromotores(); };
+        document.body.appendChild(overlay);
+
+        modal = document.createElement('div');
+        modal.id = 'modal-promotores';
+        modal.className = 'horarios-modal horarios-modal-promotores';
+        overlay.appendChild(modal);
+    }
+
+    const zonas = HorariosDataStore.zonas;
+    const promotores = HorariosDataStore.promotores;
+
+    const rowsHtml = promotores.map((p, i) => {
+        const zonaOptions = `
+            <option value="" ${!p.zona_principal_id ? 'selected' : ''}>— Sin asignar —</option>
+            ${zonas.map(z =>
+                `<option value="${z.id}" ${p.zona_principal_id === z.id ? 'selected' : ''}>${escHtml(z.nombre)}${z.cadena ? ' · ' + escHtml(z.cadena) : ''}</option>`
+            ).join('')}
+        `;
+
+        return `
+            <tr class="promotor-row" data-id="${escHtml(p.id)}">
+                <td class="promotor-row-num">${i + 1}</td>
+                <td>
+                    <input class="promotor-input-name" type="text" value="${escHtml(p.nombre)}"
+                        data-id="${escHtml(p.id)}"
+                        onchange="aplicarCambiosPromotor('${escHtml(p.id)}')"
+                        placeholder="Nombre del promotor">
+                </td>
+                <td>
+                    <select class="promotor-select-tipo" data-id="${escHtml(p.id)}" onchange="aplicarCambiosPromotor('${escHtml(p.id)}')">
+                        <option value="fijo" ${p.tipo === 'fijo' ? 'selected' : ''}>Fijo [F]</option>
+                        <option value="flotante" ${p.tipo === 'flotante' ? 'selected' : ''}>Flotante [FL]</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="promotor-select-zona" data-id="${escHtml(p.id)}" onchange="aplicarCambiosPromotor('${escHtml(p.id)}')">
+                        ${zonaOptions}
+                    </select>
+                </td>
+                <td>
+                    <button class="promotor-btn-delete" onclick="eliminarPromotorHandler('${escHtml(p.id)}')" title="Eliminar promotor">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    modal.innerHTML = `
+        <div class="horarios-modal-header">
+            <h3>⚙️ Gestión de Promotores</h3>
+            <button class="horarios-modal-close" onclick="cerrarModalPromotores()">✕</button>
+        </div>
+        <div class="horarios-modal-body">
+            <div class="promotores-summary">
+                <span>${promotores.length} promotor${promotores.length !== 1 ? 'es' : ''} registrados</span>
+                <span>· ${HorariosDataStore.zonas.length} tiendas disponibles</span>
+            </div>
+            <div class="promotores-table-wrapper">
+                <table class="promotores-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Tienda asignada</th>
+                            <th style="width:44px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml || '<tr><td colspan="5" class="promotores-empty">No hay promotores registrados.</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+            <button class="promotor-btn-add" onclick="agregarNuevoPromotor()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Añadir promotor
+            </button>
+        </div>
+        <div class="horarios-modal-footer">
+            <button class="horarios-btn-modal-secondary" onclick="cerrarModalPromotores()">Cerrar</button>
+        </div>
+    `;
+}
+
+function aplicarCambiosPromotor(promotorId) {
+    const fila = document.querySelector(`.promotor-row[data-id="${promotorId}"]`);
+    if (!fila) return;
+
+    const nombreInput = fila.querySelector('.promotor-input-name');
+    const tipoSelect = fila.querySelector('.promotor-select-tipo');
+    const zonaSelect = fila.querySelector('.promotor-select-zona');
+
+    const nombre = nombreInput ? nombreInput.value.trim() : '';
+    const tipo = tipoSelect ? tipoSelect.value : 'fijo';
+    const zonaId = zonaSelect ? zonaSelect.value || null : null;
+
+    if (!nombre) {
+        nombreInput.focus();
+        nombreInput.style.borderColor = '#EF4444';
+        setTimeout(() => { if (nombreInput) nombreInput.style.borderColor = ''; }, 1500);
+        return;
+    }
+
+    HorariosDataStore.editarPromotor(promotorId, { nombre, tipo, zona_principal_id: zonaId });
+}
+
+function agregarNuevoPromotor() {
+    const zonas = HorariosDataStore.zonas;
+    const nuevaZonaId = zonas.length > 0 ? zonas[0].id : null;
+    HorariosDataStore.agregarPromotor('Nuevo promotor', 'fijo', nuevaZonaId);
+    renderizarModalPromotores();
+
+    setTimeout(() => {
+        const lastInput = document.querySelector('.promotor-row:last-child .promotor-input-name');
+        if (lastInput) { lastInput.focus(); lastInput.select(); }
+    }, 100);
+}
+
+function eliminarPromotorHandler(promotorId) {
+    const promotor = HorariosDataStore.promotores.find(p => p.id === promotorId);
+    if (!promotor) return;
+    if (!confirm(`¿Eliminar a "${promotor.nombre}"? Todos sus turnos asignados se perderán.`)) return;
+
+    HorariosDataStore.eliminarPromotor(promotorId);
+    renderizarModalPromotores();
+}
+
+function iniciarEdicionInline(span, promotorId) {
+    const promotor = HorariosDataStore.promotores.find(p => p.id === promotorId);
+    if (!promotor || !span) return;
+
+    const currentName = promotor.nombre;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'horarios-inline-edit-input';
+    input.value = currentName;
+    input.style.cssText = 'width:100%;padding:4px 8px;border-radius:6px;border:1px solid var(--accent);background:rgba(29,185,84,0.06);color:#fff;font-size:12px;font-weight:600;font-family:inherit;outline:none;box-sizing:border-box;';
+
+    span.style.display = 'none';
+    span.parentNode.insertBefore(input, span.nextSibling);
+    input.focus();
+    input.select();
+
+    function guardarInline() {
+        const nuevoNombre = input.value.trim();
+        if (nuevoNombre && nuevoNombre !== currentName) {
+            HorariosDataStore.editarPromotor(promotorId, { nombre: nuevoNombre });
+        }
+        input.remove();
+        span.style.display = '';
+        span.textContent = nuevoNombre || currentName;
+    }
+
+    input.addEventListener('blur', guardarInline);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { input.blur(); }
+        if (e.key === 'Escape') { input.value = currentName; input.blur(); }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function () {

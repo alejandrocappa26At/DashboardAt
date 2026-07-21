@@ -532,6 +532,19 @@ const reporteSort = { sortBy: 'pdv', sortDir: 'asc' };
 
 function recargarDashboard() {
     poblarFiltros();
+
+    if (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.initialized) {
+        HorariosDataStore._sincronizarZonasConDataStore();
+        const activePage = document.querySelector('.page.active');
+        if (activePage) {
+            if (activePage.id === 'page-horarios') {
+                renderHorarios();
+            } else if (activePage.id === 'page-horarios-view') {
+                renderHorariosView();
+            }
+        }
+    }
+
     const fechaInfo = document.getElementById('dia-actual');
     if (fechaInfo) fechaInfo.textContent = DataStore.getDiaActual() + ' / 31';
     renderizarResumenEjecutivo();

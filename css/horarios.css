@@ -1081,6 +1081,425 @@
     color: #EF4444;
 }
 
+/* Manage Promotores Button */
+.horarios-btn-manage-promotores {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.2px;
+}
+
+.horarios-btn-manage-promotores:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border-color: rgba(255,255,255,0.15);
+}
+
+/* Promoter Management Modal */
+.horarios-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+    animation: horariosFadeIn 0.2s ease;
+}
+
+.horarios-modal-overlay.open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.horarios-modal {
+    display: none;
+    background: #191414;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    width: 90%;
+    max-width: 760px;
+    max-height: 85vh;
+    flex-direction: column;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.7);
+    animation: horariosModalIn 0.25s ease;
+}
+
+.horarios-modal.open {
+    display: flex;
+}
+
+@keyframes horariosFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes horariosModalIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.horarios-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.horarios-modal-header h3 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #fff;
+}
+
+.horarios-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.horarios-modal-close:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.horarios-modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.horarios-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    gap: 10px;
+}
+
+.horarios-btn-modal-secondary {
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.horarios-btn-modal-secondary:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+}
+
+/* Promotores table inside modal */
+.promotores-summary {
+    font-size: 12px;
+    color: var(--text-subdued);
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.promotores-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 12px;
+    background: #0f0f0f;
+}
+
+.promotores-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.promotores-table thead th {
+    background: #121212;
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.promotores-table tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
+}
+
+.promotores-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.promotores-table tbody tr:hover {
+    background: rgba(255,255,255,0.02);
+}
+
+.promotor-row-num {
+    color: var(--text-subdued);
+    font-size: 11px;
+    font-weight: 600;
+    width: 32px;
+    text-align: center;
+}
+
+.promotor-input-name {
+    width: 100%;
+    min-width: 140px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.promotor-input-name:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+    background: rgba(29,185,84,0.04);
+}
+
+.promotor-input-name::placeholder {
+    color: var(--text-subdued);
+    font-weight: 400;
+}
+
+.promotor-select-tipo,
+.promotor-select-zona {
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 120px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' width='12' height='12' fill='none' stroke='%23b3b3b3' stroke-width='2' stroke-linecap='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 28px;
+}
+
+.promotor-select-tipo:focus,
+.promotor-select-zona:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+}
+
+.promotor-select-tipo option,
+.promotor-select-zona option {
+    background: #191414;
+    color: #fff;
+}
+
+.promotor-btn-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(239,68,68,0.08);
+    color: #EF4444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.promotor-btn-delete:hover {
+    background: rgba(239,68,68,0.2);
+    transform: scale(1.05);
+}
+
+.promotor-btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px dashed rgba(255,255,255,0.12);
+    background: transparent;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    width: 100%;
+    justify-content: center;
+}
+
+.promotor-btn-add:hover {
+    background: rgba(29,185,84,0.06);
+    border-color: var(--accent);
+}
+
+.promotores-empty {
+    text-align: center;
+    padding: 32px 16px !important;
+    color: var(--text-subdued);
+    font-size: 13px;
+}
+
+/* Inline editing input for table */
+.horarios-inline-edit-input {
+    box-sizing: border-box;
+}
+
+.horarios-inline-edit-input:focus {
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.15);
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+    .horarios-modal {
+        width: 96%;
+        max-height: 90vh;
+        border-radius: 12px;
+    }
+
+    .horarios-modal-body {
+        padding: 16px;
+    }
+
+    .promotor-select-tipo,
+    .promotor-select-zona {
+        min-width: 100px;
+        font-size: 11px;
+    }
+
+    .promotor-input-name {
+        font-size: 12px;
+        min-width: 100px;
+    }
+}
+
+/* PDV Filter Bar */
+.horarios-pdv-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 10px 16px;
+    background: #181818;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.04);
+    flex-wrap: wrap;
+}
+
+.horarios-pdv-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.horarios-pdv-filter-group svg {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.horarios-pdv-filter-group select {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='%23b3b3b3' stroke-width='2' stroke-linecap='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+}
+
+.horarios-pdv-filter-group select:hover {
+    border-color: rgba(255,255,255,0.15);
+}
+
+.horarios-pdv-filter-group select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+}
+
+.horarios-pdv-filter-group select option {
+    background: #191414;
+    color: #fff;
+    padding: 8px;
+}
+
+.horarios-pdv-filter-clear {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.horarios-pdv-filter-clear:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    border-color: rgba(255,255,255,0.15);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .horarios-header-left h2 {
