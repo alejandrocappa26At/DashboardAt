@@ -521,10 +521,12 @@ function createResumenPDVCharts(entries) {
 
 function poblarFiltros() {
     const pdvs = DataStore.getPDVs();
+    console.log('[AUDITORIA] poblarFiltros pdvs:', pdvs.length, pdvs);
     const pdvSelect = document.getElementById('pdv-select');
     if (pdvSelect) {
         pdvSelect.innerHTML = '<option value="">Seleccionar punto de venta...</option>' +
             pdvs.map(p => `<option value="${p}">${p}</option>`).join('');
+        console.log('[AUDITORIA] pdv-select options después de poblar:', pdvSelect.options.length);
     }
 }
 
@@ -607,19 +609,31 @@ function navegarACuotas() {
 function recargarDashboard() {
     poblarFiltros();
 
-    if (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.initialized) {
-        HorariosDataStore._sincronizarZonasConDataStore();
-        const activePage = document.querySelector('.page.active');
-        if (activePage) {
-            if (activePage.id === 'page-horarios') {
+    if (typeof HorariosDataStore !== 'undefined') {
+        if (!HorariosDataStore.initialized && typeof initHorarios === 'function') {
+            initHorarios('supervisor');
+            HorariosDataStore.onUpdate = function () {
                 renderHorarios();
-            } else if (activePage.id === 'page-horarios-view') {
                 renderHorariosView();
-            } else if (activePage.id === 'page-horarios-public') {
                 renderizarHorariosPublic();
+            };
+        }
+        if (HorariosDataStore.initialized) {
+            HorariosDataStore._sincronizarZonasConDataStore();
+            const activePage = document.querySelector('.page.active');
+            if (activePage) {
+                if (activePage.id === 'page-horarios') {
+                    renderHorarios();
+                } else if (activePage.id === 'page-horarios-view') {
+                    renderHorariosView();
+                } else if (activePage.id === 'page-horarios-public') {
+                    renderizarHorariosPublic();
+                }
             }
         }
     }
+
+    poblarFiltrosInformePromotor();
 
     const fechaInfo = document.getElementById('dia-actual');
     if (fechaInfo) fechaInfo.textContent = DataStore.getDiaActual() + ' / 31';
@@ -661,9 +675,10 @@ function cambiarPagina(pagina) {
             pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                     pagina === 'resumen-pdv' ? 'Resumen General PDV' :
-                        pagina === 'horarios' ? 'Planificador Semanal' :
-                            pagina === 'horarios-view' ? 'Horarios Semanales por Tienda' :
-                                pagina === 'horarios-public' ? 'Horarios Semanales' : 'Dashboard';
+                        pagina === 'informe-promotor' ? 'Informe por Promotor' :
+                            pagina === 'horarios' ? 'Planificador Semanal' :
+                                pagina === 'horarios-view' ? 'Horarios Semanales por Tienda' :
+                                    pagina === 'horarios-public' ? 'Horarios Semanales' : 'Dashboard';
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
@@ -671,6 +686,8 @@ function cambiarPagina(pagina) {
         renderizarAvancePDV();
     } else if (pagina === 'ranking') {
         renderizarRanking();
+    } else if (pagina === 'informe-promotor') {
+        renderizarInformePromotor();
     } else if (pagina === 'resumen-pdv') {
         renderizarResumenGeneralPDV();
     } else if (pagina === 'horarios') {
@@ -860,34 +877,38 @@ function cerrarModalCuotas() {
 }
 
 function guardarCuotas() {
-    const inputs = document.querySelectorAll('.cuotas-input');
-    const mes = parseInt(document.getElementById('cuotas-mes').value);
-    const anio = parseInt(document.getElementById('cuotas-anio').value);
-    const nuevasCuotas = [];
+    try {
+        const inputs = document.querySelectorAll('.cuotas-input');
+        const mes = parseInt(document.getElementById('cuotas-mes').value);
+        const anio = parseInt(document.getElementById('cuotas-anio').value);
+        const nuevasCuotas = [];
 
-    inputs.forEach(inp => {
-        const val = parseFloat(inp.value);
-        if (!isNaN(val) && val >= 0) {
-            nuevasCuotas.push({
-                punto_venta: inp.dataset.pdv,
-                producto: inp.dataset.prod,
-                cuota: val,
-                mes,
-                anio
-            });
+        inputs.forEach(inp => {
+            const val = parseFloat(inp.value);
+            if (!isNaN(val) && val >= 0) {
+                nuevasCuotas.push({
+                    punto_venta: inp.dataset.pdv,
+                    producto: inp.dataset.prod,
+                    cuota: val,
+                    mes,
+                    anio
+                });
+            }
+        });
+
+        if (nuevasCuotas.length === 0) {
+            mostrarNotificacion('No hay cuotas para guardar', 'error');
+            return;
         }
-    });
 
-    if (nuevasCuotas.length === 0) {
-        mostrarNotificacion('No hay cuotas para guardar', 'error');
-        return;
+        DataStore.actualizarCuotas(nuevasCuotas, mes, anio);
+        cerrarModalCuotas();
+        recargarDashboard();
+        mostrarNotificacion('✅ Información guardada correctamente.', 'success');
+    } catch (error) {
+        mostrarNotificacion('❌ Error al guardar información.\nDetalle: ' + error.message, 'error');
+        console.error('Error en guardarCuotas:', error);
     }
-
-    DataStore.actualizarCuotas(nuevasCuotas, mes, anio);
-    cerrarModalCuotas();
-    recargarDashboard();
-    const nombreMes = MESES.find(m => m.valor === mes)?.nombre || mes;
-    mostrarNotificacion(`Cuotas de ${nombreMes} ${anio} actualizadas (${nuevasCuotas.length} registros)`, 'success');
 }
 
 let ventasModificadas = false;
@@ -895,27 +916,13 @@ let ventasFullscreen = false;
 let modoVista = 'mes';
 let diaSeleccionado = new Date().getDate();
 
-function abrirModalVenta() {
-    const pdvSel = document.getElementById('modal-pdv');
-    pdvSel.innerHTML = DataStore.getPDVs().map(p => `<option value="${p}">${p}</option>`).join('');
-    document.getElementById('modal-venta').classList.add('open');
-    ventasModificadas = false;
-    document.getElementById('ventas-unsaved-bar').classList.remove('visible');
-    modoVista = 'mes';
-    diaSeleccionado = new Date().getDate();
-    const toggleMes = document.querySelector('[data-view="mes"]');
-    const toggleDia = document.querySelector('[data-view="dia"]');
-    if (toggleMes) toggleMes.classList.add('active');
-    if (toggleDia) toggleDia.classList.remove('active');
-    const diaSelect = document.getElementById('ventas-dia-select');
-    if (diaSelect) diaSelect.style.display = 'none';
-    document.getElementById('modal-venta').classList.remove('vista-dia');
-    cargarVentasCalendario();
-}
-
 function cerrarModalVenta() {
     document.getElementById('modal-venta').classList.remove('open');
     document.getElementById('modal-venta').classList.remove('ventas-fullscreen');
+    const sessionBar = document.getElementById('ventas-session-bar');
+    if (sessionBar) sessionBar.remove();
+    const pdvSel = document.getElementById('modal-pdv');
+    if (pdvSel) pdvSel.disabled = false;
     ventasFullscreen = false;
 }
 
@@ -954,57 +961,64 @@ function cargarVentasCalendario() {
     );
 
     tbody.innerHTML = '';
-    let totalDiasConDatos = 0;
+
+    const fragment = document.createDocumentFragment();
+
     for (let prod of productos) {
-        let tr = document.createElement('tr');
-        tr.innerHTML = `<td>${prod}</td>`;
+        const tr = document.createElement('tr');
+        const tdProducto = document.createElement('td');
+        tdProducto.textContent = prod;
+        tr.appendChild(tdProducto);
 
         let suma = 0;
-        const celdas = [];
+
         for (let d = 1; d <= diasMes; d++) {
             const venta = d <= diaActual ? ventas.find(v => v.producto === prod && v.dia === d) : null;
             const val = venta !== null && venta !== undefined ? venta.venta : '';
             suma += venta ? venta.venta : 0;
-            const cls = d <= diaActual ? '' : 'style="opacity:0.4;"';
-            const disabled = d > diaActual ? 'readonly' : '';
-            const valCls = val === '' || val === 0 ? 'calendario-input-zero' : 'calendario-input-filled';
-            celdas.push({ d, val, cls, disabled, valCls });
-        }
 
-        for (let c of celdas) {
-            let tooltip = '';
-            if (c.val !== '' && c.d > 1) {
-                const cAnterior = ventas.find(v => v.producto === prod && v.dia === c.d - 1);
+            const td = document.createElement('td');
+            td.setAttribute('data-dia', d);
+            if (d > diaActual) td.style.opacity = '0.4';
+
+            const input = document.createElement('input');
+            input.className = 'calendario-input' + (val === '' || val === 0 ? ' calendario-input-zero' : ' calendario-input-filled');
+            input.type = 'number';
+            input.min = '0';
+            input.step = 'any';
+            if (val !== '') input.value = val;
+            input.dataset.prod = prod;
+            input.dataset.dia = d;
+            if (d > diaActual) input.readOnly = true;
+
+            if (val !== '' && d > 1) {
+                const cAnterior = ventas.find(v => v.producto === prod && v.dia === d - 1);
                 if (cAnterior && cAnterior.venta > 0) {
-                    const variacion = ((c.val - cAnterior.venta) / cAnterior.venta * 100).toFixed(1);
-                    tooltip = ` title="Variaci\u00f3n: ${variacion > 0 ? '+' : ''}${variacion}% vs d\u00eda ${c.d - 1}"`;
+                    const variacion = ((val - cAnterior.venta) / cAnterior.venta * 100).toFixed(1);
+                    input.title = `Variaci\u00f3n: ${variacion > 0 ? '+' : ''}${variacion}% vs d\u00eda ${d - 1}`;
                 }
             }
-            tr.innerHTML += `<td data-dia="${c.d}" ${c.cls}><input class="calendario-input ${c.valCls}" type="number" min="0" step="1" value="${c.val}" data-prod="${prod}" data-dia="${c.d}"${tooltip} ${c.disabled}></td>`;
+
+            td.appendChild(input);
+            tr.appendChild(td);
         }
-        tr.innerHTML += `<td class="calendario-total"><span class="total-prod">${suma.toLocaleString('es-CL')}</span></td>`;
-        tbody.appendChild(tr);
+
+        const tdTotal = document.createElement('td');
+        tdTotal.className = 'calendario-total';
+        const spanTotal = document.createElement('span');
+        spanTotal.className = 'total-prod';
+        spanTotal.textContent = suma.toLocaleString('es-CL');
+        tdTotal.appendChild(spanTotal);
+        tr.appendChild(tdTotal);
+
+        fragment.appendChild(tr);
     }
+
+    tbody.appendChild(fragment);
 
     const totalRegistros = ventas.length;
     const maxRegistros = productos.length * diaActual;
     document.getElementById('ventas-progress-text').textContent = `${totalRegistros} / ${maxRegistros}`;
-
-    document.querySelectorAll('.calendario-input').forEach(inp => {
-        inp.addEventListener('input', function(e) {
-            ventasModificadas = true;
-            document.getElementById('ventas-unsaved-bar').classList.add('visible');
-            const val = parseFloat(this.value);
-            if (val > 0) {
-                this.classList.remove('calendario-input-zero');
-                this.classList.add('calendario-input-filled');
-            } else {
-                this.classList.remove('calendario-input-filled');
-                this.classList.add('calendario-input-zero');
-            }
-            actualizarTotalesCalendario();
-        });
-    });
 
     aplicarFiltroVistaVentas(diasMes);
 
@@ -1013,6 +1027,29 @@ function cargarVentasCalendario() {
 
     initCrosshairCalendario();
 }
+
+(function() {
+    document.addEventListener('input', function(e) {
+        const inp = e.target.closest('.calendario-input');
+        if (!inp) return;
+        if (!inp.closest('#modal-venta.open')) return;
+        if (inp.readOnly) return;
+
+        ventasModificadas = true;
+        const bar = document.getElementById('ventas-unsaved-bar');
+        if (bar) bar.classList.add('visible');
+
+        const val = parseFloat(inp.value);
+        if (val > 0) {
+            inp.classList.remove('calendario-input-zero');
+            inp.classList.add('calendario-input-filled');
+        } else {
+            inp.classList.remove('calendario-input-filled');
+            inp.classList.add('calendario-input-zero');
+        }
+        actualizarTotalesCalendario();
+    });
+})();
 
 function cambiarModoVista(modo) {
     modoVista = modo;
@@ -1116,26 +1153,39 @@ function actualizarTotalesCalendario() {
 
 function guardarVentasCalendario() {
     const btn = document.getElementById('btn-guardar-ventas');
+    if (!btn) return;
     btn.classList.add('loading');
 
-    setTimeout(() => {
+    try {
         const pdv = document.getElementById('modal-pdv').value;
         const mes = parseInt(document.getElementById('venta-mes').value);
         const anio = parseInt(document.getElementById('venta-anio').value);
         const inputs = document.querySelectorAll('.calendario-input');
         const datos = [];
 
+        const promoId = promotorSession ? promotorSession.id : null;
+        const promoNombre = promotorSession ? promotorSession.nombre : null;
+        const promoCorreo = promotorSession ? promotorSession.email : null;
+        const promoDni = promotorSession ? promotorSession.dni : null;
+
         inputs.forEach(inp => {
             const val = parseFloat(inp.value);
             if (!isNaN(val) && val >= 0) {
-                datos.push({
+                const base = {
                     pdv,
                     producto: inp.dataset.prod,
                     dia: parseInt(inp.dataset.dia),
                     monto: val,
                     mes,
                     anio
-                });
+                };
+                if (promoId) {
+                    base.promotor_id = promoId;
+                    base.promotor_nombre = promoNombre;
+                    base.promotor_correo = promoCorreo;
+                    base.promotor_dni = promoDni;
+                }
+                datos.push(base);
             }
         });
 
@@ -1145,8 +1195,7 @@ function guardarVentasCalendario() {
             return;
         }
 
-        const registrosEliminados = DataStore.actualizarVentasCalendario(pdv, datos);
-        guardarVentasFirebase(datos);
+        DataStore.actualizarVentasCalendario(pdv, datos);
 
         inputs.forEach(inp => {
             inp.classList.add('venta-guardada-anim');
@@ -1160,11 +1209,720 @@ function guardarVentasCalendario() {
         recargarDashboard();
 
         const msg = `Ventas guardadas para ${pdv} (${datos.length} registros)`;
-        mostrarNotificacion(registrosEliminados > 0 ? msg + `, ${registrosEliminados} eliminados` : msg, 'success');
-    }, 400);
+        mostrarNotificacion('✅ Información guardada correctamente.', 'success');
+    } catch (error) {
+        btn.classList.remove('loading');
+        mostrarNotificacion('❌ Error al guardar información.\nDetalle: ' + error.message, 'error');
+        console.error('Error en guardarVentasCalendario:', error);
+    }
+}
+
+/* ===== PROMOTOR AUTHENTICATION ===== */
+let promotorSession = null;
+
+function initPromotorSession() {
+    if (promotorSession) return;
+    const stored = localStorage.getItem('promotor_session') || sessionStorage.getItem('promotor_session');
+    if (stored) {
+        try {
+            const data = JSON.parse(stored);
+            if (data && data.email) {
+                promotorSession = data;
+            }
+        } catch (e) {
+            promotorSession = null;
+        }
+    }
+}
+
+function mostrarModalLogin() {
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('login-error').textContent = '';
+    document.getElementById('login-email-wrapper').classList.remove('shake');
+    document.getElementById('login-password-wrapper').classList.remove('shake');
+    document.getElementById('login-email-input').value = '';
+    document.getElementById('login-password-input').value = '';
+    document.getElementById('btn-confirmar-login').classList.remove('loading');
+    document.getElementById('modal-login').classList.add('open');
+    setTimeout(() => document.getElementById('login-email-input').focus(), 100);
+}
+
+function cerrarModalLogin() {
+    document.getElementById('modal-login').classList.remove('open');
+}
+
+function toggleLoginPasswordVisibility() {
+    const input = document.getElementById('login-password-input');
+    const btn = document.getElementById('login-password-toggle');
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    } else {
+        input.type = 'password';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    }
+}
+
+async function confirmarLogin() {
+    const email = document.getElementById('login-email-input').value.trim().toLowerCase();
+    const password = document.getElementById('login-password-input').value;
+    const btn = document.getElementById('btn-confirmar-login');
+    const errorEl = document.getElementById('login-error');
+
+    btn.classList.add('loading');
+
+    if (!email) {
+        btn.classList.remove('loading');
+        mostrarErrorLogin('Ingresa tu correo corporativo.');
+        document.getElementById('login-email-wrapper').classList.add('shake');
+        setTimeout(() => document.getElementById('login-email-wrapper').classList.remove('shake'), 600);
+        return;
+    }
+    if (!password) {
+        btn.classList.remove('loading');
+        mostrarErrorLogin('Ingresa tu contrase\u00f1a.');
+        document.getElementById('login-password-wrapper').classList.add('shake');
+        setTimeout(() => document.getElementById('login-password-wrapper').classList.remove('shake'), 600);
+        return;
+    }
+
+    const promotor = HorariosDataStore.promotores.find(p => p.email && p.email.toLowerCase() === email);
+
+    if (!promotor) {
+        btn.classList.remove('loading');
+        mostrarErrorLogin('El correo ingresado no se encuentra registrado.');
+        registrarAcceso(null, email, 'Usuario inexistente');
+        document.getElementById('login-email-wrapper').classList.add('shake');
+        setTimeout(() => document.getElementById('login-email-wrapper').classList.remove('shake'), 600);
+        return;
+    }
+
+    let passwordValida = false;
+    if (promotor.password_hash) {
+        const passwordHash = await hashPassword(password);
+        passwordValida = promotor.password_hash === passwordHash;
+    }
+    if (!passwordValida && promotor.password) {
+        passwordValida = password === promotor.password;
+    }
+
+    if (!passwordValida) {
+        btn.classList.remove('loading');
+        mostrarErrorLogin('Contrase\u00f1a incorrecta.');
+        registrarAcceso(promotor, email, 'Contrase\u00f1a incorrecta');
+        document.getElementById('login-password-wrapper').classList.add('shake');
+        setTimeout(() => document.getElementById('login-password-wrapper').classList.remove('shake'), 600);
+        return;
+    }
+
+    const estado = promotor.estado || 'Activo';
+    if (estado !== 'Activo') {
+        btn.classList.remove('loading');
+        mostrarErrorLogin('Su cuenta se encuentra temporalmente inhabilitada. Comun\u00edquese con su supervisor.');
+        registrarAcceso(promotor, email, 'Usuario bloqueado');
+        return;
+    }
+
+    if (!promotor.zona_principal_id) {
+        btn.classList.remove('loading');
+        mostrarErrorLogin('No tiene una tienda asignada. Comun\u00edquese con su supervisor.');
+        registrarAcceso(promotor, email, 'Sin tienda asignada');
+        return;
+    }
+
+    const remember = document.getElementById('login-remember-check').checked;
+    iniciarSesionPromotor(promotor, remember);
+    registrarAcceso(promotor, email, 'Acceso correcto');
+
+    btn.classList.remove('loading');
+    cerrarModalLogin();
+    abrirModalVentaConSesion();
+}
+
+function mostrarErrorLogin(mensaje) {
+    const errorEl = document.getElementById('login-error');
+    errorEl.style.display = 'flex';
+    errorEl.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> ' + mensaje;
+}
+
+function iniciarSesionPromotor(promotor, remember) {
+    promotorSession = {
+        id: promotor.id,
+        nombre: promotor.nombre,
+        dni: promotor.dni,
+        email: promotor.email,
+        zona_principal_id: promotor.zona_principal_id
+    };
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('promotor_session', JSON.stringify(promotorSession));
+}
+
+function cerrarSesionPromotor() {
+    promotorSession = null;
+    localStorage.removeItem('promotor_session');
+    sessionStorage.removeItem('promotor_session');
+    document.getElementById('modal-venta').classList.remove('open');
+    mostrarNotificacion('Sesi\u00f3n cerrada correctamente', 'success');
+}
+
+async function registrarAcceso(promotor, correo, resultado) {
+    try {
+        if (typeof db === 'undefined' || !db) return;
+        await db.collection('historial_accesos').add({
+            promotor_id: promotor ? promotor.id : null,
+            nombre: promotor ? promotor.nombre : null,
+            dni: promotor ? promotor.dni : null,
+            correo: correo,
+            fecha_hora: new Date().toISOString(),
+            ip: '',
+            resultado: resultado
+        });
+    } catch (e) {}
+}
+
+function abrirModalVenta() {
+    initPromotorSession();
+    if (!promotorSession) {
+        mostrarModalLogin();
+        return;
+    }
+    abrirModalVentaConSesion();
+}
+
+function abrirModalVentaConSesion() {
+    const zonaId = promotorSession.zona_principal_id;
+    const zona = HorariosDataStore.zonas.find(z => z.id === zonaId);
+
+    const pdvSel = document.getElementById('modal-pdv');
+
+    if (zona) {
+        pdvSel.innerHTML = '<option value="' + escHtml(zona.nombre) + '">' + escHtml(zona.nombre) + '</option>';
+        pdvSel.disabled = true;
+    } else {
+        pdvSel.innerHTML = '<option value="">Sin tienda asignada</option>';
+        pdvSel.disabled = true;
+    }
+
+    const sessionBar = document.getElementById('ventas-session-bar');
+    if (!sessionBar) {
+        const header = document.querySelector('.modal-ventas .modal-header');
+        if (header) {
+            const bar = document.createElement('div');
+            bar.id = 'ventas-session-bar';
+            bar.className = 'ventas-session-bar';
+            bar.innerHTML = '<div class="ventas-session-user"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Bienvenido, ' + escHtml(promotorSession.nombre) + '</div><button class="ventas-session-logout" onclick="cerrarSesionPromotor()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar Sesi\u00f3n</button></div>';
+            header.parentNode.insertBefore(bar, header.nextSibling);
+        }
+    }
+
+    document.getElementById('modal-venta').classList.add('open');
+    ventasModificadas = false;
+    document.getElementById('ventas-unsaved-bar').classList.remove('visible');
+    modoVista = 'mes';
+    diaSeleccionado = new Date().getDate();
+    const toggleMes = document.querySelector('[data-view="mes"]');
+    const toggleDia = document.querySelector('[data-view="dia"]');
+    if (toggleMes) toggleMes.classList.add('active');
+    if (toggleDia) toggleDia.classList.remove('active');
+    const diaSelect = document.getElementById('ventas-dia-select');
+    if (diaSelect) diaSelect.style.display = 'none';
+    document.getElementById('modal-venta').classList.remove('vista-dia');
+    cargarVentasCalendario();
+}
+
+/* ===== INFORME POR PROMOTOR ===== */
+function poblarFiltrosInformePromotor() {
+    const promotorSelect = document.getElementById('inf-promotor-select');
+    const tiendaSelect = document.getElementById('inf-promotor-tienda');
+    const productoSelect = document.getElementById('inf-promotor-producto');
+    if (!promotorSelect) return;
+
+    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+    const activos = promotores.filter(p => p.estado === 'Activo' && p.zona_principal_id);
+    promotorSelect.innerHTML = '<option value="">Seleccionar promotor...</option>' +
+        activos.map(p => '<option value="' + p.id + '">' + escHtml(p.nombre) + (p.dni ? ' · ' + escHtml(p.dni) : '') + '</option>').join('');
+
+    if (tiendaSelect) {
+        const pdvs = DataStore.getPDVs();
+        console.log('[AUDITORIA] poblarFiltrosInformePromotor tiendas:', pdvs.length, pdvs);
+        tiendaSelect.innerHTML = '<option value="">Todas las tiendas</option>' +
+            pdvs.map(p => '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>').join('');
+        console.log('[AUDITORIA] inf-promotor-tienda options después de poblar:', tiendaSelect.options.length);
+    }
+
+    if (productoSelect) {
+        const prods = DataStore.getProductos();
+        productoSelect.innerHTML = '<option value="">Todos los productos</option>' +
+            prods.map(p => '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>').join('');
+    }
+
+    const hoy = new Date();
+    const mes = hoy.getMonth() + 1;
+    const anio = hoy.getFullYear();
+    const primerDia = new Date(anio, mes - 1, 1);
+    const desde = document.getElementById('inf-promotor-fecha-desde');
+    const hasta = document.getElementById('inf-promotor-fecha-hasta');
+    if (desde) desde.value = primerDia.toISOString().split('T')[0];
+    if (hasta) hasta.value = hoy.toISOString().split('T')[0];
+}
+
+function renderizarInformePromotor() {
+    if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized) {
+        if (typeof initHorarios === 'function') {
+            initHorarios('supervisor');
+            HorariosDataStore.onUpdate = function () {
+                renderHorarios();
+                renderHorariosView();
+                renderizarHorariosPublic();
+            };
+        }
+    }
+    poblarFiltrosInformePromotor();
+    const content = document.getElementById('inf-promotor-content');
+    if (content) {
+        content.innerHTML = `
+            <div class="inf-promotor-empty">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <p>Selecciona un promotor y aplica los filtros para visualizar su informe.</p>
+            </div>
+        `;
+    }
+    const heroKpis = document.getElementById('inf-promotor-hero-kpis');
+    if (heroKpis) heroKpis.innerHTML = '';
+}
+
+/* ===== CHART REGISTRY for Informe Promotor ===== */
+let infPromChartInstances = {};
+
+function infPromDestroyChart(id) {
+    if (infPromChartInstances[id]) {
+        infPromChartInstances[id].destroy();
+        delete infPromChartInstances[id];
+    }
+}
+
+function aplicarFiltrosInformePromotor() {
+    let promotorId = document.getElementById('inf-promotor-select').value;
+
+    if (!promotorId && promotorSession && !estaSupervisorDesbloqueado()) {
+        promotorId = promotorSession.id;
+    }
+
+    if (!promotorId) {
+        mostrarNotificacion('Selecciona un promotor para generar el informe.', 'warning');
+        return;
+    }
+
+    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+    const promotor = promotores.find(p => p.id === promotorId);
+    if (!promotor) {
+        mostrarNotificacion('Promotor no encontrado.', 'error');
+        return;
+    }
+
+    const fechaDesde = document.getElementById('inf-promotor-fecha-desde').value;
+    const fechaHasta = document.getElementById('inf-promotor-fecha-hasta').value;
+    const tiendaFiltro = document.getElementById('inf-promotor-tienda').value;
+    const productFiltro = document.getElementById('inf-promotor-producto').value;
+
+    const ventas = DataStore.ventas || [];
+    let ventasFiltradas = ventas.filter(v => {
+        if (v.promotor_id && v.promotor_id !== promotorId) return false;
+        if (tiendaFiltro && v.punto_venta !== tiendaFiltro) return false;
+        if (productFiltro && v.producto !== productFiltro) return false;
+        return true;
+    });
+
+    if (fechaDesde) {
+        const fd = new Date(fechaDesde + 'T00:00:00');
+        ventasFiltradas = ventasFiltradas.filter(v => new Date(v.fecha) >= fd);
+    }
+    if (fechaHasta) {
+        const fh = new Date(fechaHasta + 'T23:59:59');
+        ventasFiltradas = ventasFiltradas.filter(v => new Date(v.fecha) <= fh);
+    }
+
+    renderEncabezadoPromotor(promotor, ventasFiltradas, fechaDesde, fechaHasta);
+    const kpis = calcularKPIsPromotor(promotor, ventasFiltradas, fechaDesde, fechaHasta);
+    renderHeroKPIsPromotor(kpis);
+    renderTablaProductosPromotor(promotor, ventasFiltradas, fechaDesde, fechaHasta, tiendaFiltro, productFiltro);
+}
+
+function renderEncabezadoPromotor(promotor, ventas, fechaDesde, fechaHasta) {
+    const zona = promotor.zona_principal_id ? (HorariosDataStore.zonas || []).find(z => z.id === promotor.zona_principal_id) : null;
+    const tiendaNombre = zona ? zona.nombre : 'Sin tienda asignada';
+    const totalRegistros = ventas.length;
+    const totalVenta = ventas.reduce((s, v) => s + (v.venta || 0), 0);
+    const fmt = n => 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+    const fd = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date();
+    const fh = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : new Date();
+    const op = { day: '2-digit', month: 'long', year: 'numeric' };
+    const desdeStr = fd.toLocaleDateString('es-PE', op);
+    const hastaStr = fh.toLocaleDateString('es-PE', op);
+
+    const heroKpis = document.getElementById('inf-promotor-hero-kpis');
+    if (heroKpis) {
+        heroKpis.innerHTML = `
+            <div class="inf-promotor-hero-kpi" style="min-width:120px;text-align:left;">
+                <div style="font-size:13px;font-weight:700;color:#ffffff;line-height:1.4;">${escHtml(promotor.nombre)}</div>
+                <div style="font-size:11px;color:#727272;margin-top:2px;">${escHtml(promotor.email || 'Sin correo')}</div>
+                <div style="font-size:11px;color:#1DB954;margin-top:1px;">${escHtml(tiendaNombre)}</div>
+            </div>
+            <div class="inf-promotor-hero-kpi" style="min-width:90px;">
+                <span class="inf-promotor-hero-kpi-value" style="color:#3B82F6;">${totalRegistros}</span>
+                <span class="inf-promotor-hero-kpi-label">Registros</span>
+            </div>
+            <div class="inf-promotor-hero-kpi" style="min-width:100px;">
+                <span class="inf-promotor-hero-kpi-value" style="color:#1DB954;">${fmt(totalVenta)}</span>
+                <span class="inf-promotor-hero-kpi-label">Venta Acumulada</span>
+            </div>
+            <div class="inf-promotor-hero-kpi" style="min-width:120px;">
+                <span class="inf-promotor-hero-kpi-value" style="color:#727272;font-size:13px;font-weight:600;">${desdeStr} — ${hastaStr}</span>
+                <span class="inf-promotor-hero-kpi-label">Periodo</span>
+            </div>
+        `;
+    }
+}
+
+function calcularKPIsPromotor(promotor, ventas, fechaDesde, fechaHasta) {
+    const totalVenta = ventas.reduce((s, v) => s + (v.venta || 0), 0);
+    const productosSet = new Set(ventas.map(v => v.producto));
+    const tiendasSet = new Set(ventas.map(v => v.punto_venta));
+    const totalRegistros = ventas.length;
+
+    const fechaInicio = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : null;
+    const mes = fechaInicio ? fechaInicio.getMonth() + 1 : new Date().getMonth() + 1;
+    const anio = fechaInicio ? fechaInicio.getFullYear() : new Date().getFullYear();
+
+    let cuotaTotal = 0;
+    const productos = DataStore.getProductos();
+    const cuotas = DataStore.cuotas || [];
+    const tienda = promotor.zona_principal_id ? (HorariosDataStore.zonas || []).find(z => z.id === promotor.zona_principal_id) : null;
+    const tiendaNombre = tienda ? tienda.nombre : null;
+
+    if (tiendaNombre) {
+        for (let prod of productos) {
+            const cuota = cuotas.find(c => c.punto_venta === tiendaNombre && c.producto === prod && c.mes === mes && c.anio === anio);
+            if (cuota) cuotaTotal += (cuota.cuota || 0);
+        }
+    }
+
+    const cumplimiento = cuotaTotal > 0 ? Math.min((totalVenta / cuotaTotal) * 100, 999) : 0;
+
+    const fechaFin = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : new Date();
+    const fechaIni = fechaInicio || new Date(fechaFin.getFullYear(), fechaFin.getMonth(), 1);
+    const diffDays = Math.max(1, Math.round((fechaFin - fechaIni) / (1000 * 60 * 60 * 24)) + 1);
+    const promedioDiario = diffDays > 0 ? totalVenta / diffDays : 0;
+    const ticketPromedio = totalRegistros > 0 ? totalVenta / totalRegistros : 0;
+
+    return { totalVenta, productosVendidos: productosSet.size, tiendasAtendidas: tiendasSet.size, cuotaTotal, cumplimiento, tiendaNombre, promedioDiario, ticketPromedio, totalRegistros, diffDays };
+}
+
+function renderHeroKPIsPromotor(kpis) {
+    const container = document.getElementById('inf-promotor-hero-kpis');
+    if (!container || container.querySelector('.inf-promotor-hero-kpi[style*="text-align:left"]')) return;
+
+    const fmt = n => 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const pct = n => Number(n).toFixed(1) + '%';
+
+    container.innerHTML = `
+        <div class="inf-promotor-hero-kpi" style="min-width:90px;">
+            <span class="inf-promotor-hero-kpi-value" style="color:#1DB954;">${fmt(kpis.totalVenta)}</span>
+            <span class="inf-promotor-hero-kpi-label">Venta Total</span>
+        </div>
+        <div class="inf-promotor-hero-kpi" style="min-width:90px;">
+            <span class="inf-promotor-hero-kpi-value" style="color:#3B82F6;">${kpis.productosVendidos}</span>
+            <span class="inf-promotor-hero-kpi-label">Productos</span>
+        </div>
+        <div class="inf-promotor-hero-kpi" style="min-width:90px;">
+            <span class="inf-promotor-hero-kpi-value" style="color:#A855F7;">${fmt(kpis.promedioDiario)}</span>
+            <span class="inf-promotor-hero-kpi-label">Prom. Diario</span>
+        </div>
+        <div class="inf-promotor-hero-kpi" style="min-width:100px;">
+            <span class="inf-promotor-hero-kpi-value" style="color:#F59E0B;">${fmt(kpis.ticketPromedio)}</span>
+            <span class="inf-promotor-hero-kpi-label">Ticket Prom.</span>
+        </div>
+        <div class="inf-promotor-hero-kpi" style="min-width:80px;">
+            <span class="inf-promotor-hero-kpi-value" style="color:${kpis.cumplimiento >= 100 ? '#1DB954' : kpis.cumplimiento >= 80 ? '#F59E0B' : '#EF4444'};">${pct(kpis.cumplimiento)}</span>
+            <span class="inf-promotor-hero-kpi-label">Cumplimiento</span>
+        </div>
+        <div class="inf-promotor-hero-kpi" style="min-width:80px;">
+            <span class="inf-promotor-hero-kpi-value" style="color:#727272;">${kpis.diffDays}d</span>
+            <span class="inf-promotor-hero-kpi-label">D&iacute;as</span>
+        </div>
+    `;
+}
+
+function renderTablaProductosPromotor(promotor, ventas, fechaDesde, fechaHasta, tiendaFiltro, productFiltro) {
+    const container = document.getElementById('inf-promotor-content');
+    if (!container) return;
+
+    const productos = DataStore.getProductos();
+    const cuotas = DataStore.cuotas || [];
+    const fechaInicio = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : null;
+    const mes = fechaInicio ? fechaInicio.getMonth() + 1 : new Date().getMonth() + 1;
+    const anio = fechaInicio ? fechaInicio.getFullYear() : new Date().getFullYear();
+    const tienda = promotor.zona_principal_id ? (HorariosDataStore.zonas || []).find(z => z.id === promotor.zona_principal_id) : null;
+    const tiendaNombre = tienda ? tienda.nombre : null;
+
+    const rows = productos.map(prod => {
+        if (productFiltro && prod !== productFiltro) return null;
+        const ventaProd = ventas.filter(v => v.producto === prod).reduce((s, v) => s + (v.venta || 0), 0);
+        const cuota = cuotas.find(c => c.punto_venta === tiendaNombre && c.producto === prod && c.mes === mes && c.anio === anio);
+        const cuo = cuota ? cuota.cuota : 0;
+        const cumpl = cuo > 0 ? (ventaProd / cuo) * 100 : 0;
+        const dif = ventaProd - cuo;
+        const estado = ventaProd === 0 ? 'riesgo' : cumpl >= 100 ? 'cumple' : cumpl >= 80 ? 'alerta' : 'riesgo';
+        return { producto: prod, venta: ventaProd, cuota: cuo, cumplimiento: cumpl, diferencia: dif, estado };
+    }).filter(Boolean);
+
+    rows.sort((a, b) => b.venta - a.venta);
+
+    const totalVenta = rows.reduce((s, r) => s + r.venta, 0);
+    const totalCuota = rows.reduce((s, r) => s + r.cuota, 0);
+    const dias = ventas.length > 0 ? new Set(ventas.map(v => v.fecha ? new Date(v.fecha).getDate() : null)).size : 0;
+
+    const prodVendidos = rows.filter(r => r.venta > 0).length;
+    const prodNoVendidos = rows.filter(r => r.venta === 0).length;
+
+    if (rows.length === 0) {
+        container.innerHTML = `
+            <div class="inf-promotor-empty">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <p>No se encontraron ventas para los filtros seleccionados.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const fmt = n => 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const pct = n => Number(n).toFixed(1) + '%';
+
+    const tableHtml = rows.map((r, i) => {
+        const barPct = r.cuota > 0 ? Math.min((r.venta / r.cuota) * 100, 100) : 0;
+        const estadoClass = r.estado;
+        const estadoLabel = r.estado === 'cumple' ? 'Cumple' : r.estado === 'alerta' ? 'Alerta' : 'Riesgo';
+        return `<tr class="inf-promotor-tr-${estadoClass}">
+            <td class="inf-promotor-td-prod">${escHtml(r.producto)}</td>
+            <td class="inf-promotor-td-amount" style="color:${r.venta > 0 ? '#ffffff' : '#EF4444'}">${r.venta > 0 ? fmt(r.venta) : '—'}</td>
+            <td class="inf-promotor-td-amount">${r.cuota > 0 ? fmt(r.cuota) : '<span style="color:#727272;">—</span>'}</td>
+            <td>
+                <div class="inf-promotor-bar-track">
+                    <div class="inf-promotor-bar-fill ${estadoClass}" style="width:${barPct}%"></div>
+                </div>
+                <span class="inf-promotor-bar-pct ${estadoClass}">${pct(r.cumplimiento)}</span>
+            </td>
+            <td class="inf-promotor-td-diff ${r.diferencia >= 0 ? 'diff-pos' : 'diff-neg'}">${r.diferencia >= 0 ? '+':''}${fmt(r.diferencia)}</td>
+            <td><span class="inf-promotor-badge ${estadoClass}">${estadoLabel}</span></td>
+        </tr>`;
+    }).join('');
+
+    const prodVendidosPct = productos.length > 0 ? (prodVendidos / productos.length * 100).toFixed(0) : 0;
+
+    // Chart data
+    const chartProdLabels = rows.filter(r => r.venta > 0).map(r => r.producto);
+    const chartProdValues = rows.filter(r => r.venta > 0).map(r => r.venta);
+
+    const fechaIni = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date();
+    const fechaFn = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : new Date();
+    const diffTime = Math.abs(fechaFn - fechaIni);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const trendMap = {};
+    for (let d = 1; d <= diffDays; d++) {
+        const date = new Date(fechaIni);
+        date.setDate(date.getDate() + d - 1);
+        const key = date.getDate() + '/' + (date.getMonth() + 1);
+        trendMap[key] = 0;
+    }
+    ventas.forEach(v => {
+        if (!v.fecha) return;
+        const f = new Date(v.fecha);
+        const key = f.getDate() + '/' + (f.getMonth() + 1);
+        if (trendMap[key] !== undefined) trendMap[key] += (v.venta || 0);
+    });
+    const trendLabels = Object.keys(trendMap);
+    const trendValues = Object.values(trendMap);
+
+    container.innerHTML = `
+        <div class="inf-promotor-summary-cards">
+            <div class="inf-promotor-summary-card">
+                <div class="inf-promotor-summary-card-icon green">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                    <div class="inf-promotor-summary-card-value">${fmt(totalVenta)}</div>
+                    <div class="inf-promotor-summary-card-label">Venta total del per&iacute;odo</div>
+                </div>
+            </div>
+            <div class="inf-promotor-summary-card">
+                <div class="inf-promotor-summary-card-icon blue">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </div>
+                <div>
+                    <div class="inf-promotor-summary-card-value">${prodVendidos} / ${productos.length}</div>
+                    <div class="inf-promotor-summary-card-label">Productos con venta (${prodVendidosPct}%)</div>
+                </div>
+            </div>
+            <div class="inf-promotor-summary-card">
+                <div class="inf-promotor-summary-card-icon ${prodNoVendidos > 0 ? 'red' : 'green'}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
+                <div>
+                    <div class="inf-promotor-summary-card-value" style="color:${prodNoVendidos > 0 ? '#EF4444' : '#1DB954'}">${prodNoVendidos}</div>
+                    <div class="inf-promotor-summary-card-label">Productos sin venta</div>
+                </div>
+            </div>
+            <div class="inf-promotor-summary-card">
+                <div class="inf-promotor-summary-card-icon purple">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div>
+                    <div class="inf-promotor-summary-card-value">${dias}</div>
+                    <div class="inf-promotor-summary-card-label">D&iacute;as con registro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="inf-promotor-charts-grid">
+            <div class="inf-promotor-chart-card">
+                <div class="inf-promotor-chart-header">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                    Participaci&oacute;n por Producto
+                </div>
+                <div class="inf-promotor-chart-body">
+                    <canvas id="infPromChartParticipation"></canvas>
+                </div>
+            </div>
+            <div class="inf-promotor-chart-card">
+                <div class="inf-promotor-chart-header">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Tendencia de Ventas
+                </div>
+                <div class="inf-promotor-chart-body">
+                    <canvas id="infPromChartTrend"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="inf-promotor-table-container" style="margin-top:20px;">
+            <table class="inf-promotor-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Venta</th>
+                        <th>Cuota</th>
+                        <th>Cumplimiento</th>
+                        <th>Diferencia</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>${tableHtml}</tbody>
+            </table>
+        </div>
+    `;
+
+    setTimeout(() => {
+        renderInfPromCharts(chartProdLabels, chartProdValues, trendLabels, trendValues);
+    }, 50);
+}
+
+function renderInfPromCharts(prodLabels, prodValues, trendLabels, trendValues) {
+    infPromDestroyChart('infPromChartParticipation');
+    infPromDestroyChart('infPromChartTrend');
+
+    const colors = ['#1DB954','#3B82F6','#A855F7','#F59E0B','#EF4444','#EC4899','#14B8A6','#8B5CF6','#F97316','#06B6D4'];
+
+    const canvasPart = document.getElementById('infPromChartParticipation');
+    if (canvasPart && prodLabels.length > 0) {
+        infPromChartInstances['infPromChartParticipation'] = new Chart(canvasPart, {
+            type: 'doughnut',
+            data: {
+                labels: prodLabels,
+                datasets: [{
+                    data: prodValues,
+                    backgroundColor: colors.slice(0, prodLabels.length),
+                    borderWidth: 2,
+                    borderColor: '#191414'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#b3b3b3', font: { size: 11 }, padding: 12, usePointStyle: true }
+                    }
+                }
+            }
+        });
+    }
+
+    const canvasTrend = document.getElementById('infPromChartTrend');
+    if (canvasTrend && trendLabels.length > 0) {
+        infPromChartInstances['infPromChartTrend'] = new Chart(canvasTrend, {
+            type: 'bar',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Venta del d\u00eda',
+                    data: trendValues,
+                    backgroundColor: trendValues.map(v => v > 0 ? 'rgba(29,185,84,0.7)' : 'rgba(239,68,68,0.4)'),
+                    borderColor: trendValues.map(v => v > 0 ? '#1DB954' : '#EF4444'),
+                    borderWidth: 1,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#727272', font: { size: 9 }, maxRotation: 45 },
+                        grid: { color: 'rgba(255,255,255,0.03)' }
+                    },
+                    y: {
+                        ticks: { color: '#727272', font: { size: 9 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function ocultarAvisoOficial() {
+    const aviso = document.getElementById('aviso-oficial');
+    if (aviso) aviso.classList.add('hidden');
+    sessionStorage.setItem('aviso_oficial_oculto', 'true');
+}
+
+function mostrarAvisoOficial() {
+    const oculto = sessionStorage.getItem('aviso_oficial_oculto') === 'true';
+    const aviso = document.getElementById('aviso-oficial');
+    if (!aviso) return;
+    if (oculto) {
+        aviso.classList.add('hidden');
+    } else {
+        aviso.classList.remove('hidden');
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    initPromotorSession();
+    mostrarAvisoOficial();
     document.querySelectorAll('.nav-item, .nav-sub-item').forEach(item => {
         if (!item.dataset.page) return;
         item.addEventListener('click', function (e) {

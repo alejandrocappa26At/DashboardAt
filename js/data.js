@@ -12,64 +12,16 @@ const MESES = [
 ];
 
 function generarMockData() {
-    const pdvs = [
-        'Red At La Joya', 'Red AT Cayma', 'Red AT Repsol Progreso',
-        'Red AT Atlas', 'Red AT Progreso', 'Red AT Bustamante y Rivero',
-        'Red AT Alto Selva Alegre', 'Red AT Dolores', 'Red AT Rivero', 'Red At Camaná'
-    ];
-    const cadenas = {
-        'Red At La Joya': 'Principal',
-        'Red AT Cayma': 'Principal',
-        'Red AT Repsol Progreso': 'Secundaria',
-        'Red AT Atlas': 'Secundaria',
-        'Red AT Progreso': 'Premium',
-        'Red AT Bustamante y Rivero': 'Express',
-        'Red AT Alto Selva Alegre': 'Premium',
-        'Red AT Dolores': 'Deportes',
-        'Red AT Rivero': 'Premium',
-        'Red At Camaná': 'Secundaria'
-    };
-
-    const ventas = [];
-    const hoy = new Date();
-    const diaActual = hoy.getDate() > DIAS_MES ? DIAS_MES : hoy.getDate();
-
-    for (let pdv of pdvs) {
-        for (let prod of PRODUCTOS) {
-            const baseVenta = Math.random() * 5000 + 500;
-            for (let d = 1; d <= DIAS_MES; d++) {
-                const factor = 1 + (Math.random() - 0.5) * 0.4;
-                const ventaDiaria = Math.round(baseVenta * factor * (1 + d / 100));
-                ventas.push({
-                    fecha: new Date(ANIO, MES - 1, d),
-                    dia: d,
-                    punto_venta: pdv,
-                    producto: prod,
-                    venta: ventaDiaria
-                });
-            }
-        }
-    }
-
-    const cuotas = [];
-    for (let pdv of pdvs) {
-        for (let prod of PRODUCTOS) {
-            const totalVentas = ventas
-                .filter(v => v.punto_venta === pdv && v.producto === prod)
-                .reduce((s, v) => s + v.venta, 0);
-            const cuota = Math.round(totalVentas * (0.85 + Math.random() * 0.3));
-            cuotas.push({ punto_venta: pdv, producto: prod, cuota, mes: MES, anio: ANIO });
-        }
-    }
-
-    const promotores = pdvs.map(pdv => ({
-        punto_venta: pdv,
-        cadena: cadenas[pdv],
-        num_promotores: Math.floor(Math.random() * 5) + 1
-    }));
-
-    return { ventas, cuotas, promotores, diaActual };
+    return { ventas: [], cuotas: [], promotores: [], diaActual: 1 };
 }
+
+const PDVS_FIJOS = [
+    'RED AT ALTO SELVA ALEGRE', 'RED AT ATLAS', 'RED AT BUSTAMANTE Y RIVERO',
+    'RED AT CAMANA', 'RED AT CAYMA', 'RED AT DOLORES',
+    'RED AT LA JOYA', 'RED AT PROGRESO', 'RED AT REPSOL PROGRESO',
+    'RED AT RIVERO'
+];
+console.log('[AUDITORIA] data.js v3 CARGADO, PDVS_FIJOS:', PDVS_FIJOS.length, PDVS_FIJOS);
 
 const DataStore = {
     ventas: [],
@@ -79,13 +31,167 @@ const DataStore = {
     initialized: false,
 
     init() {
-        const mock = generarMockData();
-        this.ventas = mock.ventas;
-        this.cuotas = mock.cuotas;
-        this.promotores = mock.promotores;
-        this.diaActual = mock.diaActual;
+        this.ventas = [];
+        this.cuotas = [];
+        this.promotores = PDVS_FIJOS.map(pdv => ({
+            punto_venta: pdv,
+            cadena: 'AREQUIPA SUR',
+            num_promotores: 1
+        }));
+        this.diaActual = 1;
         this.initialized = true;
+
         this._iniciarFirestore();
+    },
+
+    _iniciarFirestore() {
+        if (typeof db === 'undefined' || !db) return;
+
+        db.collection('dashboard').doc('datos').get().then(snap => {
+            if (snap.exists) {
+                const data = snap.data();
+                console.log('[AUDITORIA] Firestore .get() data.promotores:', data.promotores?.length || 0, 'items', data.promotores?.map(p => p.punto_venta));
+
+                if (data.ventas && data.ventas.length > 0) {
+                    this.ventas = data.ventas.map(v => ({
+                        ...v,
+                        fecha: new Date(v.fecha)
+                    }));
+                }
+                if (data.cuotas && data.cuotas.length > 0) {
+                    this.cuotas = data.cuotas.map(c => ({
+                        ...c,
+                        mes: c.mes || MES,
+                        anio: c.anio || ANIO
+                    }));
+                }
+                if (data.promotores && data.promotores.length > 0) {
+                    const pdvMap = new Map();
+                    for (const p of data.promotores) {
+                        if (p && p.punto_venta) pdvMap.set(p.punto_venta, p);
+                    }
+                    this.promotores = PDVS_FIJOS.map(pdv =>
+                        pdvMap.get(pdv) || { punto_venta: pdv, cadena: 'AREQUIPA SUR', num_promotores: 1 }
+                    );
+                } else {
+                    this.promotores = PDVS_FIJOS.map(pdv => ({
+                        punto_venta: pdv, cadena: 'AREQUIPA SUR', num_promotores: 1
+                    }));
+                }
+                if (data.diaActual) {
+                    const hoy = new Date();
+                    const mesHoy = hoy.getMonth() + 1;
+                    const anioHoy = hoy.getFullYear();
+                    this.diaActual = (mesHoy === MES && anioHoy === ANIO)
+                        ? Math.max(data.diaActual, Math.min(hoy.getDate(), DIAS_MES))
+                        : data.diaActual;
+                }
+
+                this._mergePDVsFijos();
+                this._guardarEnFirestore();
+
+                console.log('[AUDITORIA] .get() this.promotores FINAL antes de recargarDashboard:', this.promotores.length, 'items', this.promotores.map(p => p.punto_venta));
+
+            } else {
+                this._guardarEnFirestore();
+            }
+
+            if (typeof recargarDashboard === 'function') recargarDashboard();
+        }).catch(e => {
+            console.error('Error al cargar datos de Firestore:', e);
+            if (typeof recargarDashboard === 'function') recargarDashboard();
+        });
+
+        db.collection('dashboard').doc('datos')
+            .onSnapshot(snap => {
+                if (!snap.exists) return;
+                const data = snap.data();
+                console.log('[AUDITORIA] Firestore onSnapshot data.promotores:', data.promotores?.length || 0, 'items', data.promotores?.map(p => p.punto_venta));
+
+                if (data.ventas && data.ventas.length > 0) {
+                    this.ventas = data.ventas.map(v => ({
+                        ...v,
+                        fecha: new Date(v.fecha)
+                    }));
+                } else {
+                    this.ventas = [];
+                }
+                if (data.cuotas && data.cuotas.length > 0) {
+                    this.cuotas = data.cuotas.map(c => ({
+                        ...c,
+                        mes: c.mes || MES,
+                        anio: c.anio || ANIO
+                    }));
+                } else {
+                    this.cuotas = [];
+                }
+                if (data.promotores && data.promotores.length > 0) {
+                    const pdvMap = new Map();
+                    for (const p of data.promotores) {
+                        if (p && p.punto_venta) pdvMap.set(p.punto_venta, p);
+                    }
+                    this.promotores = PDVS_FIJOS.map(pdv =>
+                        pdvMap.get(pdv) || { punto_venta: pdv, cadena: 'AREQUIPA SUR', num_promotores: 1 }
+                    );
+                } else {
+                    this.promotores = PDVS_FIJOS.map(pdv => ({
+                        punto_venta: pdv, cadena: 'AREQUIPA SUR', num_promotores: 1
+                    }));
+                }
+                if (data.diaActual) {
+                    const hoy = new Date();
+                    const hoyDia = Math.min(hoy.getDate(), DIAS_MES);
+                    const hoyMes = hoy.getMonth() + 1;
+                    const hoyAnio = hoy.getFullYear();
+                    this.diaActual = (hoyMes === MES && hoyAnio === ANIO)
+                        ? Math.max(data.diaActual, hoyDia)
+                        : data.diaActual;
+                }
+
+                this._mergePDVsFijos();
+                console.log('[AUDITORIA] onSnapshot this.promotores FINAL:', this.promotores.length, 'items', this.promotores.map(p => p.punto_venta));
+
+                if (typeof recargarDashboard === 'function') recargarDashboard();
+            }, e => {
+                console.error('Error en snapshot de Firestore:', e);
+            });
+    },
+
+    _mergePDVsFijos() {
+        const existentes = new Set((this.promotores || []).map(p => p.punto_venta));
+        let modificado = false;
+        for (const pdv of PDVS_FIJOS) {
+            if (!existentes.has(pdv)) {
+                this.promotores.push({
+                    punto_venta: pdv,
+                    cadena: 'AREQUIPA SUR',
+                    num_promotores: 1
+                });
+                modificado = true;
+            }
+        }
+        if (modificado) {
+            this._guardarEnFirestore();
+        }
+    },
+
+    _guardarEnFirestore() {
+        if (typeof db === 'undefined' || !db) return;
+        try {
+            db.collection('dashboard').doc('datos').set({
+                ventas: this.ventas.map(v => ({
+                    ...v,
+                    fecha: v.fecha instanceof Date ? v.fecha.toISOString() : v.fecha
+                })),
+                cuotas: this.cuotas,
+                promotores: this.promotores,
+                diaActual: this.diaActual
+            }).catch(e => {
+                console.error('Error al guardar en Firestore:', e);
+            });
+        } catch (e) {
+            console.error('Error al guardar en Firestore:', e);
+        }
     },
 
     parseExcel(data) {
@@ -120,9 +226,20 @@ const DataStore = {
             const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
             this.promotores = json.map(row => ({
                 punto_venta: row['Punto de Venta'] || row.punto_venta,
-                cadena: row.Cadena || row.cadena || row.CADENA || '',
-                num_promotores: parseInt(row['N° Promotores'] || row.num_promotores || 0)
+                cadena: row.Cadena || row.cadena || row.CADENA || 'AREQUIPA SUR',
+                num_promotores: parseInt(row['N° Promotores'] || row.num_promotores || 1)
             }));
+        }
+
+        const existentes = new Set(this.promotores.map(p => p.punto_venta));
+        for (const pdv of PDVS_FIJOS) {
+            if (!existentes.has(pdv)) {
+                this.promotores.push({
+                    punto_venta: pdv,
+                    cadena: 'AREQUIPA SUR',
+                    num_promotores: 1
+                });
+            }
         }
 
         const hoy = new Date();
@@ -150,7 +267,9 @@ const DataStore = {
     },
 
     getPDVs() {
-        return [...new Set(this.ventas.map(v => v.punto_venta))].sort();
+        const result = [...PDVS_FIJOS];
+        console.log('[AUDITORIA] PDVs obtenidos desde configuración:', result.length, result);
+        return result;
     },
 
     getPDVObjects() {
@@ -432,14 +551,27 @@ const DataStore = {
             );
             if (existente) {
                 existente.venta = d.monto;
+                if (d.promotor_id) {
+                    existente.promotor_id = d.promotor_id;
+                    existente.promotor_nombre = d.promotor_nombre;
+                    existente.promotor_correo = d.promotor_correo;
+                    existente.promotor_dni = d.promotor_dni;
+                }
             } else {
-                this.ventas.push({
+                const ventaNueva = {
                     fecha: new Date(itemAnio, itemMes - 1, d.dia),
                     dia: d.dia,
                     punto_venta: d.pdv,
                     producto: d.producto,
                     venta: d.monto
-                });
+                };
+                if (d.promotor_id) {
+                    ventaNueva.promotor_id = d.promotor_id;
+                    ventaNueva.promotor_nombre = d.promotor_nombre;
+                    ventaNueva.promotor_correo = d.promotor_correo;
+                    ventaNueva.promotor_dni = d.promotor_dni;
+                }
+                this.ventas.push(ventaNueva);
             }
         }
         if (!this.promotores.find(p => p.punto_venta === pdv)) {
@@ -468,6 +600,14 @@ const DataStore = {
             if (snap.exists) {
                 const data = snap.data();
 
+                if (!data.ventas || data.ventas.length === 0) {
+                    this.ventas = [];
+                    this.cuotas = [];
+                    this.diaActual = 1;
+                    if (typeof recargarDashboard === 'function') recargarDashboard();
+                    return;
+                }
+
                 const hoy = new Date();
                 const diaHoy = Math.min(hoy.getDate(), DIAS_MES);
                 const mesHoy = hoy.getMonth() + 1;
@@ -487,9 +627,7 @@ const DataStore = {
                 this.promotores = data.promotores;
                 this.diaActual = (mesHoy === MES && anioHoy === ANIO) ? Math.max(data.diaActual, diaHoy) : data.diaActual;
 
-                if (typeof recargarDashboard === 'function') {
-                    recargarDashboard();
-                }
+                if (typeof recargarDashboard === 'function') recargarDashboard();
             } else {
                 this._guardarEnFirestore();
             }
@@ -498,8 +636,16 @@ const DataStore = {
         db.collection('dashboard').doc('datos')
             .onSnapshot(snap => {
                 if (!snap.exists) return;
-
                 const data = snap.data();
+
+                if (!data.ventas || data.ventas.length === 0) {
+                    this.ventas = [];
+                    this.cuotas = [];
+                    this.diaActual = 1;
+                    if (typeof recargarDashboard === 'function') recargarDashboard();
+                    return;
+                }
+
                 const hoy = new Date();
                 const hoyDia = Math.min(hoy.getDate(), DIAS_MES);
                 const hoyMes = hoy.getMonth() + 1;
@@ -519,9 +665,7 @@ const DataStore = {
                 this.promotores = data.promotores;
                 this.diaActual = (hoyMes === MES && hoyAnio === ANIO) ? Math.max(data.diaActual, hoyDia) : data.diaActual;
 
-                if (typeof recargarDashboard === 'function') {
-                    recargarDashboard();
-                }
+                if (typeof recargarDashboard === 'function') recargarDashboard();
             });
     },
 

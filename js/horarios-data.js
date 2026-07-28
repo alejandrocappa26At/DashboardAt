@@ -71,6 +71,7 @@ const HorariosDataStore = {
     currentUser: null,
     currentRole: 'supervisor',
     initialized: false,
+    _firestoreLoaded: false,
     onUpdate: null,
     realtimeUnsubscribe: null,
 
@@ -102,24 +103,6 @@ const HorariosDataStore = {
             }));
         } else {
             this.zonas = [];
-        }
-
-        if (this.promotores.length === 0 && this.zonas.length > 0) {
-            const nombresPromotores = [
-                'Carlos Mamani', 'Ana Condori', 'Luis Quispe', 'Maria Huanca',
-                'Jose Lopez', 'Rosa Nina', 'Pedro Torres', 'Sofia Rojas',
-                'Diego Puma', 'Lucia Vargas', 'Raul Choque'
-            ];
-            this.promotores = [];
-            for (let i = 0; i < Math.min(nombresPromotores.length, this.zonas.length * 2); i++) {
-                const zona = this.zonas[i % this.zonas.length];
-                this.promotores.push({
-                    id: `p${i + 1}`,
-                    nombre: nombresPromotores[i],
-                    zona_principal_id: zona.id,
-                    tipo: i % 4 === 2 ? 'flotante' : 'fijo'
-                });
-            }
         }
 
         this.semanas = {};
@@ -290,11 +273,18 @@ const HorariosDataStore = {
 
     agregarPromotor(nombre, tipo, zonaId) {
         const id = this._proximoIdPromotor();
+        const ahora = new Date().toISOString();
         const promotor = {
             id,
             nombre: nombre || 'Nuevo promotor',
             zona_principal_id: zonaId || null,
-            tipo: tipo || 'fijo'
+            tipo: tipo || 'fijo',
+            dni: '',
+            email: '',
+            password: '',
+            estado: 'Activo',
+            fecha_creacion: ahora,
+            fecha_actualizacion: ahora
         };
         this.promotores.push(promotor);
 
@@ -320,6 +310,11 @@ const HorariosDataStore = {
         if (cambios.nombre !== undefined) promotor.nombre = cambios.nombre;
         if (cambios.tipo !== undefined) promotor.tipo = cambios.tipo;
         if (cambios.zona_principal_id !== undefined) promotor.zona_principal_id = cambios.zona_principal_id;
+        if (cambios.dni !== undefined) promotor.dni = cambios.dni;
+        if (cambios.email !== undefined) promotor.email = cambios.email;
+        if (cambios.password !== undefined) promotor.password = cambios.password;
+        if (cambios.estado !== undefined) promotor.estado = cambios.estado;
+        promotor.fecha_actualizacion = new Date().toISOString();
         this._guardarEnFirestore();
         return promotor;
     },
@@ -572,10 +567,18 @@ const HorariosDataStore = {
             db.collection(HORARIOS_COLLECTION).doc('config').get().then(snap => {
                 if (snap.exists) {
                     const data = snap.data();
-                    if (data.promotores) this.promotores = data.promotores;
+                    if (data.promotores && data.promotores.length > 0) {
+                        this.promotores = data.promotores;
+                    }
+                    this._firestoreLoaded = true;
+                } else {
+                    this._firestoreLoaded = true;
+                    this._guardarEnFirestore();
                 }
+                this._limpiarPromotoresFicticios();
                 this._sincronizarZonasConDataStore();
             }).catch(() => {
+                this._firestoreLoaded = true;
                 this._sincronizarZonasConDataStore();
             });
 
@@ -590,13 +593,34 @@ const HorariosDataStore = {
                 }
                 if (typeof this.onUpdate === 'function') this.onUpdate();
             }).catch(() => {
-                this._guardarEnFirestore();
                 if (typeof this.onUpdate === 'function') this.onUpdate();
             });
         } else {
             setTimeout(() => {
                 if (typeof this.onUpdate === 'function') this.onUpdate();
             }, 100);
+        }
+    },
+
+    _limpiarPromotoresFicticios() {
+        if (!this.promotores || this.promotores.length === 0) return;
+        const nombresFicticios = [
+            'Carlos Mamani', 'Ana Condori', 'Luis Quispe', 'Maria Huanca',
+            'Jose Lopez', 'Rosa Nina', 'Pedro Torres', 'Sofia Rojas',
+            'Diego Puma', 'Lucia Vargas', 'Raul Choque',
+            'Nuevo promotor'
+        ];
+        const idsFicticios = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11'];
+        const antes = this.promotores.length;
+        this.promotores = this.promotores.filter(p => {
+            if (!p || !p.id) return false;
+            if (idsFicticios.includes(p.id) && nombresFicticios.includes(p.nombre) && !p.dni && !p.email) return false;
+            if (nombresFicticios.includes(p.nombre) && p.id && idsFicticios.includes(p.id) && (!p.dni || p.dni === '') && (!p.email || p.email === '')) return false;
+            return true;
+        });
+        const despues = this.promotores.length;
+        if (antes !== despues) {
+            this._guardarEnFirestore();
         }
     },
 
@@ -626,6 +650,7 @@ const HorariosDataStore = {
 
     _guardarEnFirestore() {
         if (typeof db === 'undefined' || !db) return;
+        if (this.promotores.length === 0 && this._firestoreLoaded) return;
 
         try {
             db.collection(HORARIOS_COLLECTION).doc('config').set({
