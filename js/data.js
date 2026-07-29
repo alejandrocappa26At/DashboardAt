@@ -526,12 +526,14 @@ const DataStore = {
     actualizarVentasCalendario(pdv, datos) {
         const mes = datos.length > 0 ? datos[0].mes : MES;
         const anio = datos.length > 0 ? datos[0].anio : ANIO;
+        const promotorId = datos.length > 0 ? datos[0].promotor_id : null;
         const key = d => `${d.producto}|${d.dia}|${d.mes || mes}|${d.anio || anio}`;
         const diasEnviados = new Set(datos.map(key));
         const aEliminar = this.ventas.filter(v =>
             v.punto_venta === pdv &&
             v.fecha.getMonth() + 1 === mes &&
             v.fecha.getFullYear() === anio &&
+            v.promotor_id === promotorId &&
             !diasEnviados.has(`${v.producto}|${v.dia}|${mes}|${anio}`)
         );
         for (let del of aEliminar) {
@@ -547,7 +549,8 @@ const DataStore = {
                 v.producto === d.producto &&
                 v.dia === d.dia &&
                 v.fecha.getMonth() + 1 === itemMes &&
-                v.fecha.getFullYear() === itemAnio
+                v.fecha.getFullYear() === itemAnio &&
+                v.promotor_id === d.promotor_id
             );
             if (existente) {
                 existente.venta = d.monto;

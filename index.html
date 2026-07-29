@@ -33,57 +33,43 @@
         </div>
 
         <nav class="sidebar-nav">
-            <div class="nav-item active" data-page="resumen">
-                <div class="nav-indicator"></div>
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
-                    </svg>
-                </span>
-                <span class="nav-label">Resumen Ejecutivo</span>
-                <div class="nav-equalizer" id="eq-resumen">
-                    <span></span><span></span><span></span>
-                </div>
-            </div>
-            <div class="nav-item" data-page="avance">
-                <div class="nav-indicator"></div>
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z" />
-                    </svg>
-                </span>
-                <span class="nav-label">Avance por PDV</span>
-                <div class="nav-equalizer" id="eq-avance">
-                    <span></span><span></span><span></span>
-                </div>
-            </div>
-            <div class="nav-item" data-page="ranking">
-                <div class="nav-indicator"></div>
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M7.5 21H2V9l6-2 4 3 4-3 6 2v12h-5.5c-.9 0-2.1-.4-2.5-1-.4.6-1.6 1-2.5 1s-2.1-.4-2.5-1c-.4.6-1.6 1-2.5 1z" />
-                    </svg>
-                </span>
-                <span class="nav-label">Ranking de Tiendas</span>
-                <div class="nav-equalizer" id="eq-ranking">
-                    <span></span><span></span><span></span>
-                </div>
-            </div>
-            <div class="nav-item" data-page="informe-promotor">
+
+            <!-- ─── PROMOTOR ─── -->
+            <div class="nav-section-divider"><span>PROMOTOR</span></div>
+
+            <div class="nav-item" onclick="abrirModalVenta()">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
                 </span>
-                <span class="nav-label">Informe por Promotor</span>
-                <div class="nav-equalizer" id="eq-informe-promotor">
-                    <span></span><span></span><span></span>
-                </div>
+                <span class="nav-label">Registrar Ventas</span>
+                <div class="nav-equalizer" id="eq-registrar-ventas"><span></span><span></span><span></span></div>
             </div>
+
+            <div class="nav-item" data-page="avance">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Avance por PDV</span>
+                <div class="nav-equalizer" id="eq-avance"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item" data-page="ranking">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.5 21H2V9l6-2 4 3 4-3 6 2v12h-5.5c-.9 0-2.1-.4-2.5-1-.4.6-1.6 1-2.5 1s-2.1-.4-2.5-1c-.4.6-1.6 1-2.5 1z"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Ranking de Tiendas</span>
+                <div class="nav-equalizer" id="eq-ranking"><span></span><span></span><span></span></div>
+            </div>
+
             <div class="nav-item" data-page="resumen-pdv">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
@@ -93,10 +79,9 @@
                     </svg>
                 </span>
                 <span class="nav-label">Resumen General PDV</span>
-                <div class="nav-equalizer" id="eq-resumen-pdv">
-                    <span></span><span></span><span></span>
-                </div>
+                <div class="nav-equalizer" id="eq-resumen-pdv"><span></span><span></span><span></span></div>
             </div>
+
             <div class="nav-item" data-page="horarios-public">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
@@ -108,70 +93,79 @@
                     </svg>
                 </span>
                 <span class="nav-label">Horarios</span>
-                <div class="nav-equalizer" id="eq-horarios-public">
-                    <span></span><span></span><span></span>
-                </div>
+                <div class="nav-equalizer" id="eq-horarios-public"><span></span><span></span><span></span></div>
             </div>
-            <!-- SUPERVISOR SECTION (password-protected accordion) -->
-            <div class="nav-section" id="nav-section-supervisor">
-                <div class="nav-section-header" onclick="toggleSupervisorSeccion()">
-                    <div class="nav-indicator" id="nav-indicator-supervisor"></div>
-                    <span class="nav-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                            <circle cx="12" cy="16" r="1"/>
-                        </svg>
-                    </span>
-                    <span class="nav-label">SUPERVISOR</span>
-                    <span class="nav-section-lock" id="nav-supervisor-lock">
-                        <svg class="lock-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                        <svg class="unlock-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
-                        </svg>
-                    </span>
-                    <span class="nav-section-arrow" id="nav-supervisor-arrow">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                    </span>
-                </div>
-                <div class="nav-sub-items" id="nav-sub-supervisor">
-                    <div class="nav-sub-item" data-page="horarios">
-                        <div class="nav-indicator"></div>
-                        <span class="nav-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                                <line x1="3" y1="10" x2="21" y2="10"/>
-                                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
-                            </svg>
-                        </span>
-                        <span class="nav-label">Planificador</span>
-                        <div class="nav-equalizer" id="eq-horarios">
-                            <span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="nav-sub-item" onclick="navegarACuotas()">
-                        <div class="nav-indicator"></div>
-                        <span class="nav-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                            </svg>
-                        </span>
-                        <span class="nav-label">Editar cuotas</span>
-                        <div class="nav-equalizer" id="eq-cuotas">
-                            <span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    </div>
-                </div>
+
+            <!-- Supervisor unlock toggle (siempre visible) -->
+            <div class="nav-item nav-supervisor-toggle" id="nav-supervisor-toggle" onclick="toggleSupervisorAcceso()">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon" id="supervisor-toggle-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </span>
+                <span class="nav-label" id="supervisor-toggle-label">Supervisor</span>
+                <span class="nav-supervisor-status" id="supervisor-status-dot"></span>
+                <div class="nav-equalizer" id="eq-supervisor-toggle"><span></span><span></span><span></span></div>
             </div>
+
+            <!-- ─── SUPERVISOR ─── (visible solo con supervisor desbloqueado) -->
+            <div class="nav-section-divider supervisor-divider"><span>SUPERVISOR</span></div>
+
+            <div class="nav-item supervisor-only" data-page="resumen">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Resumen Ejecutivo</span>
+                <div class="nav-equalizer" id="eq-super-resumen"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item supervisor-only" data-page="informe-promotor">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Informe por Promotor</span>
+                <div class="nav-equalizer" id="eq-super-inf-promotor"><span></span><span></span><span></span></div>
+            </div>
+
+            <!-- ─── GESTIÓN ─── (visible solo con supervisor desbloqueado) -->
+            <div class="nav-section-divider gestion-divider"><span>GESTI&Oacute;N</span></div>
+
+            <div class="nav-item gestion-only" onclick="navegarACuotas()">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Editar Cuotas</span>
+                <div class="nav-equalizer" id="eq-cuotas"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item gestion-only" data-page="horarios">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Planificador</span>
+                <div class="nav-equalizer" id="eq-planificador"><span></span><span></span><span></span></div>
+            </div>
+
         </nav>
 
         <div class="sidebar-footer">
@@ -182,13 +176,6 @@
                     <line x1="1" y1="1" x2="23" y2="23"/>
                 </svg>
                 Bloquear supervisor
-            </button>
-            <button class="btn-sidebar btn-sidebar-primary" onclick="abrirModalVenta()">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                <span>Registrar ventas</span>
             </button>
         </div>
     </aside>
@@ -225,28 +212,6 @@
 
         <!-- ===== PAGINA 1: RESUMEN ZONA ===== -->
         <section class="page active" id="page-resumen">
-
-            <div class="aviso-oficial" id="aviso-oficial">
-                <div class="aviso-oficial-badge">📌 Aviso Oficial</div>
-                <button class="aviso-oficial-close" id="aviso-oficial-close" onclick="ocultarAvisoOficial()" aria-label="Ocultar aviso" title="Ocultar aviso">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-                <div class="aviso-oficial-icon">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="1.8" fill="rgba(245,158,11,0.1)"/>
-                        <line x1="12" y1="9" x2="12" y2="13" stroke-width="2.5"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2.5"/>
-                    </svg>
-                </div>
-                <div class="aviso-oficial-content">
-                    <p><strong>IMPORTANTE:</strong></p>
-                    <p>La informaci&oacute;n mostrada se actualiza manualmente con los registros ingresados por cada promotor, por lo que los resultados son referenciales y podr&iacute;an presentar variaciones respecto a los resultados oficiales.</p>
-                    <p>Para cualquier validaci&oacute;n, se deber&aacute; considerar la informaci&oacute;n oficial compartida por el <strong>&aacute;rea de Retail</strong>, a trav&eacute;s de los <strong>supervisores</strong>.</p>
-                </div>
-            </div>
 
             <div class="resumen-header">
                 <div class="resumen-header-left">

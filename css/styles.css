@@ -307,6 +307,77 @@ body {
     75% { transform: scaleY(0.7); }
 }
 
+/* ─── Section dividers ─── */
+.nav-section-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 14px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #555;
+    user-select: none;
+}
+.nav-section-divider::before,
+.nav-section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+}
+.nav-section-divider span {
+    white-space: nowrap;
+}
+
+/* ─── Supervisor / Gestión visibility (hidden by default) ─── */
+.supervisor-only,
+.gestion-only,
+.supervisor-divider,
+.gestion-divider {
+    display: none !important;
+}
+.sidebar.supervisor-unlocked .supervisor-only,
+.sidebar.supervisor-unlocked .supervisor-divider,
+.sidebar.supervisor-unlocked .gestion-only,
+.sidebar.supervisor-unlocked .gestion-divider {
+    display: flex !important;
+}
+
+/* Supervisor toggle item (always visible in PROMOTOR section) */
+.nav-supervisor-toggle {
+    margin-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 14px !important;
+}
+.nav-supervisor-toggle .nav-label {
+    color: #727272;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.nav-supervisor-toggle:hover .nav-label {
+    color: #b3b3b3;
+}
+.nav-supervisor-status {
+    display: flex;
+    align-items: center;
+}
+#supervisor-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #555;
+    transition: background 0.3s;
+    display: inline-block;
+}
+.sidebar.supervisor-unlocked #supervisor-status-dot {
+    background: #1DB954;
+    box-shadow: 0 0 6px rgba(29,185,84,0.5);
+}
+
 /* Section container for sub-items (SUPERVISOR accordion) */
 .nav-section {
     margin-top: 4px;
@@ -4615,6 +4686,212 @@ select option {
 .inf-promotor-tr-alerta:hover { background: rgba(245,158,11,0.04) !important; }
 .inf-promotor-tr-riesgo:hover { background: rgba(239,68,68,0.04) !important; }
 
+/* Charts grid (ranking + trend) */
+.inf-promotor-charts-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.inf-promotor-chart-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.inf-promotor-chart-header {
+    padding: 14px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #b3b3b3;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.inf-promotor-chart-body {
+    padding: 16px;
+}
+
+/* Ranking horizontal list */
+.inf-promotor-ranking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.inf-promotor-ranking-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 120px 85px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.02);
+    transition: background 0.2s;
+}
+
+.inf-promotor-ranking-row:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.inf-promotor-ranking-pos {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #727272;
+}
+
+.inf-promotor-ranking-info {
+    min-width: 0;
+}
+
+.inf-promotor-ranking-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.inf-promotor-ranking-bar-track {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.inf-promotor-ranking-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+}
+
+.inf-promotor-ranking-data {
+    text-align: right;
+}
+
+.inf-promotor-ranking-amount {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'Inter', 'Segoe UI', monospace;
+    white-space: nowrap;
+}
+
+.inf-promotor-ranking-pct {
+    font-size: 11px;
+    color: #727272;
+    margin-top: 1px;
+}
+
+.inf-promotor-ranking-badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Top / Bottom product cards */
+.inf-promotor-topbottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.inf-promotor-topbottom-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+}
+
+.inf-promotor-topbottom-icon {
+    margin-bottom: 8px;
+}
+
+.inf-promotor-topbottom-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #727272;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.inf-promotor-topbottom-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+.inf-promotor-topbottom-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: 'Inter', 'Segoe UI', monospace;
+}
+
+.inf-promotor-topbottom-pct {
+    font-size: 12px;
+    color: #727272;
+    margin-top: 2px;
+}
+
+/* Executive insight */
+.inf-promotor-insight {
+    margin-top: 20px;
+    padding: 14px 18px;
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.15);
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #d4d4d4;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.inf-promotor-insight svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Table badges for new estado labels */
+.inf-promotor-badge-excelente,
+.inf-promotor-badge-normal,
+.inf-promotor-badge-bajo,
+.inf-promotor-badge-oportunidad {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.inf-promotor-badge-excelente { background: rgba(29,185,84,0.12); color: #1DB954; }
+.inf-promotor-badge-normal    { background: rgba(245,158,11,0.12); color: #F59E0B; }
+.inf-promotor-badge-bajo      { background: rgba(239,68,68,0.12); color: #EF4444; }
+.inf-promotor-badge-oportunidad { background: rgba(239,68,68,0.12); color: #EF4444; }
+
 @media (max-width: 768px) {
     .inf-promotor-hero {
         flex-direction: column;
@@ -4655,6 +4932,17 @@ select option {
     .inf-promotor-table th,
     .inf-promotor-table td {
         padding: 8px 10px;
+    }
+    .inf-promotor-charts-grid {
+        grid-template-columns: 1fr;
+    }
+    .inf-promotor-ranking-row {
+        grid-template-columns: 24px 1fr 90px 70px;
+        gap: 8px;
+        padding: 6px 8px;
+    }
+    .inf-promotor-topbottom-grid {
+        grid-template-columns: 1fr;
     }
 }
 

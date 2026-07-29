@@ -1,4 +1,5 @@
 ﻿function renderizarResumenEjecutivo() {
+    renderAvisoOficial();
     const ventaTotal = DataStore.getVentaTotal();
     const cuotaTotal = DataStore.getCuotaTotal();
     const avance = DataStore.getAvanceGeneral();
@@ -37,6 +38,7 @@
 }
 
 function renderizarAvancePDV(pdvSeleccionado) {
+    renderAvisoOficial();
     const pdvs = DataStore.getPDVs();
     const select = document.getElementById('pdv-select');
     if (!select) return;
@@ -204,6 +206,7 @@ function renderizarAvancePDV(pdvSeleccionado) {
 }
 
 function renderizarRanking() {
+    renderAvisoOficial();
     const ranking = DataStore.getRanking();
     if (!document.getElementById('page-ranking')) return;
 
@@ -287,6 +290,7 @@ function renderizarRanking() {
 }
 
 function renderizarResumenGeneralPDV() {
+    renderAvisoOficial();
     try {
         const container = document.getElementById('rpdv-hero-kpis');
         if (!container) return;
@@ -542,10 +546,6 @@ function estaSupervisorDesbloqueado() {
 function desbloquearSupervisor() {
     sessionStorage.setItem('supervisor_unlocked', 'true');
     actualizarSidebarSupervisor();
-    const sectionEl = document.getElementById('nav-section-supervisor');
-    const subEl = document.getElementById('nav-sub-supervisor');
-    if (sectionEl) sectionEl.classList.add('open');
-    if (subEl) subEl.classList.add('open');
     cerrarModalPassword();
     mostrarNotificacion('Modo supervisor activado', 'success');
 }
@@ -556,8 +556,8 @@ function bloquearSupervisor() {
     const activePage = document.querySelector('.page.active');
     if (activePage) {
         const id = activePage.id.replace('page-', '');
-        if (id === 'horarios' || id === 'horarios-view') {
-            cambiarPagina('resumen');
+        if (id === 'resumen' || id === 'horarios' || id === 'horarios-view') {
+            cambiarPagina('avance');
         }
     }
     mostrarNotificacion('Modo supervisor bloqueado', 'success');
@@ -565,36 +565,37 @@ function bloquearSupervisor() {
 
 function actualizarSidebarSupervisor() {
     const unlocked = estaSupervisorDesbloqueado();
-    const sectionEl = document.getElementById('nav-section-supervisor');
-    const subEl = document.getElementById('nav-sub-supervisor');
+    document.getElementById('sidebar').classList.toggle('supervisor-unlocked', unlocked);
     const lockBtn = document.getElementById('supervisor-lock-btn');
+    if (lockBtn) lockBtn.style.display = unlocked ? 'flex' : 'none';
 
-    if (sectionEl) {
-        sectionEl.classList.toggle('unlocked', unlocked);
-        if (unlocked) {
-            sectionEl.classList.add('open');
-        } else {
-            sectionEl.classList.remove('open');
+    const toggleIcon = document.getElementById('supervisor-toggle-icon');
+    const toggleLabel = document.getElementById('supervisor-toggle-label');
+    if (toggleIcon) {
+        toggleIcon.innerHTML = unlocked
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><circle cx="12" cy="16" r="1" fill="#1DB954"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>';
+    }
+    if (toggleLabel) {
+        toggleLabel.textContent = unlocked ? 'Supervisor activo' : 'Supervisor';
+    }
+
+    if (!unlocked) {
+        const activePage = document.querySelector('.page.active');
+        if (activePage) {
+            const id = activePage.id.replace('page-', '');
+            if (id === 'resumen' || id === 'horarios' || id === 'horarios-view') {
+                cambiarPagina('avance');
+            }
         }
     }
-    if (subEl) {
-        subEl.classList.toggle('open', unlocked);
-    }
-    if (lockBtn) lockBtn.style.display = unlocked ? 'flex' : 'none';
 }
 
-function toggleSupervisorSeccion() {
-    if (!estaSupervisorDesbloqueado()) {
+function toggleSupervisorAcceso() {
+    if (estaSupervisorDesbloqueado()) {
+        bloquearSupervisor();
+    } else {
         abrirModalPassword();
-        return;
-    }
-    const sectionEl = document.getElementById('nav-section-supervisor');
-    const subEl = document.getElementById('nav-sub-supervisor');
-    if (sectionEl) {
-        sectionEl.classList.toggle('open');
-    }
-    if (subEl) {
-        subEl.classList.toggle('open');
     }
 }
 
@@ -644,31 +645,18 @@ function recargarDashboard() {
 }
 
 function cambiarPagina(pagina) {
-    if ((pagina === 'horarios' || pagina === 'horarios-view') && !estaSupervisorDesbloqueado()) {
+    if ((pagina === 'resumen' || pagina === 'horarios' || pagina === 'horarios-view') && !estaSupervisorDesbloqueado()) {
         abrirModalPassword();
         return;
     }
 
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.nav-sub-item').forEach(n => n.classList.remove('active'));
 
     const pageEl = document.getElementById('page-' + pagina);
     if (pageEl) pageEl.classList.add('active');
 
-    const navItem = document.querySelector(`.nav-item[data-page="${pagina}"]`);
-    if (navItem) navItem.classList.add('active');
-
-    const subItem = document.querySelector(`.nav-sub-item[data-page="${pagina}"]`);
-    if (subItem) {
-        subItem.classList.add('active');
-        const section = subItem.closest('.nav-section');
-        if (section) {
-            section.classList.add('open');
-            const indicator = section.querySelector('.nav-section-header .nav-indicator');
-            if (indicator) indicator.style.background = 'var(--accent)';
-        }
-    }
+    document.querySelectorAll(`.nav-item[data-page="${pagina}"]`).forEach(n => n.classList.add('active'));
 
     document.getElementById('page-title').textContent =
         pagina === 'resumen' ? 'Resumen Zona' :
@@ -956,9 +944,11 @@ function cargarVentasCalendario() {
     }
     thead.innerHTML += '<th class="calendario-th-dia">Total</th>';
 
-    const ventas = DataStore.getVentasDelMes(mes, anio).filter(v =>
-        v.punto_venta === pdv && v.dia <= diaActual
-    );
+    const ventas = DataStore.getVentasDelMes(mes, anio).filter(v => {
+        if (v.punto_venta !== pdv || v.dia > diaActual) return false;
+        if (promotorSession && v.promotor_id && v.promotor_id !== promotorSession.id) return false;
+        return true;
+    });
 
     tbody.innerHTML = '';
 
@@ -1362,6 +1352,9 @@ function cerrarSesionPromotor() {
     localStorage.removeItem('promotor_session');
     sessionStorage.removeItem('promotor_session');
     document.getElementById('modal-venta').classList.remove('open');
+    const sessionBar = document.getElementById('ventas-session-bar');
+    if (sessionBar) sessionBar.remove();
+    mostrarModalLogin();
     mostrarNotificacion('Sesi\u00f3n cerrada correctamente', 'success');
 }
 
@@ -1404,7 +1397,10 @@ function abrirModalVentaConSesion() {
     }
 
     const sessionBar = document.getElementById('ventas-session-bar');
-    if (!sessionBar) {
+    if (sessionBar) {
+        const userDiv = sessionBar.querySelector('.ventas-session-user');
+        if (userDiv) userDiv.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Bienvenido, ' + escHtml(promotorSession.nombre);
+    } else {
         const header = document.querySelector('.modal-ventas .modal-header');
         if (header) {
             const bar = document.createElement('div');
@@ -1703,33 +1699,35 @@ function renderTablaProductosPromotor(promotor, ventas, fechaDesde, fechaHasta, 
         return;
     }
 
-    const fmt = n => 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    const pct = n => Number(n).toFixed(1) + '%';
+    const top = rows[0];
+    const bottom = rows[rows.length - 1];
+    const topPct = totalVenta > 0 ? ((top.venta / totalVenta) * 100).toFixed(1) : 0;
+    const bottomPct = totalVenta > 0 ? ((bottom.venta / totalVenta) * 100).toFixed(1) : 0;
 
-    const tableHtml = rows.map((r, i) => {
-        const barPct = r.cuota > 0 ? Math.min((r.venta / r.cuota) * 100, 100) : 0;
-        const estadoClass = r.estado;
-        const estadoLabel = r.estado === 'cumple' ? 'Cumple' : r.estado === 'alerta' ? 'Alerta' : 'Riesgo';
-        return `<tr class="inf-promotor-tr-${estadoClass}">
-            <td class="inf-promotor-td-prod">${escHtml(r.producto)}</td>
-            <td class="inf-promotor-td-amount" style="color:${r.venta > 0 ? '#ffffff' : '#EF4444'}">${r.venta > 0 ? fmt(r.venta) : '—'}</td>
-            <td class="inf-promotor-td-amount">${r.cuota > 0 ? fmt(r.cuota) : '<span style="color:#727272;">—</span>'}</td>
-            <td>
-                <div class="inf-promotor-bar-track">
-                    <div class="inf-promotor-bar-fill ${estadoClass}" style="width:${barPct}%"></div>
-                </div>
-                <span class="inf-promotor-bar-pct ${estadoClass}">${pct(r.cumplimiento)}</span>
-            </td>
-            <td class="inf-promotor-td-diff ${r.diferencia >= 0 ? 'diff-pos' : 'diff-neg'}">${r.diferencia >= 0 ? '+':''}${fmt(r.diferencia)}</td>
-            <td><span class="inf-promotor-badge ${estadoClass}">${estadoLabel}</span></td>
-        </tr>`;
-    }).join('');
+    const concentrados = [];
+    let acum = 0;
+    for (const r of rows) {
+        const pct = totalVenta > 0 ? (r.venta / totalVenta) * 100 : 0;
+        r.participacion = pct;
+        acum += pct;
+        if (acum <= 80 || concentrados.length < 2) concentrados.push(r.producto);
+    }
+    const concentradosStr = concentrados.slice(0, 3).join(', ');
+    const ultimos = rows.filter(r => r.participacion < 5).map(r => r.producto);
+    const resumenParts = [];
+    if (concentrados.length >= 2) {
+        resumenParts.push('El ' + acum.toFixed(0) + '% de las ventas se concentra en ' + concentradosStr + '.');
+    }
+    if (ultimos.length > 0) {
+        const ultimosStr = ultimos.join(', ');
+        resumenParts.push(ultimosStr + ' representan menos del 5% de participaci\u00f3n y requieren refuerzo comercial.');
+    }
+    if (totalVenta === 0) {
+        resumenParts.push('No se registraron ventas en el per\u00edodo seleccionado.');
+    }
+    const resumenEjecutivo = resumenParts.join(' ');
 
     const prodVendidosPct = productos.length > 0 ? (prodVendidos / productos.length * 100).toFixed(0) : 0;
-
-    // Chart data
-    const chartProdLabels = rows.filter(r => r.venta > 0).map(r => r.producto);
-    const chartProdValues = rows.filter(r => r.venta > 0).map(r => r.venta);
 
     const fechaIni = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date();
     const fechaFn = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : new Date();
@@ -1752,120 +1750,110 @@ function renderTablaProductosPromotor(promotor, ventas, fechaDesde, fechaHasta, 
     const trendLabels = Object.keys(trendMap);
     const trendValues = Object.values(trendMap);
 
-    container.innerHTML = `
-        <div class="inf-promotor-summary-cards">
-            <div class="inf-promotor-summary-card">
-                <div class="inf-promotor-summary-card-icon green">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div>
-                    <div class="inf-promotor-summary-card-value">${fmt(totalVenta)}</div>
-                    <div class="inf-promotor-summary-card-label">Venta total del per&iacute;odo</div>
-                </div>
-            </div>
-            <div class="inf-promotor-summary-card">
-                <div class="inf-promotor-summary-card-icon blue">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                </div>
-                <div>
-                    <div class="inf-promotor-summary-card-value">${prodVendidos} / ${productos.length}</div>
-                    <div class="inf-promotor-summary-card-label">Productos con venta (${prodVendidosPct}%)</div>
-                </div>
-            </div>
-            <div class="inf-promotor-summary-card">
-                <div class="inf-promotor-summary-card-icon ${prodNoVendidos > 0 ? 'red' : 'green'}">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                </div>
-                <div>
-                    <div class="inf-promotor-summary-card-value" style="color:${prodNoVendidos > 0 ? '#EF4444' : '#1DB954'}">${prodNoVendidos}</div>
-                    <div class="inf-promotor-summary-card-label">Productos sin venta</div>
-                </div>
-            </div>
-            <div class="inf-promotor-summary-card">
-                <div class="inf-promotor-summary-card-icon purple">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                </div>
-                <div>
-                    <div class="inf-promotor-summary-card-value">${dias}</div>
-                    <div class="inf-promotor-summary-card-label">D&iacute;as con registro</div>
-                </div>
-            </div>
-        </div>
+    const fmt = n => 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const pct = n => Number(n).toFixed(1) + '%';
+    const escHtml = str => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-        <div class="inf-promotor-charts-grid">
-            <div class="inf-promotor-chart-card">
-                <div class="inf-promotor-chart-header">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-                    Participaci&oacute;n por Producto
-                </div>
-                <div class="inf-promotor-chart-body">
-                    <canvas id="infPromChartParticipation"></canvas>
-                </div>
-            </div>
-            <div class="inf-promotor-chart-card">
-                <div class="inf-promotor-chart-header">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    Tendencia de Ventas
-                </div>
-                <div class="inf-promotor-chart-body">
-                    <canvas id="infPromChartTrend"></canvas>
-                </div>
-            </div>
-        </div>
+    const barColors = ['#1DB954','#3B82F6','#A855F7','#F59E0B','#EC4899','#14B8A6','#8B5CF6','#F97316'];
 
-        <div class="inf-promotor-table-container" style="margin-top:20px;">
-            <table class="inf-promotor-table">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Venta</th>
-                        <th>Cuota</th>
-                        <th>Cumplimiento</th>
-                        <th>Diferencia</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>${tableHtml}</tbody>
-            </table>
-        </div>
-    `;
+    const rankingBars = rows.map((r, i) => {
+        const pctWidth = totalVenta > 0 ? (r.venta / totalVenta) * 100 : 0;
+        const color = barColors[i % barColors.length];
+        const estadoBadge = r.venta === 0 ? 'oportunidad' : r.cumplimiento >= 100 ? 'excelente' : r.cumplimiento >= 80 ? 'normal' : 'bajo';
+        const badgeLabel = r.venta === 0 ? 'Oportunidad' : r.cumplimiento >= 100 ? 'Excelente' : r.cumplimiento >= 80 ? 'Normal' : 'Bajo';
+        const badgeColor = estadoBadge === 'excelente' ? '#1DB954' : estadoBadge === 'normal' ? '#F59E0B' : '#EF4444';
+        return '<div class="inf-promotor-ranking-row">' +
+            '<div class="inf-promotor-ranking-pos">' + (i + 1) + '</div>' +
+            '<div class="inf-promotor-ranking-info">' +
+                '<div class="inf-promotor-ranking-name">' + escHtml(r.producto) + '</div>' +
+                '<div class="inf-promotor-ranking-bar-track">' +
+                    '<div class="inf-promotor-ranking-bar-fill" style="width:' + pctWidth + '%;background:' + color + ';"></div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="inf-promotor-ranking-data">' +
+                '<div class="inf-promotor-ranking-amount">' + (r.venta > 0 ? fmt(r.venta) : '<span style="color:#727272;">\u2014</span>') + '</div>' +
+                '<div class="inf-promotor-ranking-pct">' + pct(r.participacion) + '</div>' +
+            '</div>' +
+            '<div class="inf-promotor-ranking-badge" style="color:' + badgeColor + ';">' + badgeLabel + '</div>' +
+        '</div>';
+    }).join('');
 
-    setTimeout(() => {
-        renderInfPromCharts(chartProdLabels, chartProdValues, trendLabels, trendValues);
-    }, 50);
+    const tableHtml = rows.map((r, i) => {
+        const estadoBadge = r.venta === 0 ? 'oportunidad' : r.cumplimiento >= 100 ? 'excelente' : r.cumplimiento >= 80 ? 'normal' : 'bajo';
+        const badgeLabel = r.venta === 0 ? 'Oportunidad' : r.cumplimiento >= 100 ? 'Excelente' : r.cumplimiento >= 80 ? 'Normal' : 'Bajo';
+        return '<tr>' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td>' + escHtml(r.producto) + '</td>' +
+            '<td style="color:' + (r.venta > 0 ? '#ffffff' : '#EF4444') + ';">' + (r.venta > 0 ? fmt(r.venta) : '\u2014') + '</td>' +
+            '<td>' + pct(r.participacion) + '</td>' +
+            '<td><span class="inf-promotor-badge-' + estadoBadge + '">' + badgeLabel + '</span></td>' +
+        '</tr>';
+    }).join('');
+
+    container.innerHTML = '' +
+        '<div class="inf-promotor-summary-cards">' +
+            '<div class="inf-promotor-summary-card">' +
+                '<div class="inf-promotor-summary-card-icon green"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+                '<div><div class="inf-promotor-summary-card-value">' + fmt(totalVenta) + '</div><div class="inf-promotor-summary-card-label">Venta total del per\u00edodo</div></div>' +
+            '</div>' +
+            '<div class="inf-promotor-summary-card">' +
+                '<div class="inf-promotor-summary-card-icon blue"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>' +
+                '<div><div class="inf-promotor-summary-card-value">' + prodVendidos + ' / ' + productos.length + '</div><div class="inf-promotor-summary-card-label">Productos con venta (' + prodVendidosPct + '%)</div></div>' +
+            '</div>' +
+            '<div class="inf-promotor-summary-card">' +
+                '<div class="inf-promotor-summary-card-icon ' + (prodNoVendidos > 0 ? 'red' : 'green') + '"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>' +
+                '<div><div class="inf-promotor-summary-card-value" style="color:' + (prodNoVendidos > 0 ? '#EF4444' : '#1DB954') + ';">' + prodNoVendidos + '</div><div class="inf-promotor-summary-card-label">Productos sin venta</div></div>' +
+            '</div>' +
+            '<div class="inf-promotor-summary-card">' +
+                '<div class="inf-promotor-summary-card-icon purple"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>' +
+                '<div><div class="inf-promotor-summary-card-value">' + dias + '</div><div class="inf-promotor-summary-card-label">D\u00edas con registro</div></div>' +
+            '</div>' +
+        '</div>' +
+
+        '<div class="inf-promotor-topbottom-grid">' +
+            '<div class="inf-promotor-topbottom-card">' +
+                '<div class="inf-promotor-topbottom-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>' +
+                '<div class="inf-promotor-topbottom-label">Producto L\u00edder</div>' +
+                '<div class="inf-promotor-topbottom-name">' + escHtml(top.producto) + '</div>' +
+                '<div class="inf-promotor-topbottom-value">' + fmt(top.venta) + '</div>' +
+                '<div class="inf-promotor-topbottom-pct">' + topPct + '% de participaci\u00f3n</div>' +
+            '</div>' +
+            '<div class="inf-promotor-topbottom-card">' +
+                '<div class="inf-promotor-topbottom-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg></div>' +
+                '<div class="inf-promotor-topbottom-label">Producto con Menor Venta</div>' +
+                '<div class="inf-promotor-topbottom-name">' + escHtml(bottom.producto) + '</div>' +
+                '<div class="inf-promotor-topbottom-value">' + (bottom.venta > 0 ? fmt(bottom.venta) : 'Sin ventas') + '</div>' +
+                '<div class="inf-promotor-topbottom-pct">' + bottomPct + '% de participaci\u00f3n</div>' +
+            '</div>' +
+        '</div>' +
+
+        '<div class="inf-promotor-charts-grid">' +
+            '<div class="inf-promotor-chart-card inf-promotor-chart-card-wide">' +
+                '<div class="inf-promotor-chart-header"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Ranking de Productos por Venta</div>' +
+                '<div class="inf-promotor-chart-body"><div class="inf-promotor-ranking-list">' + rankingBars + '</div></div>' +
+            '</div>' +
+            '<div class="inf-promotor-chart-card">' +
+                '<div class="inf-promotor-chart-header"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Tendencia de Ventas</div>' +
+                '<div class="inf-promotor-chart-body"><canvas id="infPromChartTrend"></canvas></div>' +
+            '</div>' +
+        '</div>' +
+
+        '<div class="inf-promotor-insight"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> ' + resumenEjecutivo + '</div>' +
+
+        '<div class="inf-promotor-table-container" style="margin-top:20px;">' +
+            '<table class="inf-promotor-table">' +
+                '<thead><tr><th>#</th><th>Producto</th><th>Venta</th><th>Participaci\u00f3n</th><th>Estado</th></tr></thead>' +
+                '<tbody>' + tableHtml + '</tbody>' +
+            '</table>' +
+        '</div>';
+
+    if (typeof renderInfPromCharts === 'function') {
+        renderInfPromCharts(trendLabels, trendValues);
+    }
 }
 
-function renderInfPromCharts(prodLabels, prodValues, trendLabels, trendValues) {
-    infPromDestroyChart('infPromChartParticipation');
+function renderInfPromCharts(trendLabels, trendValues) {
     infPromDestroyChart('infPromChartTrend');
-
-    const colors = ['#1DB954','#3B82F6','#A855F7','#F59E0B','#EF4444','#EC4899','#14B8A6','#8B5CF6','#F97316','#06B6D4'];
-
-    const canvasPart = document.getElementById('infPromChartParticipation');
-    if (canvasPart && prodLabels.length > 0) {
-        infPromChartInstances['infPromChartParticipation'] = new Chart(canvasPart, {
-            type: 'doughnut',
-            data: {
-                labels: prodLabels,
-                datasets: [{
-                    data: prodValues,
-                    backgroundColor: colors.slice(0, prodLabels.length),
-                    borderWidth: 2,
-                    borderColor: '#191414'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: { color: '#b3b3b3', font: { size: 11 }, padding: 12, usePointStyle: true }
-                    }
-                }
-            }
-        });
-    }
 
     const canvasTrend = document.getElementById('infPromChartTrend');
     if (canvasTrend && trendLabels.length > 0) {
@@ -1885,9 +1873,7 @@ function renderInfPromCharts(prodLabels, prodValues, trendLabels, trendValues) {
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     x: {
                         ticks: { color: '#727272', font: { size: 9 }, maxRotation: 45 },
@@ -1903,27 +1889,63 @@ function renderInfPromCharts(prodLabels, prodValues, trendLabels, trendValues) {
     }
 }
 
-function ocultarAvisoOficial() {
-    const aviso = document.getElementById('aviso-oficial');
-    if (aviso) aviso.classList.add('hidden');
-    sessionStorage.setItem('aviso_oficial_oculto', 'true');
+function renderAvisoOficial() {
+    if (sessionStorage.getItem('aviso_oficial_oculto') === 'true') return;
+
+    const page = document.querySelector('.page.active');
+    if (!page) return;
+
+    const existing = page.querySelector('.aviso-oficial');
+    if (existing) {
+        existing.classList.remove('hidden');
+        return;
+    }
+
+    const titleSelectors = [
+        '.resumen-header',
+        '.pdv-header',
+        '.ranking-hero',
+        '.rpdv-hero'
+    ];
+    const title = page.querySelector(titleSelectors.join(','));
+
+    const aviso = document.createElement('div');
+    aviso.className = 'aviso-oficial';
+    aviso.innerHTML =
+        '<div class="aviso-oficial-badge">📌 Aviso Oficial</div>' +
+        '<button class="aviso-oficial-close" onclick="ocultarAvisoOficial()" aria-label="Ocultar aviso" title="Ocultar aviso">' +
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+                '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>' +
+            '</svg>' +
+        '</button>' +
+        '<div class="aviso-oficial-icon">' +
+            '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="1.8" fill="rgba(245,158,11,0.1)"/>' +
+                '<line x1="12" y1="9" x2="12" y2="13" stroke-width="2.5"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2.5"/>' +
+            '</svg>' +
+        '</div>' +
+        '<div class="aviso-oficial-content">' +
+            '<p><strong>IMPORTANTE:</strong></p>' +
+            '<p>La informaci&oacute;n mostrada se actualiza manualmente con los registros ingresados por cada promotor, por lo que los resultados son referenciales y podr&iacute;an presentar variaciones respecto a los resultados oficiales.</p>' +
+            '<p>Para cualquier validaci&oacute;n, se deber&aacute; considerar la informaci&oacute;n oficial compartida por el <strong>&aacute;rea de Retail</strong>, a trav&eacute;s de los <strong>supervisores</strong>.</p>' +
+        '</div>';
+
+    if (title) {
+        title.parentNode.insertBefore(aviso, title.nextSibling);
+    } else {
+        page.insertBefore(aviso, page.firstChild);
+    }
 }
 
-function mostrarAvisoOficial() {
-    const oculto = sessionStorage.getItem('aviso_oficial_oculto') === 'true';
-    const aviso = document.getElementById('aviso-oficial');
-    if (!aviso) return;
-    if (oculto) {
-        aviso.classList.add('hidden');
-    } else {
-        aviso.classList.remove('hidden');
-    }
+function ocultarAvisoOficial() {
+    document.querySelectorAll('.aviso-oficial').forEach(el => el.classList.add('hidden'));
+    sessionStorage.setItem('aviso_oficial_oculto', 'true');
 }
 
 document.addEventListener('DOMContentLoaded', function () {
     initPromotorSession();
-    mostrarAvisoOficial();
-    document.querySelectorAll('.nav-item, .nav-sub-item').forEach(item => {
+    renderAvisoOficial();
+    document.querySelectorAll('.nav-item').forEach(item => {
         if (!item.dataset.page) return;
         item.addEventListener('click', function (e) {
             const rect = this.getBoundingClientRect();
@@ -1964,7 +1986,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     recargarDashboard();
-    cambiarPagina('resumen');
+    cambiarPagina('avance');
 
     const style = document.createElement('style');
     style.textContent = `
