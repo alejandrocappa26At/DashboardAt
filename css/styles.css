@@ -4960,3 +4960,293 @@ select option {
         grid-template-columns: 1fr;
     }
 }
+
+/* =============================================
+   WELCOME MODAL - Bienvenida Institucional
+   ============================================= */
+
+@keyframes welcomeFadeIn {
+    0% { opacity: 0; transform: scale(0.92) translateY(20px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes welcomeGlowPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.welcome-overlay {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.welcome-overlay.open {
+    display: flex;
+}
+
+.modal-bienvenida {
+    position: relative;
+    background: linear-gradient(145deg, rgba(22, 22, 26, 0.98), rgba(18, 18, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    max-width: 640px;
+    width: 100%;
+    padding: 40px 36px 32px;
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.03),
+        0 0 60px rgba(29, 185, 84, 0.08);
+    animation: welcomeFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-bienvenida::-webkit-scrollbar {
+    width: 4px;
+}
+
+.modal-bienvenida::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-bienvenida::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+.welcome-glow {
+    position: absolute;
+    top: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 160px;
+    background: radial-gradient(ellipse at center, rgba(29, 185, 84, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: welcomeGlowPulse 3s ease-in-out infinite;
+}
+
+/* Header */
+.welcome-header {
+    text-align: center;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+}
+
+.welcome-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, rgba(29, 185, 84, 0.15), rgba(29, 185, 84, 0.05));
+    border: 1px solid rgba(29, 185, 84, 0.2);
+    border-radius: 18px;
+    color: #1DB954;
+    margin-bottom: 18px;
+    box-shadow: 0 0 30px rgba(29, 185, 84, 0.08);
+}
+
+.welcome-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.4px;
+    line-height: 1.3;
+}
+
+/* Body */
+.welcome-body {
+    position: relative;
+    z-index: 1;
+}
+
+.welcome-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #c8c8c8;
+    margin: 0 0 14px;
+}
+
+.welcome-text:first-child {
+    font-size: 15px;
+    color: #e0e0e0;
+}
+
+/* Alert block */
+.welcome-alert {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.03));
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 18px 0;
+    display: flex;
+    gap: 14px;
+}
+
+.welcome-alert-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.welcome-alert-content {
+    flex: 1;
+}
+
+.welcome-alert-content strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #F59E0B;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.welcome-alert-content p {
+    font-size: 13px;
+    line-height: 1.65;
+    color: #b0b0b0;
+    margin: 0 0 8px;
+}
+
+.welcome-alert-content p:last-child {
+    margin-bottom: 0;
+}
+
+.welcome-highlight {
+    color: #1DB954;
+    font-weight: 700;
+}
+
+/* Disclaimer block */
+.welcome-disclaimer {
+    background: linear-gradient(135deg, rgba(29, 185, 84, 0.08), rgba(29, 185, 84, 0.03));
+    border: 1px solid rgba(29, 185, 84, 0.2);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 18px 0;
+    display: flex;
+    gap: 14px;
+}
+
+.welcome-disclaimer-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.welcome-disclaimer-content {
+    flex: 1;
+}
+
+.welcome-disclaimer-content strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1DB954;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.welcome-disclaimer-content p {
+    font-size: 13px;
+    line-height: 1.65;
+    color: #b0b0b0;
+    margin: 0;
+}
+
+/* Quote */
+.welcome-quote {
+    text-align: center;
+    font-size: 13px;
+    font-style: italic;
+    color: #888888;
+    line-height: 1.6;
+    padding: 16px 0 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    margin-top: 18px;
+}
+
+/* Footer / Button */
+.welcome-footer {
+    text-align: center;
+    margin-top: 28px;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-welcome {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 36px;
+    background: linear-gradient(135deg, #1DB954, #169c46);
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px rgba(29, 185, 84, 0.3);
+}
+
+.btn-welcome:hover {
+    background: linear-gradient(135deg, #1ed760, #1DB954);
+    box-shadow: 0 6px 30px rgba(29, 185, 84, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-welcome:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(29, 185, 84, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .modal-bienvenida {
+        padding: 28px 20px 24px;
+        border-radius: 16px;
+        margin: 10px;
+    }
+
+    .welcome-title {
+        font-size: 17px;
+    }
+
+    .welcome-icon-wrapper {
+        width: 52px;
+        height: 52px;
+    }
+
+    .welcome-icon-wrapper svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    .welcome-text {
+        font-size: 13px;
+    }
+
+    .welcome-alert,
+    .welcome-disclaimer {
+        padding: 14px 16px;
+    }
+
+    .welcome-alert-content p,
+    .welcome-disclaimer-content p {
+        font-size: 12px;
+    }
+
+    .btn-welcome {
+        padding: 10px 28px;
+        font-size: 14px;
+    }
+}

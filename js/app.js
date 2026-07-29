@@ -1942,8 +1942,25 @@ function ocultarAvisoOficial() {
     sessionStorage.setItem('aviso_oficial_oculto', 'true');
 }
 
+function mostrarBienvenida() {
+    const modal = document.getElementById('modal-bienvenida');
+    if (modal) {
+        modal.classList.add('open');
+    }
+}
+
+function cerrarBienvenida() {
+    const modal = document.getElementById('modal-bienvenida');
+    if (modal) {
+        modal.classList.remove('open');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     initPromotorSession();
+    if (!promotorSession) {
+        mostrarBienvenida();
+    }
     renderAvisoOficial();
     document.querySelectorAll('.nav-item').forEach(item => {
         if (!item.dataset.page) return;
