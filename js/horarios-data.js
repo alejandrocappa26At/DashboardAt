@@ -121,7 +121,8 @@ const HorariosDataStore = {
                 fecha_fin: getWeekRange(fechaInicio).domingo.toISOString(),
                 estado: 'borrador',
                 turnos: {},
-                feriados: []
+                feriados: [],
+                coberturas: {}
             };
 
             for (let p of this.promotores) {
@@ -406,6 +407,52 @@ const HorariosDataStore = {
     getHorasPromotorSemanaConFlotantes(fechaInicio, promotorId) {
         const result = this.getHorasPromotorSemana(fechaInicio, promotorId);
         return result;
+    },
+
+    setCobertura(fechaInicio, zonaId, diaIndex, data) {
+        const semana = this.getOrCreateSemana(fechaInicio);
+        if (!semana.coberturas) semana.coberturas = {};
+        const key = `${zonaId}-${diaIndex}`;
+        semana.coberturas[key] = {
+            promotor_id: data.promotor_id,
+            promotor_nombre: data.promotor_nombre,
+            hora_inicio: data.hora_inicio || null,
+            hora_fin: data.hora_fin || null,
+            fecha_asignacion: new Date().toISOString()
+        };
+        this._guardarEnFirestore();
+        return semana.coberturas[key];
+    },
+
+    removeCobertura(fechaInicio, zonaId, diaIndex) {
+        const semana = this.getSemana(fechaInicio);
+        if (!semana || !semana.coberturas) return null;
+        const key = `${zonaId}-${diaIndex}`;
+        const removed = semana.coberturas[key];
+        if (removed) {
+            delete semana.coberturas[key];
+            this._guardarEnFirestore();
+        }
+        return removed || null;
+    },
+
+    getCobertura(fechaInicio, zonaId, diaIndex) {
+        const semana = this.getSemana(fechaInicio);
+        if (!semana || !semana.coberturas) return null;
+        return semana.coberturas[`${zonaId}-${diaIndex}`] || null;
+    },
+
+    getCoberturasZonaSemana(fechaInicio, zonaId) {
+        const semana = this.getSemana(fechaInicio);
+        if (!semana || !semana.coberturas) return [];
+        const results = [];
+        for (let d = 0; d < 7; d++) {
+            const key = `${zonaId}-${d}`;
+            if (semana.coberturas[key]) {
+                results.push({ dia: d, ...semana.coberturas[key] });
+            }
+        }
+        return results;
     },
 
     validarSemana(fechaInicio) {

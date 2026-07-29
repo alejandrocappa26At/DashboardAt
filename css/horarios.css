@@ -7,6 +7,8 @@
     --cell-sin-asignar-border: #333;
     --cell-flotante: #2a1a3a;
     --cell-flotante-border: #A855F7;
+    --cell-cobertura: #0a2a3a;
+    --cell-cobertura-border: #38BDF8;
     --header-domingo: #3a1a1a;
     --header-domingo-text: #EF4444;
     --hour-color: var(--accent);
@@ -542,6 +544,154 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #A855F7;
+}
+
+/* Cobertura row */
+.horarios-cobertura-row td {
+    border-top: 2px solid rgba(56,189,248,0.12);
+    background: rgba(56,189,248,0.02);
+    transition: background 0.2s ease;
+}
+
+.horarios-cobertura-row:hover td {
+    background: rgba(56,189,248,0.04);
+}
+
+.horarios-promotor-type.cobertura {
+    background: rgba(56,189,248,0.12);
+    color: #38BDF8;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.horarios-legend-dot.cobertura {
+    background: var(--cell-cobertura);
+    border: 1.5px solid var(--cell-cobertura-border);
+}
+
+/* Cobertura modal — centered, above overlay */
+#horarios-cobertura-editor {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    background: #191414;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 20px;
+    min-width: 340px;
+    max-width: 400px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+    animation: horariosEditorIn 0.2s ease;
+}
+#horarios-cobertura-editor.open {
+    display: block;
+}
+
+/* Cobertura form body */
+.hcf-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.hcf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.hcf-field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.hcf-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    padding: 6px 0;
+}
+.hcf-select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='%23b3b3b3' stroke-width='2' stroke-linecap='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+}
+.hcf-select:focus {
+    border-color: #38BDF8;
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+}
+.hcf-select option {
+    background: #191414;
+    color: #fff;
+}
+.hcf-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.hcf-horas {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.hcf-horas input {
+    flex: 1;
+}
+.hcf-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.hcf-actions .horarios-btn-publish {
+    min-width: 140px;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    #horarios-cobertura-editor {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: none;
+        border-radius: 16px 16px 0 0;
+        max-width: 100%;
+        min-width: 100%;
+        max-height: 80vh;
+        animation: horariosEditorMobileIn 0.3s ease;
+    }
+    .hcf-actions {
+        flex-direction: column;
+    }
+    .hcf-actions .horarios-btn-publish {
+        min-width: 0;
+    }
 }
 
 /* Cell editor popover */

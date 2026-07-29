@@ -480,6 +480,55 @@
     margin: 0 1px;
 }
 
+/* Cobertura chip — Sky blue */
+.hv-cell-cobertura {
+    background: rgba(56,189,248,0.12);
+    border-color: rgba(56,189,248,0.18);
+    color: #7dd3fc;
+    box-shadow: 0 0 6px rgba(56,189,248,0.06);
+    flex-direction: column;
+    gap: 1px;
+    padding: 4px 8px;
+    min-height: 32px;
+}
+
+.hv-cell-cobertura:hover {
+    background: rgba(56,189,248,0.2);
+    border-color: rgba(56,189,248,0.25);
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(56,189,248,0.12);
+}
+
+.hv-cell-promotor-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #7dd3fc;
+}
+
+.hv-cell-cobertura .hv-cell-time-end {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--hv-text-secondary, #9ca3af);
+}
+
+/* Cobertura row */
+.hv-row-cobertura {
+    background: rgba(56,189,248,0.015);
+}
+
+.hv-row-cobertura:hover td {
+    background: rgba(56,189,248,0.04) !important;
+}
+
+.hv-td-cobertura {
+    background: rgba(56,189,248,0.02) !important;
+}
+
+.hv-promo-name-cobertura {
+    color: #7dd3fc !important;
+    font-size: 11px;
+}
+
 /* Row hover effect */
 .hv-table tbody tr.hv-row {
     transition: background 0.2s ease;

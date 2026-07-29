@@ -56,6 +56,11 @@ function renderHorariosView() {
             }
         }
 
+        const coberturasZona = HorariosDataStore.getCoberturasZonaSemana(weekStart, zona.id);
+        if (coberturasZona.length > 0) {
+            rowsHtml += renderCoberturaRowView(weekStart, zona, semana, today);
+        }
+
         const countFijos = promotores.length;
         const countFlotantes = flotantesEnZona.length;
         const countLabel = `${countFijos} promotor${countFijos !== 1 ? 'es' : ''}` +
@@ -186,6 +191,40 @@ function renderPromotorRow(weekStart, promotor, zona, semana, today, esFlotanteE
         <td class="hv-td-promotor">
             <span class="${nameClass}">${escHtml(promotor.nombre)}</span>
             <span class="hv-promo-role ${roleClass}">${roleLabel}</span>
+        </td>
+        ${cellsHtml}
+    </tr>`;
+}
+
+function renderCoberturaRowView(weekStart, zona, semana, today) {
+    const coberturas = semana.coberturas || {};
+
+    let cellsHtml = '';
+    for (let d = 0; d < 7; d++) {
+        const ck = `${zona.id}-${d}`;
+        const cb = coberturas[ck];
+        const fecha = getFechaSemana(weekStart, d);
+        const esHoy = fecha.getTime() === today.getTime();
+        const tdClass = esHoy ? 'hv-td-today' : '';
+
+        if (cb) {
+            const horasStr = cb.hora_inicio && cb.hora_fin
+                ? `<span class="hv-cell-time-end">${cb.hora_inicio}&ndash;${cb.hora_fin}</span>`
+                : '';
+            cellsHtml += `<td class="${tdClass}">
+                <span class="hv-cell hv-cell-cobertura">
+                    <span class="hv-cell-promotor-name">${escHtml(cb.promotor_nombre)}</span>
+                    ${horasStr}
+                </span>
+            </td>`;
+        } else {
+            cellsHtml += `<td class="${tdClass}"><span class="hv-cell hv-cell-empty">&mdash;</span></td>`;
+        }
+    }
+
+    return `<tr class="hv-row hv-row-cobertura">
+        <td class="hv-td-promotor hv-td-cobertura">
+            <span class="hv-promo-name hv-promo-name-cobertura">🔄 Promotor Flotante</span>
         </td>
         ${cellsHtml}
     </tr>`;

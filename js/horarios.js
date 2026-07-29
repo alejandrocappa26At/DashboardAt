@@ -127,6 +127,9 @@ function renderVistaSupervisor() {
         <div class="horarios-legend-item">
             <span class="horarios-legend-dot flotante"></span> Cobertura flotante
         </div>
+        <div class="horarios-legend-item">
+            <span class="horarios-legend-dot cobertura"></span> Promotor Flotante
+        </div>
     </div>
 
     ${validacionesHtml}
@@ -214,6 +217,8 @@ function renderVistaSupervisor() {
                     html += renderFilaPromotor(weekStart, f, zona, true);
                 }
             }
+
+            html += renderFilaCobertura(weekStart, zona);
         }
     }
 
@@ -274,6 +279,46 @@ function renderVistaSupervisor() {
                 Asignar a flotante
             </button>
         </div>
+    </div>
+
+    <div class="horarios-editor-overlay" id="horarios-cobertura-overlay" onclick="cerrarSelectorCobertura()"></div>
+    <div class="horarios-cobertura-modal" id="horarios-cobertura-editor">
+        <div class="horarios-editor-header">
+            <span class="horarios-editor-title">Asignar Promotor Flotante</span>
+            <button class="horarios-editor-close" onclick="cerrarSelectorCobertura()">✕</button>
+        </div>
+        <div class="hcf-body" id="hcf-body">
+            <div class="hcf-field">
+                <label>Fecha</label>
+                <span class="hcf-value" id="hcf-fecha"></span>
+            </div>
+            <div class="hcf-field">
+                <label>Tienda</label>
+                <span class="hcf-value" id="hcf-tienda"></span>
+            </div>
+            <div class="hcf-field">
+                <label>Promotor</label>
+                <select class="hcf-select" id="hcf-promotor-select" onchange="hcfActualizarHoras()">
+                    <option value="">Seleccionar promotor...</option>
+                </select>
+            </div>
+            <div class="hcf-field">
+                <label>Horario</label>
+                <div class="hcf-horas">
+                    <input class="horarios-editor-time-input" type="time" id="hcf-hora-inicio" value="08:00">
+                    <span class="horarios-editor-time-sep">→</span>
+                    <input class="horarios-editor-time-input" type="time" id="hcf-hora-fin" value="17:00">
+                </div>
+            </div>
+        </div>
+        <div class="hcf-actions">
+            <button class="horarios-btn-modal-secondary" onclick="cerrarSelectorCobertura()">Cancelar</button>
+            <button class="horarios-btn-publish" onclick="guardarCobertura()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Guardar Asignación
+            </button>
+        </div>
+        <input type="hidden" id="horarios-cobertura-state">
     </div>
     `;
 
@@ -351,6 +396,204 @@ function renderFilaPromotor(weekStart, promotor, zona, esFlotanteEnZona) {
 
     html += `</tr>`;
     return html;
+}
+
+function renderFilaCobertura(weekStart, zona) {
+    const semana = HorariosDataStore.getSemana(weekStart);
+    const coberturas = semana ? (semana.coberturas || {}) : {};
+    const promotoresZona = HorariosDataStore.getPromotoresDeZona(zona.id);
+
+    let html = `<tr class="horarios-cobertura-row">
+        <td class="horarios-td-promotor" style="background:rgba(56,189,248,0.03) !important;">
+            <div class="horarios-promotor-info">
+                <span class="horarios-promotor-type cobertura">🔄</span>
+                <span class="horarios-promotor-name" style="color:#38BDF8;">Promotor Flotante</span>
+            </div>
+        </td>
+    `;
+
+    for (let d = 0; d < 7; d++) {
+        const coberturaKey = `${zona.id}-${d}`;
+        const cobertura = coberturas[coberturaKey];
+
+        const necesita = promotoresZona.some(p => {
+            const tk = `${p.id}-${d}`;
+            const t = semana ? semana.turnos[tk] : null;
+            return t && t.estado === 'descanso';
+        });
+
+        let content;
+        if (cobertura) {
+            const horasStr = cobertura.hora_inicio && cobertura.hora_fin
+                ? formatHora(cobertura.hora_inicio, cobertura.hora_fin)
+                : '';
+            content = `
+                <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                    <span style="color:#38BDF8;font-weight:700;font-size:11px;">${escHtml(cobertura.promotor_nombre)}</span>
+                    ${horasStr ? `<span style="color:var(--text-subdued);font-size:9px;">${horasStr}</span>` : ''}
+                </div>
+            `;
+        } else if (necesita) {
+            content = `<span style="color:#F59E0B;font-size:10px;font-weight:600;">⚠ Asignar</span>`;
+        } else {
+            content = `<span style="color:var(--text-subdued);font-size:10px;">—</span>`;
+        }
+
+        const cellBg = cobertura ? 'rgba(56,189,248,0.08)' : 'transparent';
+        const cellBorder = cobertura
+            ? '1px solid rgba(56,189,248,0.25)'
+            : necesita
+                ? '1px dashed rgba(245,158,11,0.3)'
+                : '1px dashed rgba(255,255,255,0.04)';
+
+        html += `<td onclick="abrirSelectorCobertura('${zona.id}', ${d})" style="cursor:pointer;background:rgba(56,189,248,0.02);">
+            <div class="horarios-cell" id="cobertura-${zona.id}-${d}" style="background:${cellBg};border:${cellBorder};border-radius:6px;">
+                ${content}
+            </div>
+        </td>`;
+    }
+
+    const totalCoberturas = Object.keys(coberturas).filter(k => k.startsWith(`${zona.id}-`)).length;
+    html += `<td style="position:sticky;right:0;background:#0f0f0f;border-left:2px solid rgba(255,255,255,0.06);">
+        <span style="color:#38BDF8;font-size:13px;font-weight:800;">${totalCoberturas}/7</span>
+    </td>`;
+
+    html += `</tr>`;
+    return html;
+}
+
+function abrirSelectorCobertura(zonaId, diaIndex) {
+    const zona = HorariosDataStore.zonas.find(z => z.id === zonaId);
+    if (!zona) { console.error('[Cobertura] Zona no encontrada:', zonaId); return; }
+
+    const weekStart = HorariosDataStore.currentWeekStart;
+    const semana = HorariosDataStore.getOrCreateSemana(weekStart);
+    const coberturaKey = `${zonaId}-${diaIndex}`;
+    const coberturaActual = semana.coberturas ? semana.coberturas[coberturaKey] : null;
+
+    const overlay = document.getElementById('horarios-cobertura-overlay');
+    const editor = document.getElementById('horarios-cobertura-editor');
+    if (!editor) { console.error('[Cobertura] Modal #horarios-cobertura-editor no encontrado en DOM'); return; }
+    if (!overlay) { console.error('[Cobertura] Overlay #horarios-cobertura-overlay no encontrado en DOM'); return; }
+
+    const fecha = getFechaSemana(weekStart, diaIndex);
+    document.getElementById('hcf-fecha').textContent = fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('hcf-tienda').textContent = zona.nombre.replace('RED AT ', '');
+    const stateEl = document.getElementById('horarios-cobertura-state');
+    stateEl.value = `${zonaId},${diaIndex}`;
+
+    const select = document.getElementById('hcf-promotor-select');
+    select.innerHTML = '<option value="">Seleccionar promotor...</option>';
+
+    const promotoresDisponibles = HorariosDataStore.promotores.filter(p => {
+        if (!p || p.estado !== 'Activo') return false;
+        const tk = `${p.id}-${diaIndex}`;
+        const t = semana.turnos[tk];
+        if (t && t.estado === 'descanso') return false;
+        return true;
+    });
+
+    if (promotoresDisponibles.length === 0) {
+        select.innerHTML = '<option value="">No hay promotores disponibles</option>';
+        select.disabled = true;
+    } else {
+        select.disabled = false;
+        promotoresDisponibles.forEach(p => {
+            const zonaPromotor = HorariosDataStore.zonas.find(z => z.id === p.zona_principal_id);
+            const zonaStr = zonaPromotor ? zonaPromotor.nombre.replace('RED AT ', '') : 'Sin tienda';
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.nombre} · ${zonaStr}`;
+            opt.dataset.nombre = p.nombre;
+            if (coberturaActual && coberturaActual.promotor_id === p.id) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+    }
+
+    if (coberturaActual && coberturaActual.promotor_id) {
+        document.getElementById('hcf-hora-inicio').value = coberturaActual.hora_inicio || '08:00';
+        document.getElementById('hcf-hora-fin').value = coberturaActual.hora_fin || '17:00';
+    } else if (select.value && select.options[select.selectedIndex]) {
+        hcfActualizarHoras();
+    } else {
+        document.getElementById('hcf-hora-inicio').value = '08:00';
+        document.getElementById('hcf-hora-fin').value = '17:00';
+    }
+
+    overlay.classList.add('open');
+    editor.classList.add('open');
+}
+
+function cerrarSelectorCobertura() {
+    const overlay = document.getElementById('horarios-cobertura-overlay');
+    const editor = document.getElementById('horarios-cobertura-editor');
+    if (overlay) overlay.classList.remove('open');
+    if (editor) editor.classList.remove('open');
+}
+
+function hcfActualizarHoras() {
+    const select = document.getElementById('hcf-promotor-select');
+    const pId = select.value;
+    if (!pId) return;
+    const weekStart = HorariosDataStore.currentWeekStart;
+    const stateEl = document.getElementById('horarios-cobertura-state');
+    const [zonaId, diaIndex] = (stateEl.value || '').split(',').map(s => isNaN(s) ? s : Number(s));
+    if (diaIndex === undefined) return;
+    const semana = HorariosDataStore.getSemana(weekStart);
+    if (!semana) return;
+    const t = semana.turnos[`${pId}-${diaIndex}`];
+    if (t && t.estado === 'turno' && t.hora_inicio && t.hora_fin) {
+        document.getElementById('hcf-hora-inicio').value = t.hora_inicio;
+        document.getElementById('hcf-hora-fin').value = t.hora_fin;
+    } else {
+        document.getElementById('hcf-hora-inicio').value = '08:00';
+        document.getElementById('hcf-hora-fin').value = '17:00';
+    }
+}
+
+function guardarCobertura() {
+    const stateEl = document.getElementById('horarios-cobertura-state');
+    const [zonaId, diaIndex] = (stateEl.value || '').split(',').map(s => isNaN(s) ? s : Number(s));
+    if (!zonaId || diaIndex === undefined) { console.error('[Cobertura] Estado inválido'); return; }
+
+    const select = document.getElementById('hcf-promotor-select');
+    const pId = select.value;
+    if (!pId) { mostrarHorariosToast('⚠ Selecciona un promotor'); return; }
+
+    const selectedOpt = select.options[select.selectedIndex];
+    const promotorNombre = selectedOpt ? selectedOpt.dataset.nombre || selectedOpt.textContent.split(' · ')[0] : '';
+
+    const horaInicio = document.getElementById('hcf-hora-inicio').value || null;
+    const horaFin = document.getElementById('hcf-hora-fin').value || null;
+
+    const weekStart = HorariosDataStore.currentWeekStart;
+
+    HorariosDataStore.setCobertura(weekStart, zonaId, diaIndex, {
+        promotor_id: pId,
+        promotor_nombre: promotorNombre,
+        hora_inicio: horaInicio,
+        hora_fin: horaFin
+    });
+
+    cerrarSelectorCobertura();
+
+    const cell = document.getElementById(`cobertura-${zonaId}-${diaIndex}`);
+    if (cell) {
+        cell.classList.add('horarios-updated');
+        setTimeout(() => cell.classList.remove('horarios-updated'), 1000);
+    }
+
+    mostrarHorariosToast(`🔄 ${promotorNombre} asignado como cobertura`);
+    renderHorarios();
+}
+
+function eliminarCobertura(zonaId, diaIndex) {
+    HorariosDataStore.removeCobertura(HorariosDataStore.currentWeekStart, zonaId, diaIndex);
+    cerrarSelectorCobertura();
+    mostrarHorariosToast('🗑️ Cobertura eliminada');
+    renderHorarios();
 }
 
 function renderMobileCardsSupervisor(weekStart) {
