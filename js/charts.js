@@ -22,7 +22,9 @@ function createEvolucionDiaria() {
     if (!canvas) return;
 
     const ventaDiaria = DataStore.getEvolucionDiaria();
-    const diaActual = DataStore.getDiaActual();
+    const periodo = DataStore.getInfoPeriodo();
+    const diaActual = periodo.elapsed;
+    const totalDias = periodo.total;
     const labels = [];
     for (let d = 1; d <= diaActual; d++) {
         labels.push('D\u00eda ' + d);
@@ -38,7 +40,7 @@ function createEvolucionDiaria() {
     }
 
     const cuotaTotal = DataStore.getCuotaTotal();
-    const targetPerDay = diaActual > 0 ? cuotaTotal / 31 : 0;
+    const targetPerDay = totalDias > 0 ? cuotaTotal / totalDias : 0;
 
     const barColors = dailyTotals.map(v =>
         v >= targetPerDay ? '#1DB954' : v >= targetPerDay * 0.8 ? '#f59e0b' : '#ef4444'

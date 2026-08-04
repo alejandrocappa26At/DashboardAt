@@ -4962,291 +4962,306 @@ select option {
 }
 
 /* =============================================
-   WELCOME MODAL - Bienvenida Institucional
+   FILTROS DE FECHA - DISENO EJECUTIVO
    ============================================= */
-
-@keyframes welcomeFadeIn {
-    0% { opacity: 0; transform: scale(0.92) translateY(20px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes welcomeGlowPulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.05); }
-}
-
-.welcome-overlay {
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-
-.welcome-overlay.open {
+.date-filters {
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-.modal-bienvenida {
+.date-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.date-filters-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: rgba(255,255,255,0.55);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.date-filters-title svg {
+    color: #1DB954;
+}
+
+.date-filter-main {
     position: relative;
-    background: linear-gradient(145deg, rgba(22, 22, 26, 0.98), rgba(18, 18, 20, 0.98));
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 20px;
-    max-width: 640px;
-    width: 100%;
-    padding: 40px 36px 32px;
-    box-shadow:
-        0 30px 80px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(255, 255, 255, 0.03),
-        0 0 60px rgba(29, 185, 84, 0.08);
-    animation: welcomeFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    max-height: 90vh;
-    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 228px;
+    padding: 0 14px;
+    height: 44px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 11px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.modal-bienvenida::-webkit-scrollbar {
-    width: 4px;
+.date-filter-main:hover {
+    border-color: rgba(255,255,255,0.2);
 }
 
-.modal-bienvenida::-webkit-scrollbar-track {
-    background: transparent;
+.date-filter-main:focus-within {
+    border-color: rgba(29,185,84,0.55);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.16);
+    background: rgba(255,255,255,0.05);
 }
 
-.modal-bienvenida::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
-}
-
-.welcome-glow {
+.date-filter-main::after {
+    content: '';
     position: absolute;
-    top: -80px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 300px;
-    height: 160px;
-    background: radial-gradient(ellipse at center, rgba(29, 185, 84, 0.15) 0%, transparent 70%);
-    border-radius: 50%;
+    right: 14px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid rgba(255,255,255,0.55);
+    border-bottom: 1.5px solid rgba(255,255,255,0.55);
+    transform: translateY(-70%) rotate(45deg);
     pointer-events: none;
-    animation: welcomeGlowPulse 3s ease-in-out infinite;
 }
 
-/* Header */
-.welcome-header {
-    text-align: center;
-    margin-bottom: 28px;
-    position: relative;
-    z-index: 1;
+.date-filter-main select {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    padding-right: 20px;
 }
 
-.welcome-icon-wrapper {
+.date-filter-main select option {
+    background: #1c1c1c;
+    color: #ffffff;
+}
+
+.date-filter-icon {
+    color: rgba(255,255,255,0.6);
+    flex-shrink: 0;
+}
+
+.date-filter-main:focus-within .date-filter-icon {
+    color: #1DB954;
+}
+
+.date-filter-custom {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px;
+}
+
+.date-filter-custom.is-open {
+    display: flex;
+    animation: dateCustomIn 0.22s ease;
+}
+
+@keyframes dateCustomIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.date-filter-field {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 12px;
+    height: 44px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 11px;
+    transition: border-color 0.2s ease;
+}
+
+.date-filter-field:focus-within {
+    border-color: rgba(29,185,84,0.5);
+}
+
+.date-filter-field label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.42);
+    white-space: nowrap;
+}
+
+.date-filter-field input[type="date"] {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 12.5px;
+    font-family: inherit;
+    padding: 2px 0 2px 4px;
+    outline: none;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.date-filter-field input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+}
+
+.date-btn-aplicar,
+.date-btn-limpiar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 44px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.date-btn-aplicar {
+    background: linear-gradient(135deg, #1DB954, #169c46);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(29,185,84,0.22);
+}
+
+.date-btn-aplicar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(29,185,84,0.32);
+    filter: brightness(1.07);
+}
+
+.date-btn-limpiar {
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.78);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+.date-btn-limpiar:hover {
+    background: rgba(255,255,255,0.11);
+    color: #ffffff;
+}
+
+.date-filter-fastrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    align-items: center;
+}
+
+.date-btn-quick {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 64px;
-    height: 64px;
-    background: linear-gradient(135deg, rgba(29, 185, 84, 0.15), rgba(29, 185, 84, 0.05));
-    border: 1px solid rgba(29, 185, 84, 0.2);
-    border-radius: 18px;
-    color: #1DB954;
-    margin-bottom: 18px;
-    box-shadow: 0 0 30px rgba(29, 185, 84, 0.08);
-}
-
-.welcome-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: -0.4px;
-    line-height: 1.3;
-}
-
-/* Body */
-.welcome-body {
-    position: relative;
-    z-index: 1;
-}
-
-.welcome-text {
-    font-size: 14px;
-    line-height: 1.7;
-    color: #c8c8c8;
-    margin: 0 0 14px;
-}
-
-.welcome-text:first-child {
-    font-size: 15px;
-    color: #e0e0e0;
-}
-
-/* Alert block */
-.welcome-alert {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.03));
-    border: 1px solid rgba(245, 158, 11, 0.15);
-    border-radius: 14px;
-    padding: 18px 20px;
-    margin: 18px 0;
-    display: flex;
-    gap: 14px;
-}
-
-.welcome-alert-icon {
-    font-size: 22px;
-    flex-shrink: 0;
-    line-height: 1;
-}
-
-.welcome-alert-content {
-    flex: 1;
-}
-
-.welcome-alert-content strong {
-    display: block;
-    font-size: 13px;
-    font-weight: 700;
-    color: #F59E0B;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-}
-
-.welcome-alert-content p {
-    font-size: 13px;
-    line-height: 1.65;
-    color: #b0b0b0;
-    margin: 0 0 8px;
-}
-
-.welcome-alert-content p:last-child {
-    margin-bottom: 0;
-}
-
-.welcome-highlight {
-    color: #1DB954;
-    font-weight: 700;
-}
-
-/* Disclaimer block */
-.welcome-disclaimer {
-    background: linear-gradient(135deg, rgba(29, 185, 84, 0.08), rgba(29, 185, 84, 0.03));
-    border: 1px solid rgba(29, 185, 84, 0.2);
-    border-radius: 14px;
-    padding: 18px 20px;
-    margin: 18px 0;
-    display: flex;
-    gap: 14px;
-}
-
-.welcome-disclaimer-icon {
-    font-size: 22px;
-    flex-shrink: 0;
-    line-height: 1;
-}
-
-.welcome-disclaimer-content {
-    flex: 1;
-}
-
-.welcome-disclaimer-content strong {
-    display: block;
-    font-size: 13px;
-    font-weight: 700;
-    color: #1DB954;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-}
-
-.welcome-disclaimer-content p {
-    font-size: 13px;
-    line-height: 1.65;
-    color: #b0b0b0;
-    margin: 0;
-}
-
-/* Quote */
-.welcome-quote {
-    text-align: center;
-    font-size: 13px;
-    font-style: italic;
-    color: #888888;
-    line-height: 1.6;
-    padding: 16px 0 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-    margin-top: 18px;
-}
-
-/* Footer / Button */
-.welcome-footer {
-    text-align: center;
-    margin-top: 28px;
-    position: relative;
-    z-index: 1;
-}
-
-.btn-welcome {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 36px;
-    background: linear-gradient(135deg, #1DB954, #169c46);
-    color: #ffffff;
-    border: none;
+    padding: 6px 13px;
+    border: 1px solid rgba(255,255,255,0.1);
     border-radius: 999px;
-    font-size: 15px;
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.25s ease;
-    box-shadow: 0 4px 20px rgba(29, 185, 84, 0.3);
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
-.btn-welcome:hover {
-    background: linear-gradient(135deg, #1ed760, #1DB954);
-    box-shadow: 0 6px 30px rgba(29, 185, 84, 0.4);
-    transform: translateY(-1px);
+.date-btn-quick:hover {
+    background: #1DB954;
+    border-color: #1DB954;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(29,185,84,0.3);
 }
 
-.btn-welcome:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(29, 185, 84, 0.2);
+.periodo-analizado {
+    display: none;
+    align-items: center;
+    gap: 9px;
+    background: linear-gradient(135deg, rgba(29,185,84,0.12), rgba(29,185,84,0.04));
+    border: 1px solid rgba(29,185,84,0.25);
+    border-radius: 12px;
+    padding: 9px 16px;
+    margin: 2px 0 18px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-    .modal-bienvenida {
-        padding: 28px 20px 24px;
-        border-radius: 16px;
-        margin: 10px;
-    }
+.periodo-analizado-ico {
+    display: inline-flex;
+    color: #1DB954;
+    flex-shrink: 0;
+}
 
-    .welcome-title {
-        font-size: 17px;
-    }
+.periodo-analizado-text {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+}
 
-    .welcome-icon-wrapper {
-        width: 52px;
-        height: 52px;
-    }
+.periodo-analizado-text strong {
+    color: #ffffff;
+    font-weight: 700;
+}
 
-    .welcome-icon-wrapper svg {
-        width: 26px;
-        height: 26px;
+@media (max-width: 1024px) {
+    .date-filter-custom.is-open {
+        flex-wrap: wrap;
     }
-
-    .welcome-text {
-        font-size: 13px;
+    .date-filter-bar {
+        gap: 8px;
     }
+}
 
-    .welcome-alert,
-    .welcome-disclaimer {
-        padding: 14px 16px;
+@media (max-width: 720px) {
+    .date-filters {
+        padding: 12px 14px;
+        gap: 10px;
     }
-
-    .welcome-alert-content p,
-    .welcome-disclaimer-content p {
-        font-size: 12px;
+    .date-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
     }
-
-    .btn-welcome {
-        padding: 10px 28px;
-        font-size: 14px;
+    .date-filters-title {
+        align-self: center;
+    }
+    .date-filter-main,
+    .date-filter-custom {
+        width: 100%;
+    }
+    .date-filter-custom.is-open {
+        flex-direction: column;
+    }
+    .date-filter-field {
+        width: 100%;
+    }
+    .date-btn-aplicar,
+    .date-btn-limpiar {
+        justify-content: center;
+    }
+    .date-btn-quick {
+        flex: 1 1 auto;
     }
 }

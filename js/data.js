@@ -1,7 +1,16 @@
 const PRODUCTOS = ['Apuestas Deportivas', 'Lottingo', 'Hípica', 'Juegos Virtuales', 'Torito', 'VLT', 'LOTOBOLA'];
-const MES = 7;
-const ANIO = 2026;
-const DIAS_MES = 31;
+const FECHA_ACTUAL = new Date();
+const MES = FECHA_ACTUAL.getMonth() + 1;
+const ANIO = FECHA_ACTUAL.getFullYear();
+const DIAS_MES = new Date(ANIO, MES, 0).getDate();
+
+function formatearFechaLocal(date) {
+    const d = date ? new Date(date) : new Date();
+    const anio = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return anio + '-' + mes + '-' + dia;
+}
 const MESES = [
     { valor: 1, nombre: 'Enero' }, { valor: 2, nombre: 'Febrero' },
     { valor: 3, nombre: 'Marzo' }, { valor: 4, nombre: 'Abril' },
@@ -28,6 +37,7 @@ const DataStore = {
     cuotas: [],
     promotores: [],
     diaActual: 1,
+    filtrosFecha: { desde: null, hasta: null },
     initialized: false,
 
     init() {
@@ -38,7 +48,8 @@ const DataStore = {
             cadena: 'AREQUIPA SUR',
             num_promotores: 1
         }));
-        this.diaActual = 1;
+        this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
+        this.filtrosFecha = { desde: null, hasta: null };
         this.initialized = true;
 
         this._iniciarFirestore();
@@ -79,12 +90,7 @@ const DataStore = {
                     }));
                 }
                 if (data.diaActual) {
-                    const hoy = new Date();
-                    const mesHoy = hoy.getMonth() + 1;
-                    const anioHoy = hoy.getFullYear();
-                    this.diaActual = (mesHoy === MES && anioHoy === ANIO)
-                        ? Math.max(data.diaActual, Math.min(hoy.getDate(), DIAS_MES))
-                        : data.diaActual;
+                    this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
                 }
 
                 this._mergePDVsFijos();
@@ -139,13 +145,7 @@ const DataStore = {
                     }));
                 }
                 if (data.diaActual) {
-                    const hoy = new Date();
-                    const hoyDia = Math.min(hoy.getDate(), DIAS_MES);
-                    const hoyMes = hoy.getMonth() + 1;
-                    const hoyAnio = hoy.getFullYear();
-                    this.diaActual = (hoyMes === MES && hoyAnio === ANIO)
-                        ? Math.max(data.diaActual, hoyDia)
-                        : data.diaActual;
+                    this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
                 }
 
                 this._mergePDVsFijos();
@@ -258,12 +258,134 @@ const DataStore = {
     getCuotasCompletas() { return this.cuotas; },
     getPromotores() { return this.promotores; },
     getDiaActual() { return this.diaActual; },
+
+    _parseFechaLocal(str) {
+        if (!str) return null;
+        const parts = String(str).split('-').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) return null;
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    },
+
+    setFiltrosFecha(desde, hasta) {
+        this.filtrosFecha = { desde: desde || null, hasta: hasta || null };
+    },
+
+    getFiltrosFecha() {
+        return { desde: this.filtrosFecha.desde, hasta: this.filtrosFecha.hasta };
+    },
+
+    limpiarFiltrosFecha() {
+        this.filtrosFecha = { desde: null, hasta: null };
+    },
+
+    getVentasEnRango(fechaDesde, fechaHasta) {
+        const fd = this._parseFechaLocal(fechaDesde);
+        const fh = this._parseFechaLocal(fechaHasta);
+        if (!fd && !fh) {
+            const activo = this.filtrosFecha.desde || this.filtrosFecha.hasta;
+            if (activo) return this.getVentasEnRango(this.filtrosFecha.desde, this.filtrosFecha.hasta);
+            return this.getVentasDelMes();
+        }
+        return this.ventas.filter(v => {
+            if (!v.fecha) return false;
+            const f = new Date(v.fecha);
+            if (isNaN(f.getTime())) return false;
+            const ts = new Date(f.getFullYear(), f.getMonth(), f.getDate()).getTime();
+            if (fd && ts < fd.getTime()) return false;
+            if (fh && ts > fh.getTime()) return false;
+            return true;
+        });
+    },
+
+    getMesesEnRango(fechaDesde, fechaHasta) {
+        const fd = this._parseFechaLocal(fechaDesde);
+        const fh = this._parseFechaLocal(fechaHasta);
+        if (!fd && !fh) {
+            if (this.filtrosFecha.desde || this.filtrosFecha.hasta) {
+                return this.getMesesEnRango(this.filtrosFecha.desde, this.filtrosFecha.hasta);
+            }
+            return [{ mes: MES, anio: ANIO }];
+        }
+        const fin = fh || fd;
+        const meses = [];
+        const cursor = new Date(fd.getFullYear(), fd.getMonth(), 1);
+        while (cursor <= fin) {
+            meses.push({ mes: cursor.getMonth() + 1, anio: cursor.getFullYear() });
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+        return meses;
+    },
+
+    getCuotasEnRango(fechaDesde, fechaHasta) {
+        const mesesEnRango = this.getMesesEnRango(fechaDesde, fechaHasta);
+        const keys = new Set(mesesEnRango.map(m => m.mes + '-' + m.anio));
+        return this.cuotas.filter(c => keys.has((c.mes || MES) + '-' + (c.anio || ANIO)));
+    },
+
+    getInfoPeriodo() {
+        const fd = this._parseFechaLocal(this.filtrosFecha.desde);
+        const fh = this._parseFechaLocal(this.filtrosFecha.hasta);
+        const activo = !!(this.filtrosFecha.desde && this.filtrosFecha.hasta);
+        if (!activo) {
+            return { activo: false, fechaDesde: null, fechaHasta: null, total: DIAS_MES, elapsed: this.diaActual };
+        }
+        const ahora = new Date();
+        const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        const total = Math.round((fh - fd) / 86400000) + 1;
+        const effEnd = fh.getTime() < hoy.getTime() ? fh : hoy;
+        let elapsed = Math.round((effEnd - fd) / 86400000) + 1;
+        elapsed = Math.max(1, Math.min(elapsed, total));
+        return {
+            activo: true,
+            fechaDesde: this.filtrosFecha.desde,
+            fechaHasta: this.filtrosFecha.hasta,
+            total,
+            elapsed
+        };
+    },
     getMesesConCuotas() {
         const meses = [...new Set(this.cuotas.map(c => `${c.mes}-${c.anio}`))];
         return meses.map(m => {
             const [mes, anio] = m.split('-').map(Number);
             return { mes, anio, nombre: MESES.find(mm => mm.valor === mes)?.nombre || mes };
         }).sort((a, b) => a.anio !== b.anio ? a.anio - b.anio : a.mes - b.mes);
+    },
+
+    _ventasEnPeriodo() {
+        const p = this.getInfoPeriodo();
+        if (!p.activo) {
+            return this.getVentasDelMes().filter(v => v.dia <= this.diaActual);
+        }
+        const fd = this._parseFechaLocal(p.fechaDesde);
+        const cutoff = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate() + (p.elapsed - 1));
+        const cutoffTs = cutoff.getTime();
+        return this.getVentasEnRango(p.fechaDesde, p.fechaHasta).filter(v => {
+            const f = new Date(v.fecha);
+            if (isNaN(f.getTime())) return false;
+            return new Date(f.getFullYear(), f.getMonth(), f.getDate()).getTime() <= cutoffTs;
+        });
+    },
+
+    getMesesDisponibles() {
+        const set = new Set();
+        for (const c of this.cuotas || []) {
+            if (c.anio && c.mes) set.add(c.anio + '-' + String(c.mes).padStart(2, '0'));
+        }
+        for (const v of this.ventas || []) {
+            if (v.fecha) {
+                const f = new Date(v.fecha);
+                if (!isNaN(f.getTime())) set.add(f.getFullYear() + '-' + String(f.getMonth() + 1).padStart(2, '0'));
+            }
+        }
+        const hoy = new Date();
+        for (let i = 0; i < 12; i++) {
+            const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+            set.add(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+        }
+        return [...set].sort().map(k => {
+            const [anio, mes] = k.split('-').map(Number);
+            return { mes, anio, nombre: MESES.find(x => x.valor === mes)?.nombre || mes };
+        });
     },
 
     getPDVs() {
@@ -332,17 +454,15 @@ const DataStore = {
     },
 
     getVentaTotal() {
-        return this.getVentasDelMes()
-            .filter(v => v.dia <= this.diaActual)
-            .reduce((s, v) => s + v.venta, 0);
+        return this._ventasEnPeriodo().reduce((s, v) => s + v.venta, 0);
     },
 
     getVentaPorProducto() {
         const result = {};
-        const ventasMes = this.getVentasDelMes();
+        const ventasPeriodo = this._ventasEnPeriodo();
         for (let prod of this.getProductos()) {
-            result[prod] = ventasMes
-                .filter(v => v.producto === prod && v.dia <= this.diaActual)
+            result[prod] = ventasPeriodo
+                .filter(v => v.producto === prod)
                 .reduce((s, v) => s + v.venta, 0);
         }
         return result;
@@ -350,10 +470,10 @@ const DataStore = {
 
     getVentaPorPDV() {
         const result = {};
-        const ventasMes = this.getVentasDelMes();
+        const ventasPeriodo = this._ventasEnPeriodo();
         for (let pdv of this.getPDVs()) {
-            result[pdv] = ventasMes
-                .filter(v => v.punto_venta === pdv && v.dia <= this.diaActual)
+            result[pdv] = ventasPeriodo
+                .filter(v => v.punto_venta === pdv)
                 .reduce((s, v) => s + v.venta, 0);
         }
         return result;
@@ -361,22 +481,27 @@ const DataStore = {
 
     getVentaDiaria() {
         const result = {};
-        const ventasMes = this.getVentasDelMes();
+        const p = this.getInfoPeriodo();
+        const ventasPeriodo = this._ventasEnPeriodo();
+        const fd = p.fechaDesde
+            ? this._parseFechaLocal(p.fechaDesde)
+            : new Date(ANIO, MES - 1, 1);
+        const elapsed = p.elapsed;
+        const base = new Date(fd.getFullYear(), fd.getMonth(), fd.getDate()).getTime();
         for (let prod of this.getProductos()) {
-            result[prod] = [];
-            for (let d = 1; d <= this.diaActual; d++) {
-                const total = ventasMes
-                    .filter(v => v.producto === prod && v.dia === d)
-                    .reduce((s, v) => s + v.venta, 0);
-                result[prod].push(total);
-            }
+            result[prod] = new Array(elapsed).fill(0);
+        }
+        for (const v of ventasPeriodo) {
+            const f = new Date(v.fecha);
+            if (isNaN(f.getTime()) || !result[v.producto]) continue;
+            const idx = Math.round((new Date(f.getFullYear(), f.getMonth(), f.getDate()).getTime() - base) / 86400000);
+            if (idx >= 0 && idx < elapsed) result[v.producto][idx] += v.venta;
         }
         return result;
     },
 
     getCuotaTotal() {
-        const cuotasFiltradas = this.getCuotas();
-        return cuotasFiltradas.reduce((s, c) => s + c.cuota, 0);
+        return this.getCuotasEnRango().reduce((s, c) => s + c.cuota, 0);
     },
 
     getAvanceGeneral() {
@@ -387,17 +512,18 @@ const DataStore = {
 
     getProyeccion() {
         const ventaTotal = this.getVentaTotal();
-        if (this.diaActual === 0) return 0;
-        return (ventaTotal / this.diaActual) * DIAS_MES;
+        const p = this.getInfoPeriodo();
+        if (p.elapsed === 0) return 0;
+        return (ventaTotal / p.elapsed) * p.total;
     },
 
     getCumplimientoPorProducto() {
         const result = {};
-        const cuotasFiltradas = this.getCuotas();
-        const ventasMes = this.getVentasDelMes();
+        const cuotasFiltradas = this.getCuotasEnRango();
+        const ventasPeriodo = this._ventasEnPeriodo();
         for (let prod of this.getProductos()) {
-            const venta = ventasMes
-                .filter(v => v.producto === prod && v.dia <= this.diaActual)
+            const venta = ventasPeriodo
+                .filter(v => v.producto === prod)
                 .reduce((s, v) => s + v.venta, 0);
             const cuota = cuotasFiltradas
                 .filter(c => c.producto === prod)
@@ -413,17 +539,19 @@ const DataStore = {
 
     getCumplimientoPorPDV(filtros = {}) {
         const result = {};
-        const diaDesde = filtros.fechaDesde ? new Date(filtros.fechaDesde).getDate() : 1;
-        const diaHasta = filtros.fechaHasta ? new Date(filtros.fechaHasta).getDate() : this.diaActual;
-        const filtrarFecha = v => v.dia >= diaDesde && v.dia <= diaHasta;
-        const cuotasFiltradas = this.getCuotas();
-        const ventasMes = this.getVentasDelMes();
+        const fechaDesde = filtros.fechaDesde || this.filtrosFecha.desde;
+        const fechaHasta = filtros.fechaHasta || this.filtrosFecha.hasta;
+        const ventasMes = this.getVentasEnRango(fechaDesde, fechaHasta);
+        const cuotasFiltradas = this.getCuotasEnRango(fechaDesde, fechaHasta);
+        const periodo = this.getInfoPeriodo();
+        const totalDias = periodo.total;
+        const diasTranscurridos = periodo.elapsed;
         for (let pdv of this.getPDVs()) {
             let ventaTotal = 0, cuotaTotal = 0;
             const productos = {};
             for (let prod of this.getProductos()) {
                 const venta = ventasMes
-                    .filter(v => v.punto_venta === pdv && v.producto === prod && v.dia <= this.diaActual && filtrarFecha(v))
+                    .filter(v => v.punto_venta === pdv && v.producto === prod)
                     .reduce((s, v) => s + v.venta, 0);
                 const cuota = cuotasFiltradas
                     .filter(c => c.punto_venta === pdv && c.producto === prod)
@@ -432,7 +560,7 @@ const DataStore = {
                 cuotaTotal += cuota;
                 productos[prod] = { venta, cuota, cumplimiento: cuota > 0 ? (venta / cuota) * 100 : 0 };
             }
-            const proyeccion = this.diaActual > 0 ? (ventaTotal / this.diaActual) * DIAS_MES : 0;
+            const proyeccion = diasTranscurridos > 0 ? (ventaTotal / diasTranscurridos) * totalDias : 0;
             result[pdv] = {
                 venta: ventaTotal,
                 cuota: cuotaTotal,
@@ -487,10 +615,9 @@ const DataStore = {
         return data[pdv] || null;
     },
 
-    calcularVentaDiariaRequerida({ diferencia, anio, mesNumero, diaActual }) {
-        const diasDelMes = new Date(anio, mesNumero, 0).getDate();
-        const diasRestantes = diasDelMes - diaActual + 1;
-
+    calcularVentaDiariaRequerida({ diferencia, anio, mesNumero, diaActual, totalDias }) {
+        const diasDelMes = totalDias || new Date(anio, mesNumero, 0).getDate();
+        const diasRestantes = Math.max(diasDelMes - diaActual, 0);
         if (diferencia <= 0) {
             return { estado: 'meta_cumplida', ventaDiariaRequerida: 0, diasRestantes: 0, diasDelMes };
         }
@@ -606,15 +733,13 @@ const DataStore = {
                 if (!data.ventas || data.ventas.length === 0) {
                     this.ventas = [];
                     this.cuotas = [];
-                    this.diaActual = 1;
+                    this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
                     if (typeof recargarDashboard === 'function') recargarDashboard();
                     return;
                 }
 
                 const hoy = new Date();
-                const diaHoy = Math.min(hoy.getDate(), DIAS_MES);
-                const mesHoy = hoy.getMonth() + 1;
-                const anioHoy = hoy.getFullYear();
+                const diaHoy = hoy.getDate();
 
                 this.ventas = data.ventas.map(v => ({
                     ...v,
@@ -628,7 +753,7 @@ const DataStore = {
                 }));
                 this.cuotas = cuotasCargadas;
                 this.promotores = data.promotores;
-                this.diaActual = (mesHoy === MES && anioHoy === ANIO) ? Math.max(data.diaActual, diaHoy) : data.diaActual;
+                this.diaActual = Math.min(diaHoy, DIAS_MES);
 
                 if (typeof recargarDashboard === 'function') recargarDashboard();
             } else {
@@ -644,15 +769,13 @@ const DataStore = {
                 if (!data.ventas || data.ventas.length === 0) {
                     this.ventas = [];
                     this.cuotas = [];
-                    this.diaActual = 1;
+                    this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
                     if (typeof recargarDashboard === 'function') recargarDashboard();
                     return;
                 }
 
                 const hoy = new Date();
-                const hoyDia = Math.min(hoy.getDate(), DIAS_MES);
-                const hoyMes = hoy.getMonth() + 1;
-                const hoyAnio = hoy.getFullYear();
+                const hoyDia = hoy.getDate();
 
                 this.ventas = data.ventas.map(v => ({
                     ...v,
@@ -666,7 +789,7 @@ const DataStore = {
                 }));
                 this.cuotas = cuotasCargadas;
                 this.promotores = data.promotores;
-                this.diaActual = (hoyMes === MES && hoyAnio === ANIO) ? Math.max(data.diaActual, hoyDia) : data.diaActual;
+                this.diaActual = Math.min(hoyDia, DIAS_MES);
 
                 if (typeof recargarDashboard === 'function') recargarDashboard();
             });

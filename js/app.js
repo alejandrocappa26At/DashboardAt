@@ -1,5 +1,6 @@
 ﻿function renderizarResumenEjecutivo() {
     renderAvisoOficial();
+    renderPeriodoAnalizado('periodo-analizado-resumen');
     const ventaTotal = DataStore.getVentaTotal();
     const cuotaTotal = DataStore.getCuotaTotal();
     const avance = DataStore.getAvanceGeneral();
@@ -39,6 +40,7 @@
 
 function renderizarAvancePDV(pdvSeleccionado) {
     renderAvisoOficial();
+    renderPeriodoAnalizado('periodo-analizado-avance');
     const pdvs = DataStore.getPDVs();
     const select = document.getElementById('pdv-select');
     if (!select) return;
@@ -48,9 +50,18 @@ function renderizarAvancePDV(pdvSeleccionado) {
     }
     select.value = pdvSeleccionado;
 
-    document.getElementById('pdv-dia-actual').textContent = DataStore.getDiaActual();
+    const periodoHeader = DataStore.getInfoPeriodo();
+    document.getElementById('pdv-dia-actual').textContent = periodoHeader.elapsed;
+    document.getElementById('pdv-dia-total').textContent = '/' + periodoHeader.total;
 
     const data = DataStore.getProyeccionPDV(pdvSeleccionado);
+
+    if (DataStore.getInfoPeriodo().activo && !DataStore.getVentasEnRango().length) {
+        document.getElementById('pdv-content').innerHTML =
+            '<div class="empty-state"><p>No existen registros de ventas para el periodo seleccionado.</p></div>';
+        return;
+    }
+
     if (!data) {
         document.getElementById('pdv-content').innerHTML = '<div class="empty-state"><p>Selecciona un punto de venta</p></div>';
         return;
@@ -66,10 +77,11 @@ function renderizarAvancePDV(pdvSeleccionado) {
         'LOTOBOLA': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
     };
 
+    const periodo = DataStore.getInfoPeriodo();
     const mesNumero = MES;
     const anio = ANIO;
-    const diaActual = DataStore.getDiaActual();
-    const diasDelMes = new Date(anio, mesNumero, 0).getDate();
+    const diaActual = periodo.elapsed;
+    const diasDelMes = periodo.total;
 
     let html = '';
     for (let prod of DataStore.getProductos()) {
@@ -79,7 +91,7 @@ function renderizarAvancePDV(pdvSeleccionado) {
         const proyCumple = proyPDV >= p.cuota;
         const diferencia = p.cuota - p.venta;
 
-        const vdrResult = DataStore.calcularVentaDiariaRequerida({ diferencia, anio, mesNumero, diaActual });
+        const vdrResult = DataStore.calcularVentaDiariaRequerida({ diferencia, anio, mesNumero, diaActual, totalDias: periodo.total });
 
         let dailyRequiredDesktop = '';
         let dailyRequiredMobile = '';
@@ -207,8 +219,19 @@ function renderizarAvancePDV(pdvSeleccionado) {
 
 function renderizarRanking() {
     renderAvisoOficial();
+    renderPeriodoAnalizado('periodo-analizado-ranking');
     const ranking = DataStore.getRanking();
     if (!document.getElementById('page-ranking')) return;
+
+    if (DataStore.getInfoPeriodo().activo && !DataStore.getVentasEnRango().length) {
+        destroyChart('chartRanking');
+        document.getElementById('ranking-podium').innerHTML = '';
+        document.getElementById('ranking-list').innerHTML =
+            '<div class="empty-state"><p>No existen registros de ventas para el periodo seleccionado.</p></div>';
+        document.getElementById('ranking-list-count').textContent = '0 tiendas';
+        document.getElementById('ranking-hero-stats').innerHTML = '';
+        return;
+    }
 
     const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
     const podiumColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
@@ -291,9 +314,20 @@ function renderizarRanking() {
 
 function renderizarResumenGeneralPDV() {
     renderAvisoOficial();
+    renderPeriodoAnalizado('periodo-analizado-resumen-pdv');
     try {
         const container = document.getElementById('rpdv-hero-kpis');
         if (!container) return;
+
+        if (DataStore.getInfoPeriodo().activo && !DataStore.getVentasEnRango().length) {
+            const grid = document.getElementById('rpdv-grid');
+            if (grid) grid.innerHTML =
+                '<div class="empty-state" style="grid-column:1/-1;"><p>No existen registros de ventas para el periodo seleccionado.</p></div>';
+            if (container) container.innerHTML = '';
+            const countEl = document.getElementById('rpdv-count');
+            if (countEl) countEl.textContent = '0 tiendas';
+            return;
+        }
 
         const pdvs = DataStore.getCumplimientoPorPDV();
         const entries = Object.entries(pdvs).map(([pdv, data]) => ({
@@ -536,6 +570,191 @@ function poblarFiltros() {
 
 const reporteSort = { sortBy: 'pdv', sortDir: 'asc' };
 
+/* ===== FILTROS DE FECHA (PERIODO ANALIZADO) ===== */
+function formatearFechaCorta(iso) {
+    if (!iso) return '';
+    const f = DataStore._parseFechaLocal(iso);
+    if (!f) return String(iso);
+    const dia = String(f.getDate()).padStart(2, '0');
+    const mes = String(f.getMonth() + 1).padStart(2, '0');
+    return dia + '/' + mes + '/' + f.getFullYear();
+}
+
+function renderPeriodoAnalizado(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const p = DataStore.getInfoPeriodo();
+    let label;
+    if (p.activo) {
+        const fd = DataStore._parseFechaLocal(p.fechaDesde);
+        const fh = DataStore._parseFechaLocal(p.fechaHasta);
+        const ultimoDia = new Date(fh.getFullYear(), fh.getMonth() + 1, 0).getDate();
+        const esMesCompleto = fd.getDate() === 1 && fh.getDate() === ultimoDia && fd.getMonth() === fh.getMonth() && fd.getFullYear() === fh.getFullYear();
+        label = esMesCompleto
+            ? (MESES.find(m => m.valor === fd.getMonth() + 1)?.nombre || fd.getMonth() + 1) + ' ' + fd.getFullYear()
+            : 'Del ' + formatearFechaCorta(p.fechaDesde) + ' al ' + formatearFechaCorta(p.fechaHasta);
+    } else {
+        const nombreMes = MESES.find(m => m.valor === MES)?.nombre || MES;
+        label = nombreMes + ' ' + ANIO;
+    }
+    el.innerHTML = `
+        <span class="periodo-analizado-ico">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        <span class="periodo-analizado-text">Periodo analizado: <strong>${label}</strong></span>`;
+    el.style.display = 'inline-flex';
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function fmtAnioMesDia(anio, mes, dia) { return anio + '-' + pad2(mes) + '-' + pad2(dia); }
+function diasDelMes(anio, mes) { return new Date(anio, mes, 0).getDate(); }
+
+function valorMesCompleto(desde, hasta) {
+    const fd = DataStore._parseFechaLocal(desde);
+    const fh = DataStore._parseFechaLocal(hasta);
+    if (!fd || !fh) return '';
+    const ultimo = new Date(fh.getFullYear(), fh.getMonth() + 1, 0).getDate();
+    const esMes = fd.getDate() === 1 && fh.getDate() === ultimo && fd.getMonth() === fh.getMonth() && fd.getFullYear() === fh.getFullYear();
+    return esMes ? fd.getFullYear() + '-' + pad2(fd.getMonth() + 1) : '';
+}
+
+function poblarSelectMes(modulo) {
+    const sel = document.getElementById('filtro-' + modulo + '-mes');
+    if (!sel) return;
+    if (sel.options.length > 1) return;
+    const meses = DataStore.getMesesDisponibles();
+    sel.innerHTML = '<option value="">Seleccionar periodo...</option>' +
+        '<option value="custom">Personalizado</option>' +
+        meses.map(mm => `<option value="${mm.anio}-${pad2(mm.mes)}">${mm.nombre} ${mm.anio}</option>`).join('');
+}
+
+function sincronizarInputsFecha() {
+    const filtros = DataStore.getFiltrosFecha();
+    ['resumen', 'avance', 'ranking', 'resumen-pdv', 'informe'].forEach(modulo => {
+        const desde = document.getElementById('filtro-' + modulo + '-desde');
+        const hasta = document.getElementById('filtro-' + modulo + '-hasta');
+        const mesSel = document.getElementById('filtro-' + modulo + '-mes');
+        poblarSelectMes(modulo);
+        if (desde) desde.value = filtros.desde || '';
+        if (hasta) hasta.value = filtros.hasta || '';
+        if (mesSel) mesSel.value = valorMesCompleto(filtros.desde, filtros.hasta);
+        toggleCustomPeriodo(modulo, (filtros.desde && filtros.hasta) ? !mesSel.value : false);
+    });
+}
+
+function toggleCustomPeriodo(modulo, open) {
+    const custom = document.getElementById('custom-' + modulo);
+    if (!custom) return;
+    custom.classList.toggle('is-open', !!open);
+    if (open) {
+        const input = document.getElementById('filtro-' + modulo + '-desde');
+        if (input) input.focus({ preventScroll: true });
+    }
+}
+
+function aplicarRangoFechas(modulo, desde, hasta) {
+    const d = document.getElementById('filtro-' + modulo + '-desde');
+    const h = document.getElementById('filtro-' + modulo + '-hasta');
+    if (d) d.value = desde;
+    if (h) h.value = hasta;
+    DataStore.setFiltrosFecha(desde, hasta);
+    recargarModulosConFiltro();
+}
+
+function cambiarMesFecha(modulo) {
+    const sel = document.getElementById('filtro-' + modulo + '-mes');
+    if (!sel) return;
+    const val = sel.value;
+    if (!val) {
+        toggleCustomPeriodo(modulo, false);
+        return;
+    }
+    if (val === 'custom') {
+        toggleCustomPeriodo(modulo, true);
+        return;
+    }
+    const [anio, mes] = val.split('-').map(Number);
+    const desde = fmtAnioMesDia(anio, mes, 1);
+    const hasta = fmtAnioMesDia(anio, mes, diasDelMes(anio, mes));
+    aplicarRangoFechas(modulo, desde, hasta);
+}
+
+function aplicarRangoRapido(modulo, tipo) {
+    const hoy = new Date();
+    const y = hoy.getFullYear();
+    const m = hoy.getMonth() + 1;
+    let desde = '';
+    let hasta = '';
+    if (tipo === 'hoy') {
+        const hoyStr = fmtAnioMesDia(y, m, hoy.getDate());
+        desde = hoyStr;
+        hasta = hoyStr;
+    } else if (tipo === 'esta-semana') {
+        const diaSemana = hoy.getDay();
+        const offsetIni = diaSemana === 0 ? 6 : diaSemana - 1;
+        const ini = new Date(y, m - 1, hoy.getDate() - offsetIni);
+        const fin = new Date(y, m - 1, hoy.getDate() + (6 - offsetIni));
+        desde = fmtAnioMesDia(ini.getFullYear(), ini.getMonth() + 1, ini.getDate());
+        hasta = fmtAnioMesDia(fin.getFullYear(), fin.getMonth() + 1, fin.getDate());
+    } else if (tipo === 'mes-actual') {
+        desde = fmtAnioMesDia(y, m, 1);
+        hasta = fmtAnioMesDia(y, m, diasDelMes(y, m));
+    } else if (tipo === 'mes-anterior') {
+        const aa = m === 1 ? y - 1 : y;
+        const mm = m === 1 ? 12 : m - 1;
+        desde = fmtAnioMesDia(aa, mm, 1);
+        hasta = fmtAnioMesDia(aa, mm, diasDelMes(aa, mm));
+    } else if (tipo === 'ultimos-3') {
+        let mm = m - 2;
+        let aa = y;
+        if (mm <= 0) { mm += 12; aa = y - 1; }
+        desde = fmtAnioMesDia(aa, mm, 1);
+        hasta = fmtAnioMesDia(y, m, diasDelMes(y, m));
+    } else if (tipo === 'anio-actual') {
+        desde = fmtAnioMesDia(y, 1, 1);
+        hasta = fmtAnioMesDia(y, 12, 31);
+    }
+    if (desde && hasta) aplicarRangoFechas(modulo, desde, hasta);
+}
+
+function recargarModulosConFiltro() {
+    sincronizarInputsFecha();
+    renderizarResumenEjecutivo();
+    renderizarAvancePDV();
+    renderizarRanking();
+    renderizarResumenGeneralPDV();
+    recargarInformeSiAplica();
+}
+
+function recargarInformeSiAplica() {
+    const sel = document.getElementById('inf-promotor-select');
+    if (sel && sel.value) aplicarFiltrosInformePromotor();
+}
+
+function aplicarFiltrosFecha(modulo) {
+    const desde = document.getElementById('filtro-' + modulo + '-desde').value;
+    const hasta = document.getElementById('filtro-' + modulo + '-hasta').value;
+    if (!desde || !hasta) {
+        mostrarNotificacion('Selecciona fecha inicial y fecha final', 'error');
+        return;
+    }
+    if (desde > hasta) {
+        mostrarNotificacion('La fecha inicial no puede ser posterior a la fecha final', 'error');
+        return;
+    }
+    DataStore.setFiltrosFecha(desde, hasta);
+    recargarModulosConFiltro();
+}
+
+function limpiarFiltrosFecha(modulo) {
+    const desde = document.getElementById('filtro-' + modulo + '-desde');
+    const hasta = document.getElementById('filtro-' + modulo + '-hasta');
+    if (desde) desde.value = '';
+    if (hasta) hasta.value = '';
+    DataStore.limpiarFiltrosFecha();
+    recargarModulosConFiltro();
+}
+
 /* ===== SUPERVISOR SESSION STATE ===== */
 const SUPERVISOR_PASSWORD = 'Adecco2019@';
 
@@ -607,6 +826,57 @@ function navegarACuotas() {
     abrirModalCuotasSinPassword();
 }
 
+function actualizarFechasUI() {
+    const nombreMes = MESES.find(m => m.valor === MES)?.nombre || MES;
+    const periodoText = nombreMes + ' ' + ANIO;
+    const diaActual = DataStore.getDiaActual();
+
+    const sidebar = document.getElementById('sidebar-periodo');
+    if (sidebar) sidebar.textContent = 'Dashboard de Ventas \u00b7 ' + periodoText;
+
+    const topBarPeriodo = document.getElementById('top-bar-periodo');
+    if (topBarPeriodo) topBarPeriodo.textContent = periodoText;
+
+    const fechaInfo = document.getElementById('dia-actual');
+    if (fechaInfo) fechaInfo.textContent = diaActual;
+
+    const diaTotal = document.getElementById('dia-actual-total');
+    if (diaTotal) diaTotal.textContent = DIAS_MES;
+
+    const pdvPeriodo = document.getElementById('pdv-date-periodo');
+    if (pdvPeriodo) pdvPeriodo.textContent = periodoText;
+
+    const pdvDiaActual = document.getElementById('pdv-dia-actual');
+    if (pdvDiaActual) pdvDiaActual.textContent = diaActual;
+
+    const pdvDiaTotal = document.getElementById('pdv-dia-total');
+    if (pdvDiaTotal) pdvDiaTotal.textContent = '/' + DIAS_MES;
+}
+
+function sincronizarSelectsPeriodo() {
+    const mesSelects = [document.getElementById('venta-mes'), document.getElementById('cuotas-mes')];
+    mesSelects.forEach(sel => {
+        if (sel) sel.value = String(MES);
+    });
+
+    const anioSelects = [document.getElementById('venta-anio'), document.getElementById('cuotas-anio')];
+    anioSelects.forEach(sel => {
+        if (!sel) return;
+        const anioStr = String(ANIO);
+        let existe = false;
+        for (let i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === anioStr) { existe = true; break; }
+        }
+        if (!existe) {
+            const opt = document.createElement('option');
+            opt.value = anioStr;
+            opt.textContent = anioStr;
+            sel.appendChild(opt);
+        }
+        sel.value = anioStr;
+    });
+}
+
 function recargarDashboard() {
     poblarFiltros();
 
@@ -635,9 +905,8 @@ function recargarDashboard() {
     }
 
     poblarFiltrosInformePromotor();
-
-    const fechaInfo = document.getElementById('dia-actual');
-    if (fechaInfo) fechaInfo.textContent = DataStore.getDiaActual() + ' / 31';
+    sincronizarInputsFecha();
+    actualizarFechasUI();
     renderizarResumenEjecutivo();
     renderizarAvancePDV();
     renderizarRanking();
@@ -822,6 +1091,7 @@ function abrirModalCuotas() {
 }
 
 function abrirModalCuotasSinPassword() {
+    sincronizarSelectsPeriodo();
     const mesActual = parseInt(document.getElementById('cuotas-mes').value);
     const anioActual = parseInt(document.getElementById('cuotas-anio').value);
 
@@ -1423,6 +1693,7 @@ function abrirModalVentaConSesion() {
     const diaSelect = document.getElementById('ventas-dia-select');
     if (diaSelect) diaSelect.style.display = 'none';
     document.getElementById('modal-venta').classList.remove('vista-dia');
+    sincronizarSelectsPeriodo();
     cargarVentasCalendario();
 }
 
@@ -1452,14 +1723,18 @@ function poblarFiltrosInformePromotor() {
             prods.map(p => '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>').join('');
     }
 
+    sincronizarInputsFecha();
+}
+
+function fechasEfectivasInforme() {
+    const filtros = DataStore.getFiltrosFecha();
+    if (filtros.desde && filtros.hasta) {
+        return { desde: filtros.desde, hasta: filtros.hasta };
+    }
     const hoy = new Date();
-    const mes = hoy.getMonth() + 1;
-    const anio = hoy.getFullYear();
-    const primerDia = new Date(anio, mes - 1, 1);
-    const desde = document.getElementById('inf-promotor-fecha-desde');
-    const hasta = document.getElementById('inf-promotor-fecha-hasta');
-    if (desde) desde.value = primerDia.toISOString().split('T')[0];
-    if (hasta) hasta.value = hoy.toISOString().split('T')[0];
+    const desde = fmtAnioMesDia(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+    const hasta = formatearFechaLocal(hoy);
+    return { desde, hasta };
 }
 
 function renderizarInformePromotor() {
@@ -1474,6 +1749,7 @@ function renderizarInformePromotor() {
         }
     }
     poblarFiltrosInformePromotor();
+    renderPeriodoAnalizado('periodo-analizado-informe');
     const content = document.getElementById('inf-promotor-content');
     if (content) {
         content.innerHTML = `
@@ -1521,8 +1797,9 @@ function aplicarFiltrosInformePromotor() {
         return;
     }
 
-    const fechaDesde = document.getElementById('inf-promotor-fecha-desde').value;
-    const fechaHasta = document.getElementById('inf-promotor-fecha-hasta').value;
+    const fechas = fechasEfectivasInforme();
+    const fechaDesde = fechas.desde;
+    const fechaHasta = fechas.hasta;
     const tiendaFiltro = document.getElementById('inf-promotor-tienda').value;
     const productFiltro = document.getElementById('inf-promotor-producto').value;
 
@@ -1942,25 +2219,8 @@ function ocultarAvisoOficial() {
     sessionStorage.setItem('aviso_oficial_oculto', 'true');
 }
 
-function mostrarBienvenida() {
-    const modal = document.getElementById('modal-bienvenida');
-    if (modal) {
-        modal.classList.add('open');
-    }
-}
-
-function cerrarBienvenida() {
-    const modal = document.getElementById('modal-bienvenida');
-    if (modal) {
-        modal.classList.remove('open');
-    }
-}
-
 document.addEventListener('DOMContentLoaded', function () {
     initPromotorSession();
-    if (!promotorSession) {
-        mostrarBienvenida();
-    }
     renderAvisoOficial();
     document.querySelectorAll('.nav-item').forEach(item => {
         if (!item.dataset.page) return;
