@@ -1090,17 +1090,13 @@ function abrirModalCuotas() {
     abrirModalCuotasSinPassword();
 }
 
-function abrirModalCuotasSinPassword() {
-    sincronizarSelectsPeriodo();
-    const mesActual = parseInt(document.getElementById('cuotas-mes').value);
-    const anioActual = parseInt(document.getElementById('cuotas-anio').value);
-
+function renderTablaCuotas(mes, anio) {
     const tbody = document.getElementById('tbody-cuotas');
     const thead = document.querySelector('#tabla-cuotas thead tr');
 
     const pdvs = DataStore.getPDVs();
     const productos = DataStore.getProductos();
-    const cuotas = DataStore.getCuotas(mesActual, anioActual);
+    const cuotas = DataStore.getCuotas(mes, anio);
 
     let headHtml = '<th class="cuotas-th-pdv">Punto de Venta</th>';
     for (let prod of productos) {
@@ -1120,14 +1116,25 @@ function abrirModalCuotasSinPassword() {
         tr.innerHTML = rowHtml;
         tbody.appendChild(tr);
     }
+}
+
+function abrirModalCuotasSinPassword() {
+    sincronizarSelectsPeriodo();
+    const mesActual = parseInt(document.getElementById('cuotas-mes').value);
+    const anioActual = parseInt(document.getElementById('cuotas-anio').value);
+
+    renderTablaCuotas(mesActual, anioActual);
 
     document.getElementById('modal-cuotas').classList.add('open');
 }
 
 function cambiarMesCuotas() {
-    if (document.getElementById('modal-cuotas').classList.contains('open')) {
-        abrirModalCuotasSinPassword();
-    }
+    if (!document.getElementById('modal-cuotas').classList.contains('open')) return;
+
+    const mes = parseInt(document.getElementById('cuotas-mes').value);
+    const anio = parseInt(document.getElementById('cuotas-anio').value);
+
+    renderTablaCuotas(mes, anio);
 }
 
 function cerrarModalCuotas() {
