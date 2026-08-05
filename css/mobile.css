@@ -1,0 +1,318 @@
+/* =============================================
+   OPTIMIZACIÓN MÓVIL — Dashboard de Ventas
+   SOLO aplica a pantallas <= 480px (celulares).
+   Desktop / laptop / pantallas grandes: sin cambios.
+   ============================================= */
+
+.mob-filter-trigger { display: none; }
+
+@media (max-width: 480px) {
+
+    /* ---------- Base ---------- */
+    .page { padding: 10px 10px 44px; }
+    .top-bar { padding: 8px 10px; }
+    .top-bar h2 { font-size: 14px; }
+    .top-bar-info { gap: 6px; }
+    .top-bar-info .top-bar-badge { font-size: 9.5px; padding: 3px 7px; }
+    .top-bar-info .top-bar-badge:nth-child(2) { display: none; }
+    .periodo-analizado { font-size: 10px; margin-bottom: 8px; }
+    .periodo-analizado-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .aviso-oficial { padding: 8px 10px; }
+    .aviso-oficial-content p { font-size: 10.5px; line-height: 1.35; }
+
+    .ctl-card { margin-bottom: 10px; border-radius: 10px; }
+    .ctl-card-header { padding: 7px 10px; }
+    .ctl-card-title { font-size: 10.5px; }
+    .ctl-card-count { font-size: 10px; }
+    .ctl-panel { border-radius: 10px; margin-bottom: 10px; }
+    .ctl-panel-header { padding: 7px 10px; font-size: 10px; }
+
+    /* ---------- KPI STRIP: 2x2 compacto ---------- */
+    .ctl-kpis { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+    .ctl-kpi { padding: 8px 10px; border-radius: 8px; gap: 1px; }
+    .ctl-kpi-label { font-size: 8px; letter-spacing: 0.4px; }
+    .ctl-kpi-value { font-size: 18px; }
+    .ctl-kpi-sub { font-size: 8.5px; }
+    /* Solo KPIs clave (Venta Total, Cumplimiento, PDVs Cumplen, PDVs Riesgo) */
+    #kpi-row .ctl-kpi:nth-child(2),
+    #kpi-row .ctl-kpi:nth-child(6),
+    #kpi-row .ctl-kpi:nth-child(7),
+    #kpi-row .ctl-kpi:nth-child(8),
+    #ve-kpis .ctl-kpi:nth-child(2),
+    #ve-kpis .ctl-kpi:nth-child(6),
+    #ve-kpis .ctl-kpi:nth-child(7),
+    #ve-kpis .ctl-kpi:nth-child(8) { display: none; }
+
+    /* ---------- Banner de progreso ---------- */
+    #overall-progress { flex-direction: row; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 10px; }
+    #overall-progress .resumen-progress-number { font-size: 18px; }
+    #overall-progress .resumen-progress-info { flex-direction: row; gap: 8px; }
+    #overall-progress .resumen-progress-label { font-size: 9px; }
+    #overall-progress .resumen-progress-track { height: 6px; }
+    #overall-progress .resumen-progress-badge { font-size: 9px; padding: 3px 8px; white-space: nowrap; }
+
+    /* ---------- Charts ---------- */
+    .ctl-charts { gap: 8px; margin-bottom: 8px; }
+    .ctl-charts .resumen-chart-body { height: 140px; }
+    .ctl-charts .resumen-chart-body-sm { height: 140px; }
+    .ctl-charts .resumen-chart-card { padding: 10px; }
+    .resumen-chart-card-full .resumen-chart-body { min-height: 160px; }
+    .resumen-header { margin-bottom: 10px; }
+    .resumen-header-title { font-size: 15px; }
+    .resumen-header-sub { display: none; }
+
+    /* ---------- Tablas: compactación global ---------- */
+    table.ctl-table { min-width: 0; font-size: 11px; }
+    .ctl-table thead th { padding: 5px 6px; font-size: 9px; letter-spacing: 0.3px; }
+    .ctl-table tbody td { padding: 5px 6px; }
+    .ctl-td-pos { width: 22px; }
+    .ctl-table-wrap { overflow-x: hidden; }
+    .ctl-cell-bar { min-width: 0; gap: 4px; }
+    .ctl-cell-bar-track { display: none; }
+    .ctl-cell-bar strong { font-size: 11px; }
+    .ctl-semaforo { padding: 1px 7px; font-size: 9px; gap: 4px; }
+
+    /* ---------- RANKING: # | Tienda | Cumplimiento ---------- */
+    #ranking-list table.ctl-table th:nth-child(3),
+    #ranking-list table.ctl-table th:nth-child(4),
+    #ranking-list table.ctl-table th:nth-child(6),
+    #ranking-list table.ctl-table th:nth-child(7),
+    #ranking-list table.ctl-table th:nth-child(8),
+    #ranking-list table.ctl-table td:nth-child(3),
+    #ranking-list table.ctl-table td:nth-child(4),
+    #ranking-list table.ctl-table td:nth-child(6),
+    #ranking-list table.ctl-table td:nth-child(7),
+    #ranking-list table.ctl-table td:nth-child(8) { display: none; }
+
+    .ranking-hero { padding: 10px 12px; margin-bottom: 8px; }
+    .ranking-hero-icon { width: 34px; height: 34px; }
+    .ranking-hero-title { font-size: 14px; }
+    .ranking-hero-sub { display: none; }
+    .ranking-hero-stats { gap: 8px; }
+    .ranking-hero-stat-value { font-size: 15px; }
+    .ranking-hero-stat-label { font-size: 8px; }
+    .ranking-list-header { margin-bottom: 8px; }
+    .ranking-list-title { font-size: 11px; }
+    .ranking-list-count { font-size: 10px; }
+    .ranking-chart-card { display: none; }
+
+    /* ---------- RESUMEN GENERAL PDV: lista compacta ---------- */
+    #rpdv-grid table.ctl-table th:nth-child(6),
+    #rpdv-grid table.ctl-table th:nth-child(7),
+    #rpdv-grid table.ctl-table th:nth-child(8),
+    #rpdv-grid table.ctl-table td:nth-child(6),
+    #rpdv-grid table.ctl-table td:nth-child(7),
+    #rpdv-grid table.ctl-table td:nth-child(8) { display: none; }
+    #rpdv-grid table.ctl-table td:nth-child(1),
+    #rpdv-grid table.ctl-table td:nth-child(2),
+    #rpdv-grid table.ctl-table th:nth-child(1),
+    #rpdv-grid table.ctl-table th:nth-child(2) { text-align: left; }
+
+    .rpdv-hero { padding: 10px 12px; margin-bottom: 8px; }
+    .rpdv-hero-icon { width: 34px; height: 34px; }
+    .rpdv-hero-title { font-size: 13px; }
+    .rpdv-hero-sub { display: none; }
+    .rpdv-hero-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; width: 100%; }
+    .rpdv-hero-kpi { padding: 6px 8px; }
+    .rpdv-hero-kpi-value { font-size: 15px; }
+    .rpdv-hero-kpi-label { font-size: 8.5px; }
+    .rpdv-charts { display: none; }
+
+    /* ---------- AVANCE POR PDV (fallback sin JS) ---------- */
+    #pdv-content table.ctl-table th:nth-child(n+5),
+    #pdv-content table.ctl-table td:nth-child(n+5) { display: none; }
+    #pdv-content table.ctl-table th:nth-child(1),
+    #pdv-content table.ctl-table td:nth-child(1) { text-align: left; }
+
+    /* ---------- VISTA EJECUTIVA ---------- */
+    #ve-main table.ctl-table th:nth-child(3),
+    #ve-main table.ctl-table th:nth-child(4),
+    #ve-main table.ctl-table th:nth-child(6),
+    #ve-main table.ctl-table th:nth-child(7),
+    #ve-main table.ctl-table th:nth-child(8),
+    #ve-main table.ctl-table td:nth-child(3),
+    #ve-main table.ctl-table td:nth-child(4),
+    #ve-main table.ctl-table td:nth-child(6),
+    #ve-main table.ctl-table td:nth-child(7),
+    #ve-main table.ctl-table td:nth-child(8) { display: none; }
+    .ve-layout { gap: 10px; }
+    .ve-side { gap: 10px; }
+    .ve-side .ctl-rank-item:nth-child(n+6) { display: none; }
+    .ctl-rank-item { padding: 5px 8px; gap: 8px; }
+    .ctl-rank-pos { width: 22px; height: 22px; font-size: 11px; }
+    .ctl-rank-name { font-size: 11.5px; }
+    .ctl-rank-value { font-size: 12px; }
+    .ctl-alert-item { padding: 6px 8px; gap: 8px; }
+    .ctl-alert-name { font-size: 11.5px; }
+    .ctl-alert-value { font-size: 11.5px; }
+
+    /* ---------- FILTROS COMPACTOS (barra + panel) ---------- */
+    .date-filters > :not(.mob-filter-trigger),
+    .rpdv-filters > :not(.mob-filter-trigger),
+    .inf-promotor-filters > :not(.mob-filter-trigger) { display: none; }
+
+    .date-filters.open > :not(.mob-filter-trigger) { display: block; }
+    .rpdv-filters.open > :not(.mob-filter-trigger),
+    .inf-promotor-filters.open > :not(.mob-filter-trigger) { display: flex; }
+    .rpdv-filters.open, .inf-promotor-filters.open { flex-direction: column; gap: 6px; align-items: stretch; }
+    .date-filters.open .date-filter-bar { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+    .date-filters.open .date-filter-main { width: 100%; }
+    .date-filters.open .date-filter-fastrow { display: flex; flex-wrap: wrap; gap: 6px; }
+    .date-filters.open .date-btn-quick { flex: 1 1 auto; min-width: 0; }
+    .rpdv-filters.open .rpdv-search { width: 100%; }
+
+    .mob-filter-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        background: #181818;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 10px;
+        color: #e6e6e6;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .mob-filter-trigger .mob-ft-left { display: inline-flex; align-items: center; gap: 6px; }
+    .mob-filter-trigger .mob-ft-right {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10px;
+        color: #1DB954;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .mob-filter-trigger .mob-ft-right svg { width: 12px; height: 12px; transition: transform 0.2s ease; }
+    .mob-collapsible.open > .mob-filter-trigger .mob-ft-right svg { transform: rotate(180deg); }
+
+    /* ---------- AVANCE PDV: tarjetas móviles ---------- */
+    .pdv-mob-list { display: flex; flex-direction: column; gap: 10px; }
+    .pdv-mob-card { padding: 10px 12px; }
+    .pdv-mob-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 8px;
+    }
+    .pdv-mob-head .ctl-group-name { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+    .pdv-mob-prods { display: flex; flex-direction: column; }
+    .pdv-mob-prod {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 11.5px;
+    }
+    .pdv-mob-prod:last-child { border-bottom: none; }
+    .pdv-mob-pname { color: #d4d4d4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pdv-mob-pmain { display: inline-flex; align-items: center; gap: 6px; color: #8a8a8a; white-space: nowrap; }
+    .pdv-mob-pmain b { font-weight: 800; }
+    .c-good { color: #1DB954 !important; }
+    .c-warn { color: #F59E0B !important; }
+    .c-bad  { color: #EF4444 !important; }
+
+    .pdv-mob-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        margin-top: 8px;
+        padding: 7px;
+        background: rgba(29, 185, 84, 0.08);
+        border: 1px solid rgba(29, 185, 84, 0.2);
+        border-radius: 8px;
+        color: #1DB954;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .pdv-mob-toggle svg { width: 12px; height: 12px; transition: transform 0.2s ease; }
+    .pdv-mob-card.open .pdv-mob-toggle svg { transform: rotate(180deg); }
+    .pdv-mob-detail { display: none; margin-top: 8px; border-top: 1px dashed rgba(255, 255, 255, 0.08); padding-top: 6px; }
+    .pdv-mob-card.open .pdv-mob-detail { display: block; }
+    .pdv-mob-drow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+        padding: 4px 0;
+        font-size: 10.5px;
+        color: #8a8a8a;
+    }
+    .pdv-mob-drow b { color: #d4d4d4; font-weight: 700; }
+
+    /* ---------- INFORME POR PROMOTOR: acordeón ---------- */
+    .prm-acc {
+        background: #181818;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        overflow: hidden;
+    }
+    .prm-acc summary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        list-style: none;
+        cursor: pointer;
+        position: relative;
+    }
+    .prm-acc summary::-webkit-details-marker { display: none; }
+    .prm-name { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prm-cump { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .prm-venta { font-size: 10.5px; color: #8a8a8a; white-space: nowrap; }
+    .prm-acc summary::after {
+        content: "";
+        width: 7px; height: 7px;
+        border-right: 2px solid #1DB954;
+        border-bottom: 2px solid #1DB954;
+        transform: rotate(45deg) translateY(-2px);
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+    }
+    .prm-acc[open] summary::after { transform: rotate(-135deg) translateY(-2px); }
+    .prm-detail { padding: 0 12px 10px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
+    .prm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 10px; padding-top: 8px; }
+    .prm-grid div { display: flex; flex-direction: column; gap: 1px; font-size: 10px; color: #8a8a8a; min-width: 0; }
+    .prm-grid b { font-size: 11px; color: #d4d4d4; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ---------- Informe individual (productos) ---------- */
+    .inf-promotor-hero { padding: 10px 12px; margin-bottom: 8px; }
+    .inf-promotor-hero-icon { width: 34px; height: 34px; }
+    .inf-promotor-hero-title { font-size: 14px; }
+    .inf-promotor-hero-sub { display: none; }
+    .inf-promotor-hero-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; width: 100%; }
+    .inf-promotor-hero-kpi { padding: 6px 8px; }
+    .inf-promotor-hero-kpi-value { font-size: 14px; }
+    .inf-promotor-hero-kpi-label { font-size: 8.5px; }
+    .inf-promotor-summary-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .inf-promotor-topbottom-grid { grid-template-columns: 1fr; }
+    .inf-promotor-ranking-row { padding: 8px; }
+
+    /* ---------- Menú lateral (hamburguesa) ---------- */
+    .sidebar { width: 280px; }
+    .sidebar-header { padding: 16px 16px 14px; }
+    .sidebar-nav { padding: 8px 10px 20px; }
+    .nav-item { padding: 10px 12px; }
+    .mobile-toggle {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}

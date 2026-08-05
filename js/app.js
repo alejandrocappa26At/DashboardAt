@@ -1,26 +1,43 @@
-﻿function renderizarResumenEjecutivo() {
+function renderizarResumenEjecutivo() {
     renderAvisoOficial();
     renderPeriodoAnalizado('periodo-analizado-resumen');
     const ventaTotal = DataStore.getVentaTotal();
     const cuotaTotal = DataStore.getCuotaTotal();
     const avance = DataStore.getAvanceGeneral();
     const proyeccion = DataStore.getProyeccion();
-    const pdvCumplen = DataStore.getPDVsCumplenMeta();
-    const totalPDVs = DataStore.getPDVs().length;
-    const pdvRiesgo = DataStore.getPDVsEnRiesgo();
-    const mejorPDV = DataStore.getMejorPDV();
+    const ranking = DataStore.getRanking();
+    const totalPDVs = ranking.length;
+    const pdvCumplen = ranking.filter(r => r.cumplimiento >= 100).length;
+    const pdvRiesgo = ranking.filter(r => r.cumplimiento < 80).length;
+    const mejor = ranking[0];
+    const peor = ranking[ranking.length - 1];
 
-    document.getElementById('kpi-venta-total').textContent = formatCurrency(ventaTotal);
-    document.getElementById('kpi-venta-sub').textContent = 'de ' + formatCurrency(cuotaTotal) + ' meta total';
-    document.getElementById('kpi-avance').textContent = formatPercent(avance);
-    document.getElementById('kpi-avance-sub').textContent = avance >= 100 ? '\u00a1Meta alcanzada!' : 'Falta ' + formatPercent(100 - avance) + ' para la meta';
-    document.getElementById('kpi-proyeccion').textContent = formatCurrency(proyeccion);
-    document.getElementById('kpi-proyeccion-sub').textContent = proyeccion >= cuotaTotal ? 'Supera la meta mensual' : 'Por debajo de la meta';
-    document.getElementById('kpi-cumplen').textContent = pdvCumplen + ' / ' + totalPDVs;
-    document.getElementById('kpi-cumplen-sub').textContent = totalPDVs > 0 ? Math.round((pdvCumplen / totalPDVs) * 100) + '% de PDVs cumplen' : '';
-    document.getElementById('kpi-riesgo').textContent = pdvRiesgo;
-    document.getElementById('kpi-riesgo-sub').textContent = totalPDVs > 0 ? Math.round((pdvRiesgo / totalPDVs) * 100) + '% de PDVs en riesgo' : '';
-    document.getElementById('kpi-mejor-pdv').textContent = mejorPDV.replace('Red AT ', '');
+    const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    const setCls = (id, cls) => { const el = document.getElementById(id); if (el) el.className = 'ctl-kpi-value ' + cls; };
+
+    setText('kpi-venta-total', formatCurrency(ventaTotal));
+    setText('kpi-venta-sub', 'acumulado del periodo');
+    setText('kpi-meta-total', formatCurrency(cuotaTotal));
+    setText('kpi-meta-sub', 'cuota asignada');
+
+    setText('kpi-avance', formatPercent(avance));
+    setCls('kpi-avance', avance >= 100 ? 'green' : avance >= 80 ? 'yellow' : 'red');
+    setText('kpi-avance-sub', avance >= 100 ? 'meta alcanzada' : 'falta ' + formatPercent(100 - avance) + ' para la meta');
+
+    setText('kpi-cumplen', pdvCumplen + ' / ' + totalPDVs);
+    setText('kpi-cumplen-sub', totalPDVs > 0 ? Math.round((pdvCumplen / totalPDVs) * 100) + '% de PDVs cumplen' : '');
+
+    setText('kpi-riesgo', pdvRiesgo);
+    setText('kpi-riesgo-sub', totalPDVs > 0 ? Math.round((pdvRiesgo / totalPDVs) * 100) + '% de PDVs en riesgo' : '');
+
+    setText('kpi-mejor-pdv', mejor ? mejor.punto_venta.replace(/^Red AT /i, '') : '-');
+    setText('kpi-mejor-sub', mejor ? formatPercent(mejor.cumplimiento) : '');
+
+    setText('kpi-peor-pdv', peor ? peor.punto_venta.replace(/^Red AT /i, '') : '-');
+    setText('kpi-peor-sub', peor ? formatPercent(peor.cumplimiento) : '');
+
+    setText('kpi-proyeccion', formatCurrency(proyeccion));
+    setText('kpi-proyeccion-sub', proyeccion >= cuotaTotal ? 'supera la meta mensual' : 'por debajo de la meta');
 
     const opNum = document.getElementById('op-number');
     const opBar = document.getElementById('op-bar-fill');
@@ -46,7 +63,7 @@ function renderizarAvancePDV(pdvSeleccionado) {
     if (!select) return;
 
     if (!pdvSeleccionado) {
-        pdvSeleccionado = select.value || pdvs[0];
+        pdvSeleccionado = select.value || 'todos';
     }
     select.value = pdvSeleccionado;
 
@@ -54,167 +71,65 @@ function renderizarAvancePDV(pdvSeleccionado) {
     document.getElementById('pdv-dia-actual').textContent = periodoHeader.elapsed;
     document.getElementById('pdv-dia-total').textContent = '/' + periodoHeader.total;
 
-    const data = DataStore.getProyeccionPDV(pdvSeleccionado);
+    const container = document.getElementById('pdv-content');
+    if (!container) return;
 
     if (DataStore.getInfoPeriodo().activo && !DataStore.getVentasEnRango().length) {
-        document.getElementById('pdv-content').innerHTML =
-            '<div class="empty-state"><p>No existen registros de ventas para el periodo seleccionado.</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>No existen registros de ventas para el periodo seleccionado.</p></div>';
         return;
     }
 
-    if (!data) {
-        document.getElementById('pdv-content').innerHTML = '<div class="empty-state"><p>Selecciona un punto de venta</p></div>';
-        return;
-    }
-
-    const iconMap = {
-        'Apuestas Deportivas': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-        'Lottingo': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>',
-        'Hípica': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3L3 17l4 4L21 7l-4-4z"/><path d="M8 8l4-4"/><path d="M16 16l-4 4"/></svg>',
-        'Juegos Virtuales': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h.01M14 12h.01M18 12h.01"/></svg>',
-        'Torito': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/></svg>',
-        'VLT': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>',
-        'LOTOBOLA': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
-    };
-
+    const allData = DataStore.getCumplimientoPorPDV();
+    const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSeleccionado] : pdvs;
     const periodo = DataStore.getInfoPeriodo();
     const mesNumero = MES;
     const anio = ANIO;
     const diaActual = periodo.elapsed;
-    const diasDelMes = periodo.total;
 
-    let html = '';
-    for (let prod of DataStore.getProductos()) {
-        const p = data.productos[prod];
-        const semaforoCls = p.cumplimiento >= 100 ? 'green' : p.cumplimiento >= 80 ? 'yellow' : 'red';
-        const proyPDV = diaActual > 0 ? (p.venta / diaActual) * diasDelMes : 0;
-        const proyCumple = proyPDV >= p.cuota;
-        const diferencia = p.cuota - p.venta;
+    let rowsHtml = '';
+    for (let pdv of listaPDVs) {
+        const d = allData[pdv];
+        if (!d) continue;
 
-        const vdrResult = DataStore.calcularVentaDiariaRequerida({ diferencia, anio, mesNumero, diaActual, totalDias: periodo.total });
+        rowsHtml += '<tr class="ctl-group-row"><td colspan="7">' +
+            '<span class="ctl-group-name">' + ctlDot(d.cumplimiento) + ' ' + ctlEsc(pdv) + '</span>' +
+            '</td><td class="ctl-td-left">' + ctlBadge(d.cumplimiento) + '</td></tr>';
 
-        let dailyRequiredDesktop = '';
-        let dailyRequiredMobile = '';
-        let dailyRequiredColor = '#b3b3b3';
+        for (let prod of DataStore.getProductos()) {
+            const p = d.productos[prod];
+            if (!p) continue;
+            const dif = p.cuota - p.venta;
+            const proyPDV = diaActual > 0 ? (p.venta / diaActual) * periodo.total : 0;
+            const vdrResult = DataStore.calcularVentaDiariaRequerida({ diferencia: dif, anio, mesNumero, diaActual, totalDias: periodo.total });
+            let vdrStr = '\u2014';
+            if (vdrResult.estado === 'meta_cumplida') vdrStr = '<span class="ctl-td-good">\u2713 Meta</span>';
+            else if (vdrResult.estado === 'mes_finalizado') vdrStr = '<span class="ctl-td-dim">Fin mes</span>';
+            else vdrStr = formatCurrency(vdrResult.ventaDiariaRequerida);
 
-        if (vdrResult.estado === 'meta_cumplida') {
-            dailyRequiredDesktop = '<span class="pdv-daily-required" style="color:#1DB954;">✓ Meta cumplida</span>';
-            dailyRequiredMobile = '<span class="pdv-daily-required-mobile" style="color:#1DB954;font-size:11px;">✓ Meta cumplida</span>';
-        } else if (vdrResult.estado === 'mes_finalizado') {
-            dailyRequiredDesktop = '<span class="pdv-daily-required" style="color:#5A5A5A;">Mes finalizado</span>';
-            dailyRequiredMobile = '<span class="pdv-daily-required-mobile" style="color:#5A5A5A;font-size:11px;">Mes finalizado</span>';
-        } else {
-            const vdr = vdrResult.ventaDiariaRequerida;
-            const promedioDiarioActual = diaActual > 0 ? p.venta / diaActual : 0;
-
-            let urgenciaLabel = '';
-            if (promedioDiarioActual > 0 && vdr > 0) {
-                const factorUrgencia = vdr / promedioDiarioActual;
-                if (factorUrgencia <= 1) {
-                    dailyRequiredColor = '#1DB954';
-                    urgenciaLabel = 'Ritmo actual suficiente';
-                } else if (factorUrgencia <= 1.5) {
-                    dailyRequiredColor = '#F5A623';
-                    urgenciaLabel = 'Necesitas acelerar el ritmo';
-                } else {
-                    dailyRequiredColor = '#E74C3C';
-                    const pctExtra = Math.round((factorUrgencia - 1) * 100);
-                    urgenciaLabel = `Ritmo insuficiente, +${pctExtra}% requerido`;
-                }
-            }
-
-            const tooltipText = `${formatCurrency(diferencia)} ÷ ${vdrResult.diasRestantes} días restantes${urgenciaLabel ? ' · ' + urgenciaLabel : ''}`;
-            const clockIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-
-            dailyRequiredDesktop = `<span class="pdv-daily-required" style="color:${dailyRequiredColor};" title="${tooltipText}">${clockIcon} ${formatCurrency(vdr)}/día requerido</span>`;
-            dailyRequiredMobile = `<span class="pdv-daily-required-mobile" style="color:${dailyRequiredColor};font-size:11px;" title="${tooltipText}">→ ${formatCurrency(vdr)}/día para cumplir</span>`;
+            rowsHtml += '<tr>' +
+                '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(prod) + '</td>' +
+                '<td>' + formatCurrency(p.venta) + '</td>' +
+                '<td>' + formatCurrency(p.cuota) + '</td>' +
+                '<td>' + ctlBarCell(p.cumplimiento) + '</td>' +
+                '<td class="' + (p.venta >= p.cuota ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (p.venta >= p.cuota ? '\u2713 ' + formatCurrency(Math.abs(dif)) : formatCurrency(dif)) + '</td>' +
+                '<td class="' + (proyPDV >= p.cuota ? 'ctl-td-good' : 'ctl-td-dim') + '">' + formatCurrency(proyPDV) + '</td>' +
+                '<td class="ctl-td-dim">' + vdrStr + '</td>' +
+                '<td>' + ctlBadge(p.cumplimiento) + '</td>' +
+                '</tr>';
         }
-
-        html += `
-        <div class="pdv-card card-${semaforoCls}">
-            <div class="pdv-card-header">
-                <div class="pdv-card-title-group">
-                    <div class="pdv-card-icon ${semaforoCls}">${iconMap[prod] || ''}</div>
-                    <span class="pdv-card-title">${prod}</span>
-                </div>
-                <span class="pdv-pct-badge ${semaforoCls}">${formatPercent(p.cumplimiento)}</span>
-            </div>
-
-            <div class="pdv-stats-row">
-                <div class="pdv-stat-card">
-                    <div class="pdv-stat-label">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        Cuota
-                    </div>
-                    <div class="pdv-stat-value">${formatCurrency(p.cuota)}</div>
-                </div>
-                <div class="pdv-stat-card">
-                    <div class="pdv-stat-label">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                        Venta Acumulada
-                    </div>
-                    <div class="pdv-stat-value">${formatCurrency(p.venta)}</div>
-                </div>
-                <div class="pdv-stat-card">
-                    <div class="pdv-stat-label">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                        Diferencia
-                    </div>
-                    <div class="pdv-stat-value ${p.venta >= p.cuota ? 'green' : 'red'}">
-                        ${p.venta >= p.cuota ? '\u2713 ' : ''}${formatCurrency(Math.abs(diferencia))}
-                    </div>
-                </div>
-                <div class="pdv-stat-card">
-                    <div class="pdv-stat-label">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        Proyecci\u00f3n
-                    </div>
-                    <div class="pdv-stat-value">${formatCurrency(proyPDV)}</div>
-                </div>
-            </div>
-
-            <div class="pdv-progress-section">
-                <div class="pdv-progress-header">
-                    <div class="pdv-progress-header-left">
-                        <span class="pdv-progress-label">Avance: <strong style="color:#ffffff;">${formatPercent(p.cumplimiento)}</strong></span>
-                        ${dailyRequiredDesktop}
-                    </div>
-                    <div class="pdv-progress-header-right">
-                        <span class="pdv-progress-faltan ${semaforoCls}">${p.venta >= p.cuota ? 'Meta alcanzada \u2713' : 'Faltan: ' + formatCurrency(diferencia)}</span>
-                        ${dailyRequiredMobile}
-                    </div>
-                </div>
-                <div class="pdv-progress-track">
-                    <div class="pdv-progress-fill ${semaforoCls}" style="width:${Math.min(p.cumplimiento, 100)}%;"></div>
-                </div>
-            </div>
-
-            <div class="pdv-projection">
-                <div class="pdv-projection-label">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                    Proyecci\u00f3n fin de mes
-                </div>
-                <span class="pdv-projection-badge ${proyCumple ? 'green' : 'red'}">
-                    ${proyCumple
-                        ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Se proyecta cumplir la meta'
-                        : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> No se proyecta cumplir la meta'}
-                </span>
-                <div class="pdv-legend">
-                    <div class="pdv-legend-item" title="Cumplimiento \u2265 100%">
-                        <span class="pdv-legend-dot green"></span> \u2265 100%
-                    </div>
-                    <div class="pdv-legend-item" title="Cumplimiento entre 80% y 99%">
-                        <span class="pdv-legend-dot yellow"></span> 80-99%
-                    </div>
-                    <div class="pdv-legend-item" title="Cumplimiento menor a 80%">
-                        <span class="pdv-legend-dot red"></span> &lt; 80%
-                    </div>
-                </div>
-            </div>
-        </div>`;
     }
 
-    document.getElementById('pdv-content').innerHTML = html;
+    container.innerHTML = '' +
+        '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Avance por Punto de Venta</span>' +
+        '<span class="ctl-card-count">' + ((pdvSeleccionado && pdvSeleccionado !== 'todos') ? ctlEsc(pdvSeleccionado) : listaPDVs.length + ' PDVs') + '</span>' +
+        '</div>' +
+        '<div class="ctl-table-wrap"><table class="ctl-table">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">Producto</th><th>Venta</th><th>Meta</th><th>Alcance</th><th>Diferencia</th><th>Proyecci\u00f3n</th><th>Req. D\u00eda</th><th>Estado</th>' +
+        '</tr></thead><tbody>' + rowsHtml + '</tbody>' +
+        '</table></div></div>';
 }
 
 function renderizarRanking() {
@@ -223,9 +138,10 @@ function renderizarRanking() {
     const ranking = DataStore.getRanking();
     if (!document.getElementById('page-ranking')) return;
 
-    if (DataStore.getInfoPeriodo().activo && !DataStore.getVentasEnRango().length) {
+    const noData = DataStore.getInfoPeriodo().activo && !DataStore.getVentasEnRango().length;
+
+    if (noData) {
         destroyChart('chartRanking');
-        document.getElementById('ranking-podium').innerHTML = '';
         document.getElementById('ranking-list').innerHTML =
             '<div class="empty-state"><p>No existen registros de ventas para el periodo seleccionado.</p></div>';
         document.getElementById('ranking-list-count').textContent = '0 tiendas';
@@ -234,63 +150,32 @@ function renderizarRanking() {
     }
 
     const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
-    const podiumColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
-
-    const top3 = ranking.slice(0, 3);
-    const rest = ranking.slice(3);
-
-    const podiumHtml = top3.map((r, i) => {
-        const hue = i === 0 ? 45 : i === 1 ? 0 : 30;
-        const sat = i === 0 ? 100 : i === 1 ? 40 : 60;
-        const light = i === 0 ? 55 : i === 1 ? 75 : 55;
-        return `
-            <div class="podium-card podium-${['gold','silver','bronze'][i]}">
-                <div class="podium-medal">${medals[i]}</div>
-                <div class="podium-position">#${r.puesto}</div>
-                <div class="podium-name">${r.punto_venta}</div>
-                <div class="podium-score">${r.puntaje.toFixed(1)}%</div>
-                <div class="podium-bar-track">
-                    <div class="podium-bar-fill" style="width:${Math.min(r.cumplimiento, 100)}%;background:hsl(${hue},${sat}%,${light}%);"></div>
-                </div>
-                <div class="podium-stats">
-                    <div class="podium-stat">
-                        <span class="podium-stat-label">Venta</span>
-                        <span class="podium-stat-value">${formatCurrency(r.venta_total)}</span>
-                    </div>
-                    <div class="podium-stat">
-                        <span class="podium-stat-label">Proy.</span>
-                        <span class="podium-stat-value">${formatCurrency(r.proyeccion)}</span>
-                    </div>
-                </div>
-            </div>
-        `;
+    const rows = ranking.map((r, i) => {
+        const proyOk = r.proyeccion >= r.cuota;
+        const dif = r.cuota - r.venta_total;
+        const medalla = i < 3 ? ' ' + medals[i] : '';
+        return '<tr>' +
+            '<td class="ctl-td-pos">' + r.puesto + medalla + '</td>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlDot(r.cumplimiento) + ' ' + ctlEsc(r.punto_venta) + '</td>' +
+            '<td>' + formatCurrency(r.venta_total) + '</td>' +
+            '<td>' + formatCurrency(r.cuota) + '</td>' +
+            '<td>' + ctlBarCell(r.cumplimiento) + '</td>' +
+            '<td class="' + (proyOk ? 'ctl-td-good' : 'ctl-td-dim') + '">' + formatCurrency(r.proyeccion) + '</td>' +
+            '<td class="' + (dif <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (dif <= 0 ? 'S/ 0' : formatCurrency(dif)) + '</td>' +
+            '<td>' + ctlBadge(r.cumplimiento) + '</td>' +
+            '</tr>';
     }).join('');
 
-    document.getElementById('ranking-podium').innerHTML = podiumHtml;
+    document.getElementById('ranking-list').innerHTML = '' +
+        '<div class="ctl-card">' +
+        '<div class="ctl-table-wrap"><table class="ctl-table">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">#</th><th class="ctl-th-left">Tienda</th>' +
+        '<th>Venta</th><th>Meta</th><th>Cumplimiento</th><th>Proyecci\u00f3n</th><th>Diferencia</th><th>Estado</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody>' +
+        '</table></div></div>';
 
-    const listHtml = rest.map((r, i) => {
-        const pc = r.cumplimiento;
-        const barColor = pc >= 100 ? 'var(--accent)' : pc >= 80 ? 'var(--warning)' : 'var(--danger)';
-        const rowClass = pc >= 100 ? 'rank-row-green' : pc >= 80 ? 'rank-row-yellow' : 'rank-row-red';
-        return `
-            <div class="rank-row ${rowClass}" style="animation-delay:${i * 0.04}s">
-                <div class="rank-row-pos">#${r.puesto}</div>
-                <div class="rank-row-info">
-                    <div class="rank-row-name">${r.punto_venta}</div>
-                    <div class="rank-row-bar-track">
-                        <div class="rank-row-bar-fill" style="width:${Math.min(pc, 100)}%;background:${barColor};"></div>
-                    </div>
-                </div>
-                <div class="rank-row-data">
-                    <div class="rank-row-pct" style="color:${barColor}">${formatPercent(pc)}</div>
-                    <div class="rank-row-sub">${formatCurrency(r.venta_total)}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    document.getElementById('ranking-list').innerHTML = listHtml;
-    document.getElementById('ranking-list-count').textContent = `${ranking.length} tiendas`;
+    document.getElementById('ranking-list-count').textContent = ranking.length + ' tiendas';
 
     const cumplen = ranking.filter(r => r.cumplimiento >= 100).length;
     const riesgo = ranking.filter(r => r.cumplimiento < 80).length;
@@ -301,7 +186,7 @@ function renderizarRanking() {
         </div>
         <div class="ranking-hero-stat">
             <span class="ranking-hero-stat-value" style="color:var(--warning)">${ranking.length - cumplen - riesgo}</span>
-            <span class="ranking-hero-stat-label">En observación</span>
+            <span class="ranking-hero-stat-label">En observaci\u00f3n</span>
         </div>
         <div class="ranking-hero-stat">
             <span class="ranking-hero-stat-value" style="color:var(--danger)">${riesgo}</span>
@@ -371,7 +256,7 @@ function renderizarResumenGeneralPDV() {
                 cadenas.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        function renderCards(data) {
+                function renderCards(data) {
             const search = (document.getElementById('rpdv-search').value || '').toLowerCase();
             const filtroCump = document.getElementById('rpdv-filter-cumplimiento').value;
             const filtroCadena = document.getElementById('rpdv-filter-cadena').value;
@@ -399,52 +284,31 @@ function renderizarResumenGeneralPDV() {
             const gridEl = document.getElementById('rpdv-grid');
             if (!gridEl) return;
 
-            gridEl.innerHTML = filtered.map((e, i) => {
-                const pct = e.cumplimiento;
-                const color = pct >= 100 ? 'var(--accent)' : pct >= 80 ? 'var(--warning)' : 'var(--danger)';
-                const estado = pct >= 100 ? 'Cumpliendo meta' : pct >= 80 ? 'En seguimiento' : 'En riesgo';
-                const colorClase = pct >= 100 ? 'green' : pct >= 80 ? 'yellow' : 'red';
-                const icono = pct >= 100 ? '\u2705' : pct >= 80 ? '\ud83d\udfe1' : '\ud83d\udd34';
-                return `
-                    <div class="rpdv-card ${colorClase}" style="animation-delay:${i * 0.035}s">
-                        <div class="rpdv-card-top">
-                            <div class="rpdv-card-icon">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            </div>
-                            <div class="rpdv-card-name">${e.punto_venta}</div>
-                            <span class="rpdv-card-badge ${colorClase}">${formatPercent(pct)}</span>
-                        </div>
-                        <div class="rpdv-card-body">
-                            <div class="rpdv-card-metrics">
-                                <div class="rpdv-card-metric">
-                                    <span class="rpdv-metric-label">Cuota Total</span>
-                                    <span class="rpdv-metric-value">${formatCurrency(e.cuota)}</span>
-                                </div>
-                                <div class="rpdv-card-metric">
-                                    <span class="rpdv-metric-label">Venta Acumulada</span>
-                                    <span class="rpdv-metric-value">${formatCurrency(e.venta)}</span>
-                                </div>
-                                <div class="rpdv-card-metric">
-                                    <span class="rpdv-metric-label">Faltante</span>
-                                    <span class="rpdv-metric-value" style="color:${e.diferencia <= 0 ? 'var(--accent)' : 'var(--danger)'}">${formatCurrency(Math.max(e.diferencia, 0))}</span>
-                                </div>
-                                <div class="rpdv-card-metric">
-                                    <span class="rpdv-metric-label">Proyecci\u00f3n</span>
-                                    <span class="rpdv-metric-value" style="color:${e.proyeccion >= e.cuota ? 'var(--accent)' : 'var(--text-secondary)'}">${formatCurrency(e.proyeccion)}</span>
-                                </div>
-                            </div>
-                            <div class="rpdv-card-bar">
-                                <div class="rpdv-bar-track">
-                                    <div class="rpdv-bar-fill ${colorClase}" style="width:${Math.min(pct, 100)}%"></div>
-                                </div>
-                                <div class="rpdv-bar-label" style="color:${color}">${formatPercent(pct)}</div>
-                            </div>
-                            <div class="rpdv-card-status ${colorClase}">${icono} ${estado}</div>
-                        </div>
-                    </div>
-                `;
+            const rows = filtered.map((e, i) => {
+                const proyOk = e.proyeccion >= e.cuota;
+                const dif = e.diferencia;
+                return '<tr>' +
+                    '<td class="ctl-td-pos">' + (i + 1) + '</td>' +
+                    '<td class="ctl-td-left ctl-td-strong">' + ctlDot(e.cumplimiento) + ' ' + ctlEsc(e.punto_venta) + '</td>' +
+                    '<td>' + formatCurrency(e.venta) + '</td>' +
+                    '<td>' + formatCurrency(e.cuota) + '</td>' +
+                    '<td>' + ctlBarCell(e.cumplimiento) + '</td>' +
+                    '<td class="' + (proyOk ? 'ctl-td-good' : 'ctl-td-dim') + '">' + formatCurrency(e.proyeccion) + '</td>' +
+                    '<td class="' + (dif <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (dif <= 0 ? 'S/ 0' : formatCurrency(dif)) + '</td>' +
+                    '<td>' + ctlBadge(e.cumplimiento) + '</td>' +
+                    '</tr>';
             }).join('');
+
+            gridEl.innerHTML = '' +
+                '<div class="ctl-card">' +
+                '<div class="ctl-table-wrap"><table class="ctl-table">' +
+                '<thead><tr>' +
+                '<th class="ctl-th-left">#</th><th class="ctl-th-left">Tienda</th>' +
+                '<th>Venta</th><th>Meta</th><th>Cumplimiento</th><th>Proyecci\u00f3n</th><th>Diferencia</th><th>Estado</th>' +
+                '</tr></thead><tbody>' + rows + '</tbody>' +
+                '</table></div></div>';
         }
+
 
         renderCards(entries);
 
@@ -562,7 +426,7 @@ function poblarFiltros() {
     console.log('[AUDITORIA] poblarFiltros pdvs:', pdvs.length, pdvs);
     const pdvSelect = document.getElementById('pdv-select');
     if (pdvSelect) {
-        pdvSelect.innerHTML = '<option value="">Seleccionar punto de venta...</option>' +
+        pdvSelect.innerHTML = '<option value="todos">Todos los PDV</option>' +
             pdvs.map(p => `<option value="${p}">${p}</option>`).join('');
         console.log('[AUDITORIA] pdv-select options después de poblar:', pdvSelect.options.length);
     }
@@ -630,7 +494,7 @@ function poblarSelectMes(modulo) {
 
 function sincronizarInputsFecha() {
     const filtros = DataStore.getFiltrosFecha();
-    ['resumen', 'avance', 'ranking', 'resumen-pdv', 'informe'].forEach(modulo => {
+    ['resumen', 'avance', 'ranking', 'resumen-pdv', 'informe', 'vista-ejecutiva'].forEach(modulo => {
         const desde = document.getElementById('filtro-' + modulo + '-desde');
         const hasta = document.getElementById('filtro-' + modulo + '-hasta');
         const mesSel = document.getElementById('filtro-' + modulo + '-mes');
@@ -723,12 +587,14 @@ function recargarModulosConFiltro() {
     renderizarAvancePDV();
     renderizarRanking();
     renderizarResumenGeneralPDV();
+    renderizarVistaEjecutiva();
     recargarInformeSiAplica();
 }
 
 function recargarInformeSiAplica() {
     const sel = document.getElementById('inf-promotor-select');
     if (sel && sel.value) aplicarFiltrosInformePromotor();
+    else renderizarTablaPromotores();
 }
 
 function aplicarFiltrosFecha(modulo) {
@@ -775,7 +641,7 @@ function bloquearSupervisor() {
     const activePage = document.querySelector('.page.active');
     if (activePage) {
         const id = activePage.id.replace('page-', '');
-        if (id === 'resumen' || id === 'horarios' || id === 'horarios-view') {
+        if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios' || id === 'horarios-view') {
             cambiarPagina('avance');
         }
     }
@@ -803,7 +669,7 @@ function actualizarSidebarSupervisor() {
         const activePage = document.querySelector('.page.active');
         if (activePage) {
             const id = activePage.id.replace('page-', '');
-            if (id === 'resumen' || id === 'horarios' || id === 'horarios-view') {
+            if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios' || id === 'horarios-view') {
                 cambiarPagina('avance');
             }
         }
@@ -911,10 +777,11 @@ function recargarDashboard() {
     renderizarAvancePDV();
     renderizarRanking();
     renderizarResumenGeneralPDV();
+    renderizarVistaEjecutiva();
 }
 
 function cambiarPagina(pagina) {
-    if ((pagina === 'resumen' || pagina === 'horarios' || pagina === 'horarios-view') && !estaSupervisorDesbloqueado()) {
+    if ((pagina === 'resumen' || pagina === 'vista-ejecutiva' || pagina === 'horarios' || pagina === 'horarios-view') && !estaSupervisorDesbloqueado()) {
         abrirModalPassword();
         return;
     }
@@ -929,7 +796,8 @@ function cambiarPagina(pagina) {
 
     document.getElementById('page-title').textContent =
         pagina === 'resumen' ? 'Resumen Zona' :
-            pagina === 'avance' ? 'Avance por Punto de Venta' :
+            pagina === 'vista-ejecutiva' ? 'Vista Ejecutiva' :
+                pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                     pagina === 'resumen-pdv' ? 'Resumen General PDV' :
                         pagina === 'informe-promotor' ? 'Informe por Promotor' :
@@ -939,6 +807,8 @@ function cambiarPagina(pagina) {
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
+    } else if (pagina === 'vista-ejecutiva') {
+        renderizarVistaEjecutiva();
     } else if (pagina === 'avance') {
         renderizarAvancePDV();
     } else if (pagina === 'ranking') {
@@ -1757,22 +1627,117 @@ function renderizarInformePromotor() {
     }
     poblarFiltrosInformePromotor();
     renderPeriodoAnalizado('periodo-analizado-informe');
+    renderizarTablaPromotores();
+}
+
+function renderizarTablaPromotores() {
     const content = document.getElementById('inf-promotor-content');
-    if (content) {
-        content.innerHTML = `
-            <div class="inf-promotor-empty">
-                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <p>Selecciona un promotor y aplica los filtros para visualizar su informe.</p>
-            </div>
-        `;
-    }
+    if (!content) return;
     const heroKpis = document.getElementById('inf-promotor-hero-kpis');
     if (heroKpis) heroKpis.innerHTML = '';
+
+    const fechas = fechasEfectivasInforme();
+    const fechaDesde = fechas.desde;
+    const fechaHasta = fechas.hasta;
+
+    const ventas = DataStore.ventas || [];
+    let ventasPeriodo = ventas.slice();
+    if (fechaDesde) ventasPeriodo = ventasPeriodo.filter(v => new Date(v.fecha) >= new Date(fechaDesde + 'T00:00:00'));
+    if (fechaHasta) ventasPeriodo = ventasPeriodo.filter(v => new Date(v.fecha) <= new Date(fechaHasta + 'T23:59:59'));
+
+    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+    const activos = promotores.filter(p => p.estado === 'Activo' && p.zona_principal_id);
+
+    const cuotas = DataStore.cuotas || [];
+    const productos = DataStore.getProductos();
+    const fechaRef = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date();
+    const mes = fechaRef.getMonth() + 1;
+    const anio = fechaRef.getFullYear();
+
+    const rows = activos.map(promotor => {
+        const tienda = (typeof HorariosDataStore.zonas !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas.find(z => z.id === promotor.zona_principal_id) : null;
+        const tiendaNombre = tienda ? tienda.nombre : null;
+
+        const ventasProm = ventasPeriodo.filter(v => {
+            if (v.promotor_id) return v.promotor_id === promotor.id;
+            return tiendaNombre ? v.punto_venta === tiendaNombre : false;
+        });
+
+        const totalVenta = ventasProm.reduce((s, v) => s + (v.venta || 0), 0);
+
+        let cuotaTotal = 0;
+        if (tiendaNombre) {
+            for (let prod of productos) {
+                const cuota = cuotas.find(c => c.punto_venta === tiendaNombre && c.producto === prod && c.mes === mes && c.anio === anio);
+                if (cuota) cuotaTotal += (cuota.cuota || 0);
+            }
+        }
+
+        const cumplimiento = cuotaTotal > 0 ? Math.min((totalVenta / cuotaTotal) * 100, 999) : 0;
+
+        const porProducto = {};
+        ventasProm.forEach(v => {
+            porProducto[v.producto] = (porProducto[v.producto] || 0) + (v.venta || 0);
+        });
+        const prodKeys = Object.keys(porProducto);
+        let mejor = null;
+        let peor = null;
+        prodKeys.forEach(p => {
+            if (!mejor || porProducto[p] > porProducto[mejor]) mejor = p;
+            if (!peor || porProducto[p] < porProducto[peor]) peor = p;
+        });
+
+        return {
+            id: promotor.id,
+            nombre: promotor.nombre,
+            tienda: tiendaNombre || 'Sin tienda',
+            venta: totalVenta,
+            cuota: cuotaTotal,
+            cumplimiento: cumplimiento,
+            diferencia: cuotaTotal - totalVenta,
+            mejor: mejor,
+            peor: peor,
+            registros: ventasProm.length
+        };
+    });
+
+    rows.sort((a, b) => b.venta - a.venta);
+
+    const totalVenta = rows.reduce((s, r) => s + r.venta, 0);
+    const totalCuota = rows.reduce((s, r) => s + r.cuota, 0);
+    const cumplen = rows.filter(r => r.cumplimiento >= 100).length;
+    const riesgo = rows.filter(r => r.cumplimiento < 80).length;
+
+    const tbody = rows.map((r, i) => {
+        const dif = r.diferencia;
+        return '<tr>' +
+            '<td class="ctl-td-pos">' + (i + 1) + '</td>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlDot(r.cumplimiento) + ' ' + ctlEsc(r.nombre) + '</td>' +
+            '<td class="ctl-td-left">' + ctlEsc(r.tienda) + '</td>' +
+            '<td>' + formatCurrency(r.venta) + '</td>' +
+            '<td>' + formatCurrency(r.cuota) + '</td>' +
+            '<td>' + ctlBarCell(r.cumplimiento) + '</td>' +
+            '<td class="' + (dif <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (dif <= 0 ? 'S/ 0' : formatCurrency(dif)) + '</td>' +
+            '<td class="ctl-td-left">' + (r.mejor ? ctlEsc(r.mejor) : '\u2014') + '</td>' +
+            '<td class="ctl-td-left">' + (r.peor ? ctlEsc(r.peor) : '\u2014') + '</td>' +
+            '<td>' + ctlBadge(r.cumplimiento) + '</td>' +
+            '</tr>';
+    }).join('');
+
+    content.innerHTML = '' +
+        '<div class="ctl-card">' +
+        '<div class="ctl-table-wrap"><table class="ctl-table">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">#</th><th class="ctl-th-left">Promotor</th><th class="ctl-th-left">Tienda</th>' +
+        '<th>Venta</th><th>Meta</th><th>Cumplimiento</th><th>Diferencia</th>' +
+        '<th class="ctl-th-left">Mejor Producto</th><th class="ctl-th-left">Peor Producto</th><th>Estado</th>' +
+        '</tr></thead><tbody>' + tbody + '</tbody>' +
+        '</table></div>' +
+        '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 12px;font-size:12px;color:#727272;">' +
+        '<span>' + rows.length + ' promotores · Venta total ' + formatCurrency(totalVenta) + ' · Meta total ' + formatCurrency(totalCuota) + '</span>' +
+        '<span><span style="color:var(--accent)">' + cumplen + '</span> cumplen meta · <span style="color:var(--danger)">' + riesgo + '</span> en riesgo</span>' +
+        '</div>' +
+        '</div>';
 }
 
 /* ===== CHART REGISTRY for Informe Promotor ===== */
