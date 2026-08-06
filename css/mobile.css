@@ -17,8 +17,6 @@
     .top-bar-info .top-bar-badge:nth-child(2) { display: none; }
     .periodo-analizado { font-size: 10px; margin-bottom: 8px; }
     .periodo-analizado-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    .aviso-oficial { padding: 8px 10px; }
-    .aviso-oficial-content p { font-size: 10.5px; line-height: 1.35; }
 
     .ctl-card { margin-bottom: 10px; border-radius: 10px; }
     .ctl-card-header { padding: 7px 10px; }
@@ -123,6 +121,20 @@
     #pdv-content table.ctl-table td:nth-child(n+5) { display: none; }
     #pdv-content table.ctl-table th:nth-child(1),
     #pdv-content table.ctl-table td:nth-child(1) { text-align: left; }
+
+    /* ---------- AVANCE PROMOCIONES: mantener botón de detalle ---------- */
+    #pdv-content table.ctl-table.promo-avance-table th:nth-child(n+5),
+    #pdv-content table.ctl-table.promo-avance-table td:nth-child(n+5) { display: table-cell; }
+    #pdv-content table.ctl-table.promo-avance-table th:nth-child(6),
+    #pdv-content table.ctl-table.promo-avance-table td:nth-child(6),
+    #pdv-content table.ctl-table.promo-avance-table th:nth-child(7),
+    #pdv-content table.ctl-table.promo-avance-table td:nth-child(7) { display: none; }
+
+    /* ---------- RESUMEN PROMOCIONES: tablas con scroll horizontal ---------- */
+    #resumen-promociones .ctl-table-wrap { overflow-x: auto; }
+    .promo-filtro-bar { flex-direction: column; align-items: stretch; }
+    .promo-filtro-select { width: 100%; min-width: 0; }
+    .promo-chart-wrap { height: 240px; }
 
     /* ---------- VISTA EJECUTIVA ---------- */
     #ve-main table.ctl-table th:nth-child(3),

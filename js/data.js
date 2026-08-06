@@ -1,4 +1,11 @@
-const PRODUCTOS = ['Apuestas Deportivas', 'Lottingo', 'Hípica', 'Juegos Virtuales', 'Torito', 'VLT', 'LOTOBOLA'];
+const PRODUCTOS = ['Apuestas Deportivas', 'Lottingo', 'Hípica', 'Juegos Virtuales', 'Torito', 'VLT', 'LOTOBOLA', 'MI BILLETERA'];
+
+function normalizarProducto(prod) {
+    if (prod == null) return prod;
+    const p = String(prod).trim().toLowerCase();
+    if (p === 'mi_billetera' || p === 'mi billetera' || p === 'mibilletera') return 'MI BILLETERA';
+    return String(prod).trim();
+}
 const FECHA_ACTUAL = new Date();
 const MES = FECHA_ACTUAL.getMonth() + 1;
 const ANIO = FECHA_ACTUAL.getFullYear();
@@ -26,9 +33,13 @@ function generarMockData() {
 
 const PDVS_FIJOS = [
     'RED AT ALTO SELVA ALEGRE', 'RED AT ATLAS', 'RED AT BUSTAMANTE Y RIVERO',
-    'RED AT CAMANA', 'RED AT CAYMA', 'RED AT DOLORES',
+    'RED AT CAMANA', 'RED AT CAYMA',
     'RED AT LA JOYA', 'RED AT PROGRESO', 'RED AT REPSOL PROGRESO',
     'RED AT RIVERO'
+];
+
+const PDVS_ELIMINADOS = [
+    'RED AT DOLORES'
 ];
 console.log('[AUDITORIA] data.js v3 CARGADO, PDVS_FIJOS:', PDVS_FIJOS.length, PDVS_FIJOS);
 
@@ -66,12 +77,14 @@ const DataStore = {
                 if (data.ventas && data.ventas.length > 0) {
                     this.ventas = data.ventas.map(v => ({
                         ...v,
+                        producto: normalizarProducto(v.producto),
                         fecha: new Date(v.fecha)
                     }));
                 }
                 if (data.cuotas && data.cuotas.length > 0) {
                     this.cuotas = data.cuotas.map(c => ({
                         ...c,
+                        producto: normalizarProducto(c.producto),
                         mes: c.mes || MES,
                         anio: c.anio || ANIO
                     }));
@@ -117,6 +130,7 @@ const DataStore = {
                 if (data.ventas && data.ventas.length > 0) {
                     this.ventas = data.ventas.map(v => ({
                         ...v,
+                        producto: normalizarProducto(v.producto),
                         fecha: new Date(v.fecha)
                     }));
                 } else {
@@ -125,6 +139,7 @@ const DataStore = {
                 if (data.cuotas && data.cuotas.length > 0) {
                     this.cuotas = data.cuotas.map(c => ({
                         ...c,
+                        producto: normalizarProducto(c.producto),
                         mes: c.mes || MES,
                         anio: c.anio || ANIO
                     }));
@@ -204,7 +219,7 @@ const DataStore = {
                 fecha: new Date(row.Fecha || row.fecha || row.FECHA),
                 dia: parseInt(row.Día || row.dia || row.DIA || row.Día),
                 punto_venta: row['Punto de Venta'] || row.punto_venta || row['PUNTO DE VENTA'],
-                producto: row.Producto || row.producto || row.PRODUCTO,
+                producto: normalizarProducto(row.Producto || row.producto || row.PRODUCTO),
                 venta: parseFloat(row.Venta || row.venta || row.VENTA || 0)
             }));
         }
@@ -214,7 +229,7 @@ const DataStore = {
             const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
             this.cuotas = json.map(row => ({
                 punto_venta: row['Punto de Venta'] || row.punto_venta,
-                producto: row.Producto || row.producto,
+                producto: normalizarProducto(row.Producto || row.producto),
                 cuota: parseFloat(row.Cuota || row.cuota || row.CUOTA || 0),
                 mes: parseInt(row.Mes || row.mes || row.MES || MES),
                 anio: parseInt(row.Año || row.anio || row.ANIO || row['A\u00f1o'] || ANIO)
@@ -249,11 +264,22 @@ const DataStore = {
     },
 
     getVentas() { return this.ventas; },
+    esPDVActivo(pdv) {
+        return !(PDVS_ELIMINADOS || []).includes(pdv);
+    },
+    getPDVsEliminados() { return [...PDVS_ELIMINADOS]; },
+    getVentasActivas() {
+        return this.ventas.filter(v => this.esPDVActivo(v.punto_venta));
+    },
+    getCuotasActivas() {
+        return this.cuotas.filter(c => this.esPDVActivo(c.punto_venta));
+    },
     getCuotas(mes, anio) {
+        const filtradas = this.cuotas.filter(c => this.esPDVActivo(c.punto_venta));
         if (mes && anio) {
-            return this.cuotas.filter(c => c.mes === mes && c.anio === anio);
+            return filtradas.filter(c => c.mes === mes && c.anio === anio);
         }
-        return this.cuotas.filter(c => c.mes === MES && c.anio === ANIO);
+        return filtradas.filter(c => c.mes === MES && c.anio === ANIO);
     },
     getCuotasCompletas() { return this.cuotas; },
     getPromotores() { return this.promotores; },
@@ -287,6 +313,7 @@ const DataStore = {
             return this.getVentasDelMes();
         }
         return this.ventas.filter(v => {
+            if (!this.esPDVActivo(v.punto_venta)) return false;
             if (!v.fecha) return false;
             const f = new Date(v.fecha);
             if (isNaN(f.getTime())) return false;
@@ -319,7 +346,10 @@ const DataStore = {
     getCuotasEnRango(fechaDesde, fechaHasta) {
         const mesesEnRango = this.getMesesEnRango(fechaDesde, fechaHasta);
         const keys = new Set(mesesEnRango.map(m => m.mes + '-' + m.anio));
-        return this.cuotas.filter(c => keys.has((c.mes || MES) + '-' + (c.anio || ANIO)));
+        return this.cuotas.filter(c =>
+            this.esPDVActivo(c.punto_venta) &&
+            keys.has((c.mes || MES) + '-' + (c.anio || ANIO))
+        );
     },
 
     getInfoPeriodo() {
@@ -411,7 +441,7 @@ const DataStore = {
     },
 
     getProductos() {
-        const productos = new Set(this.ventas.map(v => v.producto));
+        const productos = new Set(this.ventas.map(v => normalizarProducto(v.producto)));
         for (let p of PRODUCTOS) productos.add(p);
         return [...productos].sort();
     },
@@ -424,6 +454,7 @@ const DataStore = {
 
     getVentasDelMes(mes, anio) {
         return this.ventas.filter(v =>
+            this.esPDVActivo(v.punto_venta) &&
             v.fecha.getMonth() + 1 === (mes || MES) &&
             v.fecha.getFullYear() === (anio || ANIO)
         );
@@ -743,11 +774,13 @@ const DataStore = {
 
                 this.ventas = data.ventas.map(v => ({
                     ...v,
+                    producto: normalizarProducto(v.producto),
                     fecha: new Date(v.fecha)
                 }));
 
                 let cuotasCargadas = (data.cuotas || []).map(c => ({
                     ...c,
+                    producto: normalizarProducto(c.producto),
                     mes: c.mes || MES,
                     anio: c.anio || ANIO
                 }));
@@ -779,11 +812,13 @@ const DataStore = {
 
                 this.ventas = data.ventas.map(v => ({
                     ...v,
+                    producto: normalizarProducto(v.producto),
                     fecha: new Date(v.fecha)
                 }));
 
                 let cuotasCargadas = (data.cuotas || []).map(c => ({
                     ...c,
+                    producto: normalizarProducto(c.producto),
                     mes: c.mes || MES,
                     anio: c.anio || ANIO
                 }));

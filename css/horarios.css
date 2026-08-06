@@ -1480,6 +1480,26 @@
     background: rgba(255,255,255,0.02);
 }
 
+/* Gestión de Promotores (vista de página, fuera del modal) */
+.gestion-promotores-body {
+    padding: 4px 0;
+}
+
+.gestion-promotores-body .promotores-table-scroll-area {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.gestion-promotores-body .promotores-table-wrapper {
+    overflow-x: auto;
+}
+
+.promotor-fecha-registro {
+    color: var(--text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
 .promotor-row-num {
     color: var(--text-subdued);
     font-size: 11px;

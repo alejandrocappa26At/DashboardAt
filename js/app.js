@@ -1,6 +1,857 @@
+/* ===== MÓDULO DE PROMOCIONES ===== */
+let filtroTipoInformacion = 'productos';
+let infPromTab = 'ventas';
+let gestionPromocionesEditando = null;
+let filtroPromo = '';
+
+function syncTipoInfoUI() {
+    const sel = document.getElementById('filtro-tipo-info');
+    if (sel) sel.value = filtroTipoInformacion;
+    const modo = (filtroTipoInformacion === 'promociones') ? 'promociones' : 'productos';
+    const rToggle = document.getElementById('ranking-mode-toggle');
+    if (rToggle) {
+        rToggle.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === modo));
+    }
+    const aToggle = document.getElementById('avance-mode-toggle');
+    if (aToggle) {
+        aToggle.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === modo));
+    }
+}
+
+function cambiarTipoInformacion(val) {
+    filtroTipoInformacion = (val === 'promociones' || val === 'todo') ? val : 'productos';
+    syncTipoInfoUI();
+    reRenderCurrentPage();
+}
+
+function cambiarModoRanking(mode) {
+    filtroTipoInformacion = mode === 'promociones' ? 'promociones' : 'productos';
+    syncTipoInfoUI();
+    renderizarRanking();
+}
+
+function cambiarModoAvance(mode) {
+    filtroTipoInformacion = mode === 'promociones' ? 'promociones' : 'productos';
+    syncTipoInfoUI();
+    renderizarAvancePDV();
+}
+
+function reRenderCurrentPage() {
+    const active = document.querySelector('.page.active');
+    if (!active) return;
+    const id = active.id;
+    if (id === 'page-resumen') renderizarResumenEjecutivo();
+    else if (id === 'page-ranking') renderizarRanking();
+    else if (id === 'page-avance') renderizarAvancePDV();
+    else if (id === 'page-informe-promotor') recargarInformeSiAplica();
+    else if (id === 'page-vista-ejecutiva') renderizarVistaEjecutiva();
+}
+
+function _promoPct(parte, total) {
+    return total > 0 ? Math.min((parte / total) * 100, 999) : 0;
+}
+
+function _promoFechaLegible(iso) {
+    if (!iso) return '\u2014';
+    const d = new Date(iso);
+    if (isNaN(d)) return '\u2014';
+    return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function _rankPromosFromRegs(regs) {
+    const m = {};
+    regs.forEach(r => { m[r.promocion] = (m[r.promocion] || 0) + r.cantidad; });
+    return Object.entries(m)
+        .map(([promocion, cantidad]) => ({ promocion, cantidad }))
+        .sort((a, b) => b.cantidad - a.cantidad);
+}
+
+function _rankTiendasFromRegs(regs) {
+    const m = {};
+    regs.forEach(r => { m[r.tienda] = (m[r.tienda] || 0) + r.cantidad; });
+    return Object.entries(m)
+        .map(([tienda, cantidad]) => ({ tienda, cantidad }))
+        .sort((a, b) => b.cantidad - a.cantidad);
+}
+
+function cambiarFiltroPromo(val) {
+    filtroPromo = val || '';
+    renderizarResumenEjecutivo();
+}
+
+function renderResumenPromociones() {
+    const container = document.getElementById('resumen-promociones');
+    if (!container) return;
+    const p = PromocionesStore._periodoEfectivo();
+    const filtro = filtroPromo || '';
+    const regsBase = PromocionesStore.getRegistrosEnRango(p.desde, p.hasta);
+    const regs = filtro ? regsBase.filter(r => r.promocion === filtro) : regsBase;
+
+    const total = regs.reduce((s, r) => s + r.cantidad, 0);
+    const registros = regs.length;
+    const activas = PromocionesStore.getPromocionesActivas().length;
+    const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
+
+    const promos = PromocionesStore.getPromociones();
+    const filtroOptions = '<option value="">Todas</option>' +
+        promos.map(pr => '<option value="' + ctlEsc(pr.nombre) + '"' + (filtro === pr.nombre ? ' selected' : '') + '>' + ctlEsc(pr.nombre) + '</option>').join('');
+    const filtroBar = '<div class="promo-filtro-bar">' +
+        '<span class="promo-filtro-label"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="8" rx="1"/><path d="M12 8V5"/></svg> Promoci\u00f3n</span>' +
+        '<select class="promo-filtro-select" onchange="cambiarFiltroPromo(this.value)">' + filtroOptions + '</select>' +
+        (filtro ? '<button type="button" class="promo-filtro-clear" onclick="cambiarFiltroPromo(\'\')">Limpiar</button>' : '') +
+        '</div>';
+
+    if (!PromocionesStore._firestoreLoaded) {
+        container.innerHTML = '<div class="ctl-card"><div class="empty-state"><p>Cargando promociones...</p></div></div>';
+        return;
+    }
+    if (total === 0) {
+        container.innerHTML = '' +
+            '<div class="resumen-promo-header">' +
+                '<div class="resumen-promo-title">\ud83c\udf81 Promociones</div>' +
+                '<div class="resumen-promo-stats"><span>' + activas + ' promociones activas</span></div>' +
+            '</div>' +
+            filtroBar +
+            '<div class="resumen-promo-grid">' +
+                '<div class="ctl-card"><div class="empty-state"><p>No existen registros de promociones para el periodo seleccionado.</p></div></div>' +
+            '</div>';
+        return;
+    }
+
+    const ranking = _rankPromosFromRegs(regs);
+    const tiendas = _rankTiendasFromRegs(regs);
+    const tiendaTop = tiendas[0];
+    const promoTop = ranking[0];
+
+    const destacadasRows = ranking.slice(0, 5).map((r, i) => {
+        const pct = _promoPct(r.cantidad, total);
+        return '<tr>' +
+            '<td class="ctl-td-pos">' + (i + 1) + (i < 3 ? ' ' + medals[i] : '') + '</td>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(r.promocion) + '</td>' +
+            '<td>' + r.cantidad + '</td>' +
+            '<td>' + ctlBarCell(pct) + '</td>' +
+            '<td>' + formatPercent(pct) + '</td>' +
+            '</tr>';
+    }).join('');
+
+    const tiendasRows = tiendas.slice(0, 8).map((r) => {
+        const pct = _promoPct(r.cantidad, total);
+        return '<tr>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(r.tienda) + '</td>' +
+            '<td>' + r.cantidad + '</td>' +
+            '<td>' + registrosPorTienda(regs, r.tienda) + '</td>' +
+            '<td>' + ctlBarCell(pct) + '</td>' +
+            '</tr>';
+    }).join('');
+
+    const porTiendaPromo = {};
+    regs.forEach(r => {
+        const key = r.tienda + '\u0001' + r.promocion;
+        if (!porTiendaPromo[key]) porTiendaPromo[key] = { tienda: r.tienda, promocion: r.promocion, cantidad: 0, promotores: new Set() };
+        porTiendaPromo[key].cantidad += r.cantidad;
+        if (r.promotor_nombre) porTiendaPromo[key].promotores.add(r.promotor_nombre);
+    });
+    const detalleRows = Object.values(porTiendaPromo)
+        .sort((a, b) => b.cantidad - a.cantidad)
+        .map(item => {
+            const promotores = [...item.promotores].join(', ');
+            return '<tr>' +
+                '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(item.tienda) + '</td>' +
+                '<td class="ctl-td-left">' + ctlEsc(item.promocion) + '</td>' +
+                '<td>' + item.cantidad + '</td>' +
+                '<td class="ctl-td-left">' + ctlEsc(promotores || '\u2014') + '</td>' +
+                '</tr>';
+        }).join('');
+
+    const chartData = tiendas.slice(0, 10).map(t => ({ tienda: t.tienda, cantidad: t.cantidad }));
+
+    container.innerHTML = '' +
+        '<div class="resumen-promo-header">' +
+            '<div class="resumen-promo-title">\ud83c\udf81 Promociones</div>' +
+            '<div class="resumen-promo-stats">' +
+                '<span>' + total + ' cantidades</span>' +
+                '<span>' + registros + ' registros</span>' +
+                '<span>' + activas + ' promociones activas</span>' +
+            '</div>' +
+        '</div>' +
+        filtroBar +
+        '<div class="resumen-promo-cards">' +
+            '<div class="resumen-promo-card">' +
+                '<span class="resumen-promo-card-icon">\ud83c\udfc6</span>' +
+                '<span class="resumen-promo-card-label">Tienda con m\u00e1s promociones</span>' +
+                '<span class="resumen-promo-card-value">' + (tiendaTop ? ctlEsc(tiendaTop.tienda) : '\u2014') + '</span>' +
+                '<span class="resumen-promo-card-sub">' + (tiendaTop ? tiendaTop.cantidad + ' registros' : '') + '</span>' +
+            '</div>' +
+            '<div class="resumen-promo-card">' +
+                '<span class="resumen-promo-card-icon">\ud83c\udf81</span>' +
+                '<span class="resumen-promo-card-label">Promoci\u00f3n m\u00e1s utilizada</span>' +
+                '<span class="resumen-promo-card-value">' + (promoTop ? ctlEsc(promoTop.promocion) : '\u2014') + '</span>' +
+                '<span class="resumen-promo-card-sub">' + (promoTop ? promoTop.cantidad + ' registros' : '') + '</span>' +
+            '</div>' +
+            '<div class="resumen-promo-card">' +
+                '<span class="resumen-promo-card-icon">\ud83d\udce6</span>' +
+                '<span class="resumen-promo-card-label">Total registrado</span>' +
+                '<span class="resumen-promo-card-value">' + total + '</span>' +
+                '<span class="resumen-promo-card-sub">' + registros + ' registros</span>' +
+            '</div>' +
+        '</div>' +
+        '<div class="resumen-promo-grid">' +
+            '<div class="ctl-card">' +
+                '<div class="ctl-card-header"><span class="ctl-card-title">\ud83c\udf81 Promociones Destacadas</span><span class="ctl-card-count">Top ' + ranking.slice(0, 5).length + '</span></div>' +
+                '<div class="ctl-table-wrap"><table class="ctl-table">' +
+                    '<thead><tr><th class="ctl-th-left">#</th><th class="ctl-th-left">Promoci\u00f3n</th><th>Cantidad</th><th>Participaci\u00f3n</th><th>%</th></tr></thead>' +
+                    '<tbody>' + destacadasRows + '</tbody>' +
+                '</table></div>' +
+            '</div>' +
+            '<div class="ctl-card">' +
+                '<div class="ctl-card-header"><span class="ctl-card-title">\ud83c\udf7f Registro por Tienda</span><span class="ctl-card-count">' + tiendas.length + ' tiendas</span></div>' +
+                '<div class="ctl-table-wrap"><table class="ctl-table">' +
+                    '<thead><tr><th class="ctl-th-left">Tienda</th><th>Cantidad</th><th>Registros</th><th>Participaci\u00f3n</th></tr></thead>' +
+                    '<tbody>' + tiendasRows + '</tbody>' +
+                '</table></div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="ctl-card">' +
+            '<div class="ctl-card-header"><span class="ctl-card-title">\ud83d\udccd Promociones por Punto de Venta</span><span class="ctl-card-count">' + detalleRows.length + ' filas</span></div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table">' +
+                '<thead><tr><th class="ctl-th-left">Tienda</th><th class="ctl-th-left">Promoci\u00f3n</th><th>Cantidad</th><th class="ctl-th-left">Promotor</th></tr></thead>' +
+                '<tbody>' + detalleRows + '</tbody>' +
+            '</table></div>' +
+        '</div>' +
+        '<div class="ctl-card">' +
+            '<div class="ctl-card-header"><span class="ctl-card-title">\ud83d\udcc8 Promociones por Punto de Venta</span><span class="ctl-card-count">Cantidad</span></div>' +
+            '<div class="promo-chart-wrap"><canvas id="chartPromos"></canvas></div>' +
+        '</div>';
+
+    createPromosChart(chartData);
+}
+
+function registrosPorTienda(regs, tienda) {
+    return regs.filter(r => r.tienda === tienda).length;
+}
+
+function renderizarRankingPromociones() {
+    renderAvisoOficial();
+    renderPeriodoAnalizado('periodo-analizado-ranking');
+    const p = PromocionesStore._periodoEfectivo();
+    const ranking = PromocionesStore.getRankingTiendas(p.desde, p.hasta);
+    const total = PromocionesStore.getTotalCantidad(p.desde, p.hasta);
+    const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
+    const listEl = document.getElementById('ranking-list');
+    const countEl = document.getElementById('ranking-list-count');
+    const statsEl = document.getElementById('ranking-hero-stats');
+    if (!listEl) return;
+
+    destroyChart('chartRanking');
+
+    if (!PromocionesStore._firestoreLoaded) {
+        listEl.innerHTML = '<div class="empty-state"><p>Cargando promociones...</p></div>';
+        if (countEl) countEl.textContent = '';
+        if (statsEl) statsEl.innerHTML = '';
+        return;
+    }
+    if (ranking.length === 0) {
+        listEl.innerHTML = '<div class="empty-state"><p>No existen registros de promociones para el periodo seleccionado.</p></div>';
+        if (countEl) countEl.textContent = '0 tiendas';
+        if (statsEl) statsEl.innerHTML = '';
+        return;
+    }
+
+    const rows = ranking.map((r, i) => {
+        const pct = _promoPct(r.cantidad, total);
+        const medalla = i < 3 ? ' ' + medals[i] : '';
+        return '<tr>' +
+            '<td class="ctl-td-pos">' + r.puesto + medalla + '</td>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlDot(pct) + ' ' + ctlEsc(r.tienda) + '</td>' +
+            '<td>' + r.cantidad + '</td>' +
+            '<td>' + r.promociones + '</td>' +
+            '<td>' + ctlBarCell(pct) + '</td>' +
+            '<td>' + formatPercent(pct) + '</td>' +
+            '<td>' + ctlBadge(pct) + '</td>' +
+            '</tr>';
+    }).join('');
+
+    listEl.innerHTML = '' +
+        '<div class="ctl-card">' +
+        '<div class="ctl-table-wrap"><table class="ctl-table">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">#</th><th class="ctl-th-left">Tienda</th>' +
+        '<th>Cantidad</th><th>Promociones</th><th>Participaci\u00f3n</th><th>%</th><th>Estado</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody>' +
+        '</table></div></div>';
+
+    if (countEl) countEl.textContent = ranking.length + ' tiendas';
+
+    const promosDistintas = PromocionesStore.getRankingPromociones(p.desde, p.hasta).length;
+    if (statsEl) statsEl.innerHTML = '' +
+        '<div class="ranking-hero-stat">' +
+            '<span class="ranking-hero-stat-value" style="color:var(--accent)">' + ranking.length + '</span>' +
+            '<span class="ranking-hero-stat-label">Tiendas con registro</span>' +
+        '</div>' +
+        '<div class="ranking-hero-stat">' +
+            '<span class="ranking-hero-stat-value" style="color:var(--warning)">' + promosDistintas + '</span>' +
+            '<span class="ranking-hero-stat-label">Promociones</span>' +
+        '</div>' +
+        '<div class="ranking-hero-stat">' +
+            '<span class="ranking-hero-stat-value" style="color:var(--danger)">' + total + '</span>' +
+            '<span class="ranking-hero-stat-label">Cantidad total</span>' +
+        '</div>';
+}
+
+function renderPromocionesAvancePDV(pdvSeleccionado) {
+    renderAvisoOficial();
+    renderPeriodoAnalizado('periodo-analizado-avance');
+    const select = document.getElementById('pdv-select');
+    if (!select) return;
+    if (!pdvSeleccionado) pdvSeleccionado = select.value || 'todos';
+    select.value = pdvSeleccionado;
+
+    const periodoHeader = DataStore.getInfoPeriodo();
+    const diaActualEl = document.getElementById('pdv-dia-actual');
+    const diaTotalEl = document.getElementById('pdv-dia-total');
+    if (diaActualEl) diaActualEl.textContent = periodoHeader.elapsed;
+    if (diaTotalEl) diaTotalEl.textContent = '/' + periodoHeader.total;
+
+    const container = document.getElementById('pdv-content');
+    if (!container) return;
+    const p = PromocionesStore._periodoEfectivo();
+    if (!PromocionesStore._firestoreLoaded) {
+        container.innerHTML = '<div class="empty-state"><p>Cargando promociones...</p></div>';
+        return;
+    }
+    const registros = PromocionesStore.getRegistrosEnRango(p.desde, p.hasta);
+    const total = registros.reduce((s, r) => s + r.cantidad, 0);
+    if (total === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No existen registros de promociones para el periodo seleccionado.</p></div>';
+        return;
+    }
+
+    if (pdvSeleccionado !== 'todos') {
+        const promos = {};
+        registros.filter(r => r.tienda === pdvSeleccionado).forEach(r => {
+            promos[r.promocion] = (promos[r.promocion] || 0) + r.cantidad;
+        });
+        const rows = Object.entries(promos)
+            .sort((a, b) => b[1] - a[1])
+            .map(([promo, cant], i) => {
+                const pct = _promoPct(cant, total);
+                return '<tr>' +
+                    '<td class="ctl-td-pos">' + (i + 1) + '</td>' +
+                    '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(promo) + '</td>' +
+                    '<td>' + cant + '</td>' +
+                    '<td>' + ctlBarCell(pct) + '</td>' +
+                    '<td>' + formatPercent(pct) + '</td>' +
+                    '<td>' + ctlBadge(pct) + '</td>' +
+                    '</tr>';
+            }).join('');
+        container.innerHTML = '' +
+            '<div class="ctl-card">' +
+                '<div class="ctl-card-header"><span class="ctl-card-title">\ud83c\udf81 Promociones de ' + ctlEsc(pdvSeleccionado) + '</span><span class="ctl-card-count">' + Object.keys(promos).length + ' promociones</span></div>' +
+                '<div class="ctl-table-wrap"><table class="ctl-table">' +
+                    '<thead><tr><th class="ctl-th-left">#</th><th class="ctl-th-left">Promoci\u00f3n</th><th>Cantidad</th><th>Participaci\u00f3n</th><th>%</th><th>Estado</th></tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table></div>' +
+            '</div>';
+        return;
+    }
+
+    const ranking = PromocionesStore.getRankingTiendas(p.desde, p.hasta);
+    const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
+    const rows = ranking.map((r, i) => {
+        const pct = _promoPct(r.cantidad, total);
+        const medalla = i < 3 ? ' ' + medals[i] : '';
+        const detalleId = 'promo-detalle-' + i;
+
+        const porPromo = {};
+        registros.filter(reg => reg.tienda === r.tienda).forEach(reg => {
+            porPromo[reg.promocion] = (porPromo[reg.promocion] || 0) + reg.cantidad;
+        });
+        const detalleHtml = Object.entries(porPromo)
+            .sort((a, b) => b[1] - a[1])
+            .map(([promo, cant]) => {
+                const dpct = _promoPct(cant, r.cantidad);
+                return '<tr>' +
+                    '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(promo) + '</td>' +
+                    '<td>' + cant + '</td>' +
+                    '<td>' + ctlBarCell(dpct) + '</td>' +
+                    '<td>' + formatPercent(dpct) + '</td>' +
+                    '<td>' + ctlBadge(dpct) + '</td>' +
+                    '</tr>';
+            }).join('');
+
+        return '<tr class="promo-tienda-row">' +
+            '<td class="ctl-td-pos">' + r.puesto + medalla + '</td>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlDot(pct) + ' ' + ctlEsc(r.tienda) + '</td>' +
+            '<td>' + r.cantidad + '</td>' +
+            '<td>' + r.promociones + '</td>' +
+            '<td>' + ctlBarCell(pct) + '</td>' +
+            '<td>' + formatPercent(pct) + '</td>' +
+            '<td>' + ctlBadge(pct) + '</td>' +
+            '<td><button type="button" class="promo-toggle-btn" onclick="togglePromoDetalle(\'' + detalleId + '\', this)">\u25bc Ver Promociones</button></td>' +
+            '</tr>' +
+            '<tr class="promo-detail-row" id="' + detalleId + '">' +
+                '<td colspan="8" class="promo-detail-cell">' +
+                    '<div class="promo-detail-inner">' +
+                        '<div class="promo-detail-title">' + ctlEsc(r.tienda) + ' \u00b7 Total: ' + r.cantidad + ' \u00b7 ' + Object.keys(porPromo).length + ' promociones</div>' +
+                        '<table class="ctl-table">' +
+                            '<thead><tr><th class="ctl-th-left">Promoci\u00f3n</th><th>Cantidad</th><th>Participaci\u00f3n</th><th>%</th><th>Estado</th></tr></thead>' +
+                            '<tbody>' + detalleHtml + '</tbody>' +
+                        '</table>' +
+                    '</div>' +
+                '</td>' +
+            '</tr>';
+    }).join('');
+
+    container.innerHTML = '' +
+        '<div class="ctl-card">' +
+            '<div class="ctl-card-header"><span class="ctl-card-title">\ud83c\udf81 Avance de Promociones por Tienda</span><span class="ctl-card-count">' + ranking.length + ' tiendas</span></div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table promo-avance-table">' +
+                '<thead><tr><th class="ctl-th-left">#</th><th class="ctl-th-left">Tienda</th><th>Cantidad</th><th>Promociones</th><th>Participaci\u00f3n</th><th>%</th><th>Estado</th><th>Detalle</th></tr></thead>' +
+                '<tbody>' + rows + '</tbody>' +
+            '</table></div>' +
+        '</div>';
+}
+
+function togglePromoDetalle(id, btn) {
+    const row = document.getElementById(id);
+    if (!row) return;
+    const visible = row.classList.toggle('open');
+    if (btn) {
+        btn.classList.toggle('open', visible);
+        btn.innerHTML = (visible ? '\u25b2 Ocultar' : '\u25bc Ver') + ' Promociones';
+    }
+}
+
+/* ===== INFORME POR PROMOTOR: PESTAÑA PROMOCIONES ===== */
+function cambiarInfPromTab(tab) {
+    infPromTab = (tab === 'promociones') ? 'promociones' : 'ventas';
+    const tabs = document.getElementById('inf-promotor-tabs');
+    if (tabs) tabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.tab === infPromTab));
+    const sel = document.getElementById('inf-promotor-select');
+    if (sel && sel.value) {
+        aplicarFiltrosInformePromotor();
+    } else if (infPromTab === 'promociones') {
+        const heroKpis = document.getElementById('inf-promotor-hero-kpis');
+        if (heroKpis) heroKpis.innerHTML = '';
+        const content = document.getElementById('inf-promotor-content');
+        if (content) content.innerHTML = '<div class="empty-state"><p>Selecciona un promotor para ver sus promociones.</p></div>';
+    } else {
+        renderizarTablaPromotores();
+    }
+}
+
+function renderPromocionesInformePromotor(promotor, fechaDesde, fechaHasta, tiendaFiltro) {
+    let registros = PromocionesStore.getRegistrosEnRango(fechaDesde, fechaHasta);
+    registros = registros.filter(r => r.promotor_id === promotor.id);
+    if (tiendaFiltro) registros = registros.filter(r => r.tienda === tiendaFiltro);
+
+    renderEncabezadoPromocionesPromotor(promotor, registros, fechaDesde, fechaHasta);
+
+    const content = document.getElementById('inf-promotor-content');
+    if (!content) return;
+    const total = registros.reduce((s, r) => s + r.cantidad, 0);
+
+    if (registros.length === 0) {
+        content.innerHTML = '<div class="empty-state"><p>No existen registros de promociones para el periodo y filtros seleccionados.</p></div>';
+        return;
+    }
+
+    const porPromo = {};
+    registros.forEach(r => {
+        porPromo[r.promocion] = (porPromo[r.promocion] || 0) + r.cantidad;
+    });
+    const ranking = Object.entries(porPromo)
+        .map(([promo, cantidad]) => ({ promocion: promo, cantidad }))
+        .sort((a, b) => b.cantidad - a.cantidad)
+        .map((item, i) => ({ ...item, puesto: i + 1 }));
+    const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
+    const rows = ranking.map((r, i) => {
+        const pct = _promoPct(r.cantidad, total);
+        const medalla = i < 3 ? ' ' + medals[i] : '';
+        return '<tr>' +
+            '<td class="ctl-td-pos">' + r.puesto + medalla + '</td>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(r.promocion) + '</td>' +
+            '<td>' + r.cantidad + '</td>' +
+            '<td>' + ctlBarCell(pct) + '</td>' +
+            '<td>' + formatPercent(pct) + '</td>' +
+            '<td>' + ctlBadge(pct) + '</td>' +
+            '</tr>';
+    }).join('');
+
+    const detalleRows = _registrosDetallePromotor(registros);
+
+    content.innerHTML = '' +
+        '<div class="ctl-card">' +
+            '<div class="ctl-card-header"><span class="ctl-card-title">\ud83c\udf81 Promociones Registradas</span><span class="ctl-card-count">' + ranking.length + ' promociones \u00b7 ' + total + ' cantidades</span></div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table">' +
+                '<thead><tr><th class="ctl-th-left">#</th><th class="ctl-th-left">Promoci\u00f3n</th><th>Cantidad</th><th>Participaci\u00f3n</th><th>%</th><th>Estado</th></tr></thead>' +
+                '<tbody>' + rows + '</tbody>' +
+            '</table></div>' +
+        '</div>' +
+        '<div class="ctl-card">' +
+            '<div class="ctl-card-header"><span class="ctl-card-title">\ud83d\udccb Detalle de Registros</span><span class="ctl-card-count">' + registros.length + ' registros</span></div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table">' +
+                '<thead><tr><th class="ctl-th-left">Promoci\u00f3n</th><th>Cantidad</th><th class="ctl-th-left">Tienda</th><th>Fecha</th></tr></thead>' +
+                '<tbody>' + detalleRows + '</tbody>' +
+            '</table></div>' +
+        '</div>';
+}
+
+function _registrosDetallePromotor(registros) {
+    return registros
+        .slice()
+        .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)) || b.cantidad - a.cantidad)
+        .map(r =>
+            '<tr>' +
+                '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(r.promocion) + '</td>' +
+                '<td>' + r.cantidad + '</td>' +
+                '<td class="ctl-td-left">' + ctlEsc(r.tienda) + '</td>' +
+                '<td>' + (r.fecha || '\u2014') + '</td>' +
+            '</tr>'
+        ).join('');
+}
+
+function renderEncabezadoPromocionesPromotor(promotor, registros, fechaDesde, fechaHasta) {
+    const zona = promotor.zona_principal_id ? (HorariosDataStore.zonas || []).find(z => z.id === promotor.zona_principal_id) : null;
+    const tiendaNombre = zona ? zona.nombre : 'Sin tienda asignada';
+    const totalCantidad = registros.reduce((s, r) => s + r.cantidad, 0);
+    const promosDistintas = new Set(registros.map(r => r.promocion)).size;
+
+    const fd = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date();
+    const fh = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : new Date();
+    const op = { day: '2-digit', month: 'long', year: 'numeric' };
+    const desdeStr = fd.toLocaleDateString('es-PE', op);
+    const hastaStr = fh.toLocaleDateString('es-PE', op);
+
+    const heroKpis = document.getElementById('inf-promotor-hero-kpis');
+    if (heroKpis) {
+        heroKpis.innerHTML = '' +
+            '<div class="inf-promotor-hero-kpi" style="min-width:120px;text-align:left;">' +
+                '<div style="font-size:13px;font-weight:700;color:#ffffff;line-height:1.4;">' + escHtml(promotor.nombre) + '</div>' +
+                '<div style="font-size:11px;color:#727272;margin-top:2px;">' + escHtml(promotor.email || 'Sin correo') + '</div>' +
+                '<div style="font-size:11px;color:#1DB954;margin-top:1px;">' + escHtml(tiendaNombre) + '</div>' +
+            '</div>' +
+            '<div class="inf-promotor-hero-kpi" style="min-width:90px;">' +
+                '<span class="inf-promotor-hero-kpi-value" style="color:#3B82F6;">' + totalCantidad + '</span>' +
+                '<span class="inf-promotor-hero-kpi-label">Cantidad Total</span>' +
+            '</div>' +
+            '<div class="inf-promotor-hero-kpi" style="min-width:100px;">' +
+                '<span class="inf-promotor-hero-kpi-value" style="color:#1DB954;">' + promosDistintas + '</span>' +
+                '<span class="inf-promotor-hero-kpi-label">Promociones</span>' +
+            '</div>' +
+            '<div class="inf-promotor-hero-kpi" style="min-width:120px;">' +
+                '<span class="inf-promotor-hero-kpi-value" style="color:#727272;font-size:13px;font-weight:600;">' + desdeStr + ' \u2014 ' + hastaStr + '</span>' +
+                '<span class="inf-promotor-hero-kpi-label">Periodo</span>' +
+            '</div>';
+    }
+}
+
+/* ===== MODAL: REGISTRO DE PROMOCIONES ===== */
+function abrirModalPromociones() {
+    initPromotorSession();
+    if (!estaSupervisorDesbloqueado() && !promotorSession) {
+        mostrarModalLogin();
+        return;
+    }
+    abrirModalPromocionesConSesion();
+}
+
+function abrirModalPromocionesConSesion() {
+    if (typeof PromocionesStore === 'undefined' || !PromocionesStore._firestoreLoaded) {
+        mostrarNotificacion('Las promociones a\u00fan se est\u00e1n cargando. Intenta en unos segundos.', 'warning');
+        return;
+    }
+    const supervisor = estaSupervisorDesbloqueado();
+    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+    const activos = promotores.filter(p => p.estado === 'Activo' && p.zona_principal_id && zonas.some(z => z.id === p.zona_principal_id));
+
+    const tiendaSel = document.getElementById('promo-tienda');
+    const promotorSel = document.getElementById('promo-promotor');
+    const fechaInput = document.getElementById('promo-fecha');
+    const sessionBar = document.getElementById('promo-session-bar');
+
+    if (!supervisor && promotorSession) {
+        const zona = zonas.find(z => z.id === promotorSession.zona_principal_id);
+        tiendaSel.innerHTML = '<option value="">Seleccionar tienda...</option>' +
+            (zona ? '<option value="' + escHtml(zona.nombre) + '">' + escHtml(zona.nombre) + '</option>' : '');
+        if (zona) tiendaSel.value = zona.nombre;
+        tiendaSel.disabled = true;
+        const promo = activos.find(p => p.id === promotorSession.id);
+        promotorSel.innerHTML = '<option value="' + escHtml(promotorSession.id) + '">' + escHtml(promo ? promo.nombre : promotorSession.nombre) + '</option>';
+        promotorSel.disabled = true;
+        if (sessionBar) {
+            sessionBar.style.display = 'flex';
+            sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promotorSession.nombre) + '</div>' +
+                '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotorDesdePromo()">Cerrar sesi\u00f3n</button>';
+        }
+    } else {
+        tiendaSel.disabled = false;
+        promotorSel.disabled = false;
+        tiendaSel.innerHTML = '<option value="">Seleccionar tienda...</option>' +
+            zonas.map(z => '<option value="' + escHtml(z.nombre) + '">' + escHtml(z.nombre) + '</option>').join('');
+        promotorSel.innerHTML = '<option value="">Seleccionar promotor...</option>' +
+            activos.map(p => '<option value="' + p.id + '">' + escHtml(p.nombre) + (p.dni ? ' \u00b7 ' + escHtml(p.dni) : '') + '</option>').join('');
+        if (sessionBar) {
+            if (promotorSession) {
+                sessionBar.style.display = 'flex';
+                sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promotorSession.nombre) + '</div>' +
+                    '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotorDesdePromo()">Cerrar sesi\u00f3n</button>';
+            } else {
+                sessionBar.style.display = 'none';
+                sessionBar.innerHTML = '';
+            }
+        }
+    }
+
+    fechaInput.value = formatearFechaLocal(new Date());
+    document.getElementById('modal-promociones').classList.add('open');
+    cargarPromocionesTabla();
+}
+
+function cerrarSesionPromotorDesdePromo() {
+    cerrarModalPromociones();
+    cerrarSesionPromotor();
+}
+
+function cerrarModalPromociones() {
+    document.getElementById('modal-promociones').classList.remove('open');
+}
+
+function cargarPromocionesTabla() {
+    const tbody = document.getElementById('tbody-registro-promociones');
+    if (!tbody) return;
+    const tienda = document.getElementById('promo-tienda').value;
+    const fecha = document.getElementById('promo-fecha').value;
+    const promotorId = document.getElementById('promo-promotor').value;
+    const totalEl = document.getElementById('promo-registro-total');
+
+    if (typeof PromocionesStore === 'undefined' || !PromocionesStore._firestoreLoaded) {
+        tbody.innerHTML = '<tr><td colspan="2"><div class="empty-state"><p>Cargando promociones...</p></div></td></tr>';
+        if (totalEl) totalEl.textContent = '0 registros';
+        return;
+    }
+    if (!tienda || !fecha || !promotorId) {
+        tbody.innerHTML = '<tr><td colspan="2"><div class="empty-state"><p>Selecciona tienda, fecha y promotor para registrar promociones.</p></div></td></tr>';
+        if (totalEl) totalEl.textContent = '0 registros';
+        return;
+    }
+
+    const activas = PromocionesStore.getPromocionesActivas();
+    const cantMap = {};
+    PromocionesStore.registros.filter(r => r.tienda === tienda && r.fecha === fecha && r.promotor_id === promotorId)
+        .forEach(r => { cantMap[r.promocion] = r.cantidad; });
+
+    if (activas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2"><div class="empty-state"><p>No hay promociones activas. Solicita a tu supervisor que cree promociones.</p></div></td></tr>';
+        if (totalEl) totalEl.textContent = '0 registros';
+        return;
+    }
+
+    const rows = activas.map(p => {
+        const cant = cantMap[p.nombre] || '';
+        return '<tr>' +
+            '<td class="promo-td-nombre">' + ctlDot(100) + ' ' + ctlEsc(p.nombre) + '</td>' +
+            '<td><input type="number" min="0" step="1" class="promo-cant-input" data-promocion="' + escHtml(p.nombre) + '" value="' + cant + '" placeholder="0" oninput="actualizarTotalPromociones()"></td>' +
+            '</tr>';
+    }).join('');
+
+    tbody.innerHTML = rows;
+    actualizarTotalPromociones();
+}
+
+function actualizarTotalPromociones() {
+    const inputs = document.querySelectorAll('#tbody-registro-promociones .promo-cant-input');
+    let total = 0;
+    let conValor = 0;
+    inputs.forEach(inp => {
+        const v = parseFloat(inp.value) || 0;
+        if (v > 0) { total += v; conValor++; }
+    });
+    const totalEl = document.getElementById('promo-registro-total');
+    if (totalEl) totalEl.textContent = conValor + ' registros \u00b7 ' + total + ' cantidades';
+}
+
+function guardarRegistroPromociones() {
+    const tienda = document.getElementById('promo-tienda').value;
+    const fecha = document.getElementById('promo-fecha').value;
+    const promotorId = document.getElementById('promo-promotor').value;
+    if (!tienda || !fecha || !promotorId) {
+        mostrarNotificacion('Completa tienda, fecha y promotor antes de guardar.', 'warning');
+        return;
+    }
+    const inputs = document.querySelectorAll('#tbody-registro-promociones .promo-cant-input');
+    const cantidades = [];
+    inputs.forEach(inp => {
+        cantidades.push({ promocion: inp.getAttribute('data-promocion'), cantidad: parseFloat(inp.value) || 0 });
+    });
+
+    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+    const promo = promotores.find(p => p.id === promotorId);
+    const guardados = PromocionesStore.guardarRegistro({
+        fecha,
+        tienda,
+        promotor_id: promotorId,
+        promotor_nombre: promo ? promo.nombre : null,
+        cantidades
+    });
+
+    const algunoPositivo = cantidades.some(c => c.cantidad > 0);
+    if (guardados > 0 && algunoPositivo) {
+        mostrarNotificacion('Promociones registradas correctamente.', 'success');
+    } else if (!algunoPositivo) {
+        mostrarNotificacion('Ingresa al menos una cantidad mayor a 0.', 'warning');
+    } else {
+        mostrarNotificacion('Promociones registradas correctamente.', 'success');
+    }
+    cerrarModalPromociones();
+    reRenderCurrentPage();
+}
+
+/* ===== MODAL: GESTIÓN DE PROMOCIONES (SUPERVISOR) ===== */
+function abrirGestionPromociones() {
+    if (!estaSupervisorDesbloqueado()) {
+        abrirModalPassword();
+        return;
+    }
+    renderGestionPromociones();
+    document.getElementById('modal-gestion-promociones').classList.add('open');
+}
+
+function cerrarGestionPromociones() {
+    document.getElementById('modal-gestion-promociones').classList.remove('open');
+    gestionPromocionesEditando = null;
+}
+
+function renderGestionPromociones() {
+    const tbody = document.getElementById('tbody-gestion-promociones');
+    if (!tbody) return;
+    if (typeof PromocionesStore === 'undefined' || !PromocionesStore._firestoreLoaded) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><p>Cargando promociones...</p></div></td></tr>';
+        return;
+    }
+    const promos = PromocionesStore.getPromociones().slice().reverse();
+    if (promos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><p>A\u00fan no existen promociones. Crea la primera con el formulario superior.</p></div></td></tr>';
+        return;
+    }
+
+    const rows = promos.map(p => {
+        const editando = gestionPromocionesEditando === p.id;
+        const nombreCell = editando
+            ? '<input type="text" id="gestion-editar-nombre-' + p.id + '" class="promo-gestion-edit-input" value="' + escHtml(p.nombre) + '" onkeydown="if(event.key===\'Enter\')guardarEdicionPromocion(\'' + p.id + '\')">'
+            : ctlEsc(p.nombre);
+        const estadoBadge = p.estado === 'Activa'
+            ? '<span class="promo-estado-badge activa">Activa</span>'
+            : '<span class="promo-estado-badge inactiva">Inactiva</span>';
+        const acciones = editando
+            ? '<button type="button" class="promo-action-btn ok" onclick="guardarEdicionPromocion(\'' + p.id + '\')">Guardar</button>' +
+              '<button type="button" class="promo-action-btn cancel" onclick="cancelarEdicionPromocion()">Cancelar</button>'
+            : '<button type="button" class="promo-action-btn" onclick="cambiarEstadoPromocion(\'' + p.id + '\')">' + (p.estado === 'Activa' ? 'Desactivar' : 'Activar') + '</button>' +
+              '<button type="button" class="promo-action-btn" onclick="editarPromocion(\'' + p.id + '\')">Editar</button>' +
+              '<button type="button" class="promo-action-btn danger" onclick="eliminarPromocion(\'' + p.id + '\')">Eliminar</button>';
+        return '<tr>' +
+            '<td class="promo-gestion-td-nombre">' + nombreCell + '</td>' +
+            '<td>' + estadoBadge + '</td>' +
+            '<td class="promo-gestion-td-fecha">' + _promoFechaLegible(p.fecha_creacion) + '</td>' +
+            '<td class="promo-gestion-td-acciones">' + acciones + '</td>' +
+            '</tr>';
+    }).join('');
+
+    tbody.innerHTML = rows;
+}
+
+function crearPromocion() {
+    const input = document.getElementById('nueva-promocion-nombre');
+    const nombre = input ? input.value.trim() : '';
+    if (!nombre) {
+        mostrarNotificacion('Escribe el nombre de la promoci\u00f3n.', 'warning');
+        return;
+    }
+    const promo = PromocionesStore.crearPromocion(nombre);
+    if (!promo) {
+        mostrarNotificacion('La promoci\u00f3n ya existe o el nombre no es v\u00e1lido.', 'warning');
+        return;
+    }
+    if (input) input.value = '';
+    mostrarNotificacion('Promoci\u00f3n creada: ' + nombre, 'success');
+    renderGestionPromociones();
+    reRenderCurrentPage();
+}
+
+function editarPromocion(promoId) {
+    gestionPromocionesEditando = promoId;
+    renderGestionPromociones();
+    const input = document.getElementById('gestion-editar-nombre-' + promoId);
+    if (input) input.focus();
+}
+
+function cancelarEdicionPromocion() {
+    gestionPromocionesEditando = null;
+    renderGestionPromociones();
+}
+
+function guardarEdicionPromocion(promoId) {
+    const input = document.getElementById('gestion-editar-nombre-' + promoId);
+    const nombre = input ? input.value.trim() : '';
+    if (!nombre) {
+        mostrarNotificacion('El nombre no puede estar vac\u00edo.', 'warning');
+        return;
+    }
+    const promo = PromocionesStore.editarPromocion(promoId, nombre);
+    if (!promo) {
+        mostrarNotificacion('No se pudo guardar. Verifica que el nombre no exista.', 'warning');
+        return;
+    }
+    gestionPromocionesEditando = null;
+    mostrarNotificacion('Promoci\u00f3n actualizada.', 'success');
+    renderGestionPromociones();
+    reRenderCurrentPage();
+}
+
+function cambiarEstadoPromocion(promoId) {
+    const promo = PromocionesStore.promociones.find(p => p.id === promoId);
+    if (!promo) return;
+    const nuevoEstado = promo.estado === 'Activa' ? 'Inactiva' : 'Activa';
+    PromocionesStore.setEstadoPromocion(promoId, nuevoEstado);
+    mostrarNotificacion('Promoci\u00f3n ' + (nuevoEstado === 'Activa' ? 'activada' : 'desactivada') + ': ' + promo.nombre, 'success');
+    renderGestionPromociones();
+    reRenderCurrentPage();
+}
+
+function eliminarPromocion(promoId) {
+    const promo = PromocionesStore.promociones.find(p => p.id === promoId);
+    if (!promo) return;
+    if (!confirm('\u00bfEliminar la promoci\u00f3n "' + promo.nombre + '"?\nTambi\u00e9n se eliminar\u00e1n sus registros asociados.')) return;
+    PromocionesStore.eliminarPromocion(promoId);
+    mostrarNotificacion('Promoci\u00f3n eliminada.', 'success');
+    renderGestionPromociones();
+    reRenderCurrentPage();
+}
+
 function renderizarResumenEjecutivo() {
     renderAvisoOficial();
     renderPeriodoAnalizado('periodo-analizado-resumen');
+
+    const tipo = filtroTipoInformacion || 'productos';
+    const mostrarProductos = tipo !== 'promociones';
+    const mostrarPromos = tipo !== 'productos';
+
+    const kpiRow = document.getElementById('kpi-row');
+    const overallProgress = document.getElementById('overall-progress');
+    const chartsGrid = document.querySelector('.resumen-charts-grid');
+    const fullCard = document.querySelector('.resumen-chart-card-full');
+    const promoSection = document.getElementById('resumen-promociones');
+    if (kpiRow) kpiRow.style.display = mostrarProductos ? '' : 'none';
+    if (overallProgress) overallProgress.style.display = mostrarProductos ? '' : 'none';
+    if (chartsGrid) chartsGrid.style.display = mostrarProductos ? '' : 'none';
+    if (fullCard) fullCard.style.display = mostrarProductos ? '' : 'none';
+    if (promoSection) promoSection.style.display = mostrarPromos ? '' : 'none';
+
+    if (!mostrarPromos && typeof destroyChart === 'function') destroyChart('chartPromos');
+    if (mostrarPromos) renderResumenPromociones();
+    if (!mostrarProductos) return;
+
     const ventaTotal = DataStore.getVentaTotal();
     const cuotaTotal = DataStore.getCuotaTotal();
     const avance = DataStore.getAvanceGeneral();
@@ -56,6 +907,10 @@ function renderizarResumenEjecutivo() {
 }
 
 function renderizarAvancePDV(pdvSeleccionado) {
+    if ((filtroTipoInformacion || 'productos') === 'promociones') {
+        renderPromocionesAvancePDV(pdvSeleccionado);
+        return;
+    }
     renderAvisoOficial();
     renderPeriodoAnalizado('periodo-analizado-avance');
     const pdvs = DataStore.getPDVs();
@@ -133,6 +988,10 @@ function renderizarAvancePDV(pdvSeleccionado) {
 }
 
 function renderizarRanking() {
+    if ((filtroTipoInformacion || 'productos') === 'promociones') {
+        renderizarRankingPromociones();
+        return;
+    }
     renderAvisoOficial();
     renderPeriodoAnalizado('periodo-analizado-ranking');
     const ranking = DataStore.getRanking();
@@ -594,7 +1453,12 @@ function recargarModulosConFiltro() {
 function recargarInformeSiAplica() {
     const sel = document.getElementById('inf-promotor-select');
     if (sel && sel.value) aplicarFiltrosInformePromotor();
-    else renderizarTablaPromotores();
+    else if (infPromTab === 'promociones') {
+        const heroKpis = document.getElementById('inf-promotor-hero-kpis');
+        if (heroKpis) heroKpis.innerHTML = '';
+        const content = document.getElementById('inf-promotor-content');
+        if (content) content.innerHTML = '<div class="empty-state"><p>Selecciona un promotor para ver sus promociones.</p></div>';
+    } else renderizarTablaPromotores();
 }
 
 function aplicarFiltrosFecha(modulo) {
@@ -778,9 +1642,33 @@ function recargarDashboard() {
     renderizarRanking();
     renderizarResumenGeneralPDV();
     renderizarVistaEjecutiva();
+
+    if (typeof PromocionesStore !== 'undefined') {
+        if (!PromocionesStore.initialized) {
+            PromocionesStore.init();
+        }
+        PromocionesStore.onUpdate = function () {
+            reRenderCurrentPage();
+            if (typeof renderizarVistaEjecutiva === 'function') renderizarVistaEjecutiva();
+        };
+        syncTipoInfoUI();
+    }
 }
 
 function cambiarPagina(pagina) {
+    const session = leerSesion();
+    if (!session || !session.rol) {
+        const screen = document.getElementById('login-screen');
+        if (screen) screen.classList.add('activo');
+        return;
+    }
+
+    const paginasSupervisor = ['resumen', 'vista-ejecutiva', 'horarios', 'horarios-view', 'informe-promotor'];
+    if (session.rol === 'promotor' && paginasSupervisor.indexOf(pagina) !== -1) {
+        cambiarPagina('avance');
+        return;
+    }
+
     if ((pagina === 'resumen' || pagina === 'vista-ejecutiva' || pagina === 'horarios' || pagina === 'horarios-view') && !estaSupervisorDesbloqueado()) {
         abrirModalPassword();
         return;
@@ -801,7 +1689,7 @@ function cambiarPagina(pagina) {
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                     pagina === 'resumen-pdv' ? 'Resumen General PDV' :
                         pagina === 'informe-promotor' ? 'Informe por Promotor' :
-                            pagina === 'horarios' ? 'Planificador Semanal' :
+                            pagina === 'horarios' ? 'Gestión de Promotores' :
                                 pagina === 'horarios-view' ? 'Horarios Semanales por Tienda' :
                                     pagina === 'horarios-public' ? 'Horarios Semanales' : 'Dashboard';
 
@@ -1582,7 +2470,12 @@ function poblarFiltrosInformePromotor() {
     if (!promotorSelect) return;
 
     const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
-    const activos = promotores.filter(p => p.estado === 'Activo' && p.zona_principal_id);
+    const zonasActivas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const activos = promotores.filter(p =>
+        p.estado === 'Activo' &&
+        p.zona_principal_id &&
+        zonasActivas.some(z => z.id === p.zona_principal_id)
+    );
     promotorSelect.innerHTML = '<option value="">Seleccionar promotor...</option>' +
         activos.map(p => '<option value="' + p.id + '">' + escHtml(p.nombre) + (p.dni ? ' · ' + escHtml(p.dni) : '') + '</option>').join('');
 
@@ -1627,7 +2520,11 @@ function renderizarInformePromotor() {
     }
     poblarFiltrosInformePromotor();
     renderPeriodoAnalizado('periodo-analizado-informe');
-    renderizarTablaPromotores();
+    if (infPromTab === 'promociones') {
+        cambiarInfPromTab('promociones');
+    } else {
+        renderizarTablaPromotores();
+    }
 }
 
 function renderizarTablaPromotores() {
@@ -1640,15 +2537,20 @@ function renderizarTablaPromotores() {
     const fechaDesde = fechas.desde;
     const fechaHasta = fechas.hasta;
 
-    const ventas = DataStore.ventas || [];
+    const ventas = DataStore.getVentasActivas();
     let ventasPeriodo = ventas.slice();
     if (fechaDesde) ventasPeriodo = ventasPeriodo.filter(v => new Date(v.fecha) >= new Date(fechaDesde + 'T00:00:00'));
     if (fechaHasta) ventasPeriodo = ventasPeriodo.filter(v => new Date(v.fecha) <= new Date(fechaHasta + 'T23:59:59'));
 
     const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
-    const activos = promotores.filter(p => p.estado === 'Activo' && p.zona_principal_id);
+    const zonasActivas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const activos = promotores.filter(p =>
+        p.estado === 'Activo' &&
+        p.zona_principal_id &&
+        zonasActivas.some(z => z.id === p.zona_principal_id)
+    );
 
-    const cuotas = DataStore.cuotas || [];
+    const cuotas = DataStore.getCuotasActivas();
     const productos = DataStore.getProductos();
     const fechaRef = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date();
     const mes = fechaRef.getMonth() + 1;
@@ -1775,7 +2677,12 @@ function aplicarFiltrosInformePromotor() {
     const tiendaFiltro = document.getElementById('inf-promotor-tienda').value;
     const productFiltro = document.getElementById('inf-promotor-producto').value;
 
-    const ventas = DataStore.ventas || [];
+    if (infPromTab === 'promociones') {
+        renderPromocionesInformePromotor(promotor, fechaDesde, fechaHasta, tiendaFiltro);
+        return;
+    }
+
+    const ventas = DataStore.getVentasActivas();
     let ventasFiltradas = ventas.filter(v => {
         if (v.promotor_id && v.promotor_id !== promotorId) return false;
         if (tiendaFiltro && v.punto_venta !== tiendaFiltro) return false;
@@ -1847,7 +2754,7 @@ function calcularKPIsPromotor(promotor, ventas, fechaDesde, fechaHasta) {
 
     let cuotaTotal = 0;
     const productos = DataStore.getProductos();
-    const cuotas = DataStore.cuotas || [];
+    const cuotas = DataStore.getCuotasActivas();
     const tienda = promotor.zona_principal_id ? (HorariosDataStore.zonas || []).find(z => z.id === promotor.zona_principal_id) : null;
     const tiendaNombre = tienda ? tienda.nombre : null;
 
@@ -1909,7 +2816,7 @@ function renderTablaProductosPromotor(promotor, ventas, fechaDesde, fechaHasta, 
     if (!container) return;
 
     const productos = DataStore.getProductos();
-    const cuotas = DataStore.cuotas || [];
+    const cuotas = DataStore.getCuotasActivas();
     const fechaInicio = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : null;
     const mes = fechaInicio ? fechaInicio.getMonth() + 1 : new Date().getMonth() + 1;
     const anio = fechaInicio ? fechaInicio.getFullYear() : new Date().getFullYear();
@@ -2139,72 +3046,12 @@ function renderInfPromCharts(trendLabels, trendValues) {
 }
 
 function renderAvisoOficial() {
-    if (sessionStorage.getItem('aviso_oficial_oculto') === 'true') return;
-
-    const page = document.querySelector('.page.active');
-    if (!page) return;
-
-    const existing = page.querySelector('.aviso-oficial');
-    if (existing) {
-        existing.classList.remove('hidden');
-        return;
-    }
-
-    const titleSelectors = [
-        '.resumen-header',
-        '.pdv-header',
-        '.ranking-hero',
-        '.rpdv-hero'
-    ];
-    const title = page.querySelector(titleSelectors.join(','));
-
-    const aviso = document.createElement('div');
-    aviso.className = 'aviso-oficial';
-    aviso.innerHTML =
-        '<div class="aviso-oficial-badge">📌 Aviso Oficial</div>' +
-        '<button class="aviso-oficial-close" onclick="ocultarAvisoOficial()" aria-label="Ocultar aviso" title="Ocultar aviso">' +
-            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
-                '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>' +
-            '</svg>' +
-        '</button>' +
-        '<div class="aviso-oficial-icon">' +
-            '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-width="1.8" fill="rgba(245,158,11,0.1)"/>' +
-                '<line x1="12" y1="9" x2="12" y2="13" stroke-width="2.5"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2.5"/>' +
-            '</svg>' +
-        '</div>' +
-        '<div class="aviso-oficial-content">' +
-            '<p><strong>IMPORTANTE:</strong></p>' +
-            '<p>La informaci&oacute;n mostrada se actualiza manualmente con los registros ingresados por cada promotor, por lo que los resultados son referenciales y podr&iacute;an presentar variaciones respecto a los resultados oficiales.</p>' +
-            '<p>Para cualquier validaci&oacute;n, se deber&aacute; considerar la informaci&oacute;n oficial compartida por el <strong>&aacute;rea de Retail</strong>, a trav&eacute;s de los <strong>supervisores</strong>.</p>' +
-        '</div>';
-
-    if (title) {
-        title.parentNode.insertBefore(aviso, title.nextSibling);
-    } else {
-        page.insertBefore(aviso, page.firstChild);
-    }
-}
-
-function ocultarAvisoOficial() {
-    document.querySelectorAll('.aviso-oficial').forEach(el => el.classList.add('hidden'));
-    sessionStorage.setItem('aviso_oficial_oculto', 'true');
+    return;
 }
 
 document.addEventListener('DOMContentLoaded', function () {
     initPromotorSession();
-    renderAvisoOficial();
-    document.querySelectorAll('.nav-item').forEach(item => {
-        if (!item.dataset.page) return;
-        item.addEventListener('click', function (e) {
-            const rect = this.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            this.style.setProperty('--ripple-x', x + '%');
-            this.style.setProperty('--ripple-y', y + '%');
-            cambiarPagina(this.dataset.page);
-        });
-    });
+    configurarVistaAutenticacion();
 
     document.getElementById('mobile-toggle').addEventListener('click', function () {
         document.getElementById('sidebar').classList.toggle('open');
@@ -2214,7 +3061,16 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('sidebar').classList.remove('open');
     });
 
-    actualizarSidebarSupervisor();
+    document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+        item.addEventListener('click', function (e) {
+            const rect = this.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            this.style.setProperty('--ripple-x', x + '%');
+            this.style.setProperty('--ripple-y', y + '%');
+            cambiarPagina(this.dataset.page);
+        });
+    });
 
     const pdvSelect = document.getElementById('pdv-select');
     if (pdvSelect) {
@@ -2234,12 +3090,295 @@ document.addEventListener('DOMContentLoaded', function () {
         togglePdvClass();
     }
 
-    recargarDashboard();
-    cambiarPagina('avance');
-
     const style = document.createElement('style');
     style.textContent = `
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     `;
     document.head.appendChild(style);
+
+    recargarDashboard();
+    aplicarSesionInicial();
 });
+
+/* ===== AUTENTICACIÓN ÚNICA ===== */
+
+function escHtmlGlobal(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function configurarVistaAutenticacion() {
+    const session = leerSesion();
+    if (session && session.rol) {
+        document.body.classList.add('rol-' + session.rol);
+    }
+}
+
+function leerSesion() {
+    try {
+        const raw = sessionStorage.getItem('auth_session');
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function guardarSesion(data) {
+    try {
+        sessionStorage.setItem('auth_session', JSON.stringify(data));
+    } catch (e) {}
+}
+
+function mostrarFormularioLogin(step) {
+    const roles = document.getElementById('login-step-roles');
+    const promo = document.getElementById('login-step-promotor');
+    const sup = document.getElementById('login-step-supervisor');
+    [[roles, step === 'roles'], [promo, step === 'promotor'], [sup, step === 'supervisor']].forEach(([el, on]) => {
+        if (!el) return;
+        if (on) {
+            el.style.display = 'block';
+            requestAnimationFrame(() => {
+                el.classList.add('login-step-enter');
+                setTimeout(() => el.classList.remove('login-step-enter'), 500);
+            });
+        } else {
+            el.style.display = 'none';
+        }
+    });
+    limpiarErrorLogin();
+    if (step === 'promotor') {
+        setTimeout(() => {
+            const inp = document.getElementById('login-promotor-email');
+            if (inp) inp.focus();
+        }, 140);
+    } else if (step === 'supervisor') {
+        setTimeout(() => {
+            const inp = document.getElementById('login-supervisor-password');
+            if (inp) inp.focus();
+        }, 140);
+    }
+}
+
+function toggleLoginField(inputId, toggleId) {
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(toggleId);
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    } else {
+        input.type = 'password';
+        if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    }
+}
+
+function limpiarErrorLogin() {
+    const errs = document.querySelectorAll('.login-error-text');
+    errs.forEach(el => {
+        el.textContent = '';
+        el.style.display = 'none';
+    });
+}
+
+function setErrorLogin(selector, mensaje) {
+    const el = document.getElementById(selector);
+    if (!el) return;
+    el.textContent = mensaje;
+    el.style.display = 'block';
+}
+
+async function ingresarPromotor() {
+    const email = document.getElementById('login-promotor-email').value.trim().toLowerCase();
+    const password = document.getElementById('login-promotor-password').value;
+    const btn = document.getElementById('login-promotor-btn');
+
+    if (!email) { setErrorLogin('login-promotor-error', 'Ingresa tu correo electrónico.'); return; }
+    if (!password) { setErrorLogin('login-promotor-error', 'Ingresa tu contraseña.'); return; }
+
+    btn.classList.add('loading');
+
+    if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized && typeof initHorarios === 'function') {
+        initHorarios('supervisor');
+        await new Promise(resolve => {
+            const check = () => {
+                if (HorariosDataStore.initialized) resolve();
+                else setTimeout(check, 150);
+            };
+            check();
+        });
+    }
+
+    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+    const promotor = promotores.find(p => p.email && p.email.toLowerCase() === email);
+
+    if (!promotor) {
+        btn.classList.remove('loading');
+        setErrorLogin('login-promotor-error', 'El correo ingresado no se encuentra registrado.');
+        return;
+    }
+
+    let passwordValida = false;
+    if (promotor.password_hash) {
+        const passwordHash = await hashPassword(password);
+        passwordValida = promotor.password_hash === passwordHash;
+    }
+    if (!passwordValida && promotor.password) {
+        passwordValida = password === promotor.password;
+    }
+
+    if (!passwordValida) {
+        btn.classList.remove('loading');
+        setErrorLogin('login-promotor-error', 'Contraseña incorrecta.');
+        return;
+    }
+
+    const estado = promotor.estado || 'Activo';
+    if (estado !== 'Activo') {
+        btn.classList.remove('loading');
+        setErrorLogin('login-promotor-error', 'Su cuenta se encuentra temporalmente inhabilitada. Comuníquese con su supervisor.');
+        return;
+    }
+
+    if (!promotor.zona_principal_id) {
+        btn.classList.remove('loading');
+        setErrorLogin('login-promotor-error', 'No tiene una tienda asignada. Comuníquese con su supervisor.');
+        return;
+    }
+
+    finishLogin({ rol: 'promotor', id: promotor.id, nombre: promotor.nombre, email: promotor.email });
+}
+
+function ingresarSupervisor() {
+    const password = document.getElementById('login-supervisor-password').value;
+    const btn = document.getElementById('login-supervisor-submit');
+
+    if (!password) { setErrorLogin('login-supervisor-error', 'Ingresa la contraseña de supervisor.'); return; }
+
+    btn.classList.add('loading');
+
+    setTimeout(() => {
+        if (password === SUPERVISOR_PASSWORD) {
+            btn.classList.remove('loading');
+            finishSupervisorLogin();
+        } else {
+            btn.classList.remove('loading');
+            setErrorLogin('login-supervisor-error', 'Contraseña de supervisor incorrecta.');
+        }
+    }, 500);
+}
+
+function finishLogin(data) {
+    guardarSesion(data);
+    aplicarSesionInicial();
+}
+
+function finishSupervisorLogin() {
+    sessionStorage.setItem('supervisor_unlocked', 'true');
+    guardarSesion({ rol: 'supervisor', nombre: 'Supervisor Activo' });
+    aplicarSesionInicial();
+}
+
+function aplicarSesionInicial() {
+    const screen = document.getElementById('login-screen');
+    const session = leerSesion();
+
+    if (!session || !session.rol) {
+        if (screen) screen.classList.add('activo');
+        return;
+    }
+
+    if (screen) screen.classList.remove('activo');
+
+    if (session.rol === 'supervisor') {
+        sessionStorage.setItem('supervisor_unlocked', 'true');
+        document.body.classList.remove('rol-promotor');
+        document.body.classList.add('rol-supervisor');
+        actualizarSidebarSupervisor();
+        mostrarCerrarSesion();
+        renderSupervisorHeader();
+        cambiarPagina('vista-ejecutiva');
+    } else if (session.rol === 'promotor') {
+        const p = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores.find(x => x.id === session.id) : null;
+        document.body.classList.remove('rol-supervisor');
+        document.body.classList.add('rol-promotor');
+        if (p) {
+            promotorSession = p;
+        } else {
+            promotorSession = {
+                id: session.id,
+                nombre: session.nombre,
+                email: session.email
+            };
+        }
+        renderPromotorHeader(session);
+        mostrarCerrarSesion();
+        cambiarPagina('avance');
+    }
+}
+
+function renderSupervisorHeader() {
+    const title = document.getElementById('page-title');
+    const welcome = document.getElementById('top-bar-welcome');
+    if (welcome) {
+        welcome.innerHTML = '👨‍💼 Supervisor Activo';
+        welcome.style.display = '';
+    }
+    if (title && title.textContent === 'Bienvenido:') title.textContent = 'Vista Ejecutiva';
+}
+
+function renderPromotorHeader(session) {
+    const welcome = document.getElementById('top-bar-welcome');
+    if (welcome) {
+        welcome.innerHTML = '👤 Bienvenido: ' + escHtmlGlobal(session.nombre || 'Promotor');
+        welcome.style.display = '';
+    }
+    const title = document.getElementById('page-title');
+    if (title && title.textContent === 'Bienvenido:') title.textContent = '';
+}
+
+function cerrarSesionGlobal() {
+    sessionStorage.removeItem('auth_session');
+    sessionStorage.removeItem('auth_session_secreto');
+    sessionStorage.removeItem('auth_session_secreto_tmp');
+    sessionStorage.removeItem('supervisor_unlocked');
+    localStorage.removeItem('promotor_session');
+    sessionStorage.removeItem('promotor_session');
+    promotorSession = null;
+    document.body.classList.remove('rol-promotor', 'rol-supervisor');
+    const welcome = document.getElementById('top-bar-welcome');
+    if (welcome) welcome.style.display = 'none';
+    const screen = document.getElementById('login-screen');
+    if (screen) screen.classList.add('activo');
+    mostrarFormularioLogin('roles');
+    limpiarCamposLogin();
+    mostrarNotificacion('Sesión cerrada correctamente', 'success');
+}
+
+function limpiarCamposLogin() {
+    const email = document.getElementById('login-promotor-email');
+    const pw = document.getElementById('login-promotor-password');
+    const sup = document.getElementById('login-supervisor-password');
+    if (email) email.value = '';
+    if (pw) pw.value = '';
+    if (sup) sup.value = '';
+    const suBtn = document.querySelector('.sidebar .btn-sidebar-logout');
+    if (suBtn) suBtn.remove();
+}
+
+function mostrarCerrarSesion() {
+    const footer = document.querySelector('.sidebar-footer');
+    if (!footer || footer.querySelector('.btn-sidebar-logout')) return;
+    const btn = document.createElement('button');
+    btn.className = 'btn-sidebar btn-sidebar-secondary btn-sidebar-logout';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Cerrar Sesión';
+    btn.onclick = cerrarSesionGlobal;
+    footer.appendChild(btn);
+}
+
+function cambiarPaginaConSesion(pagina) {
+    if (!leerSesion()) {
+        const screen = document.getElementById('login-screen');
+        if (screen) screen.classList.add('activo');
+        return;
+    }
+    cambiarPagina(pagina);
+}

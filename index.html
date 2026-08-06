@@ -17,6 +17,134 @@
 </head>
 
 <body>
+
+    <!-- ===== PANTALLA ÚNICA DE ACCESO ===== -->
+    <div class="login-screen" id="login-screen">
+        <div class="login-bg login-bg-orb login-bg-orb-1"></div>
+        <div class="login-bg login-bg-orb login-bg-orb-2"></div>
+        <div class="login-bg login-bg-grid"></div>
+        <div class="login-bg login-bg-vignette"></div>
+
+        <div class="login-screen-card" id="login-card">
+            <!-- Brand / Logo -->
+            <div class="login-brand">
+                <div class="login-logo" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        <circle cx="12" cy="16.5" r="1.4" fill="currentColor" stroke="none"/>
+                    </svg>
+                </div>
+                <h1 class="login-title">Dashboard Comercial</h1>
+                <p class="login-subtitle">Drive AT Sur</p>
+            </div>
+
+            <p class="login-tagline">Control y seguimiento comercial de puntos de venta y promociones.</p>
+
+            <div class="login-reference">
+                <span class="login-reference-icon">📌</span>
+                <span class="login-reference-text"><strong>Información Referencial:</strong> Los resultados mostrados en este dashboard tienen fines de seguimiento comercial y pueden presentar variaciones respecto a la información oficial consolidada por el Área de Retail.</span>
+            </div>
+
+            <!-- Paso 1: elegir rol -->
+            <div class="login-step login-step-roles" id="login-step-roles">
+                <div class="login-role-grid">
+                    <button type="button" class="login-role-card login-role-card-promotor" data-role="promotor" onclick="mostrarFormularioLogin('promotor')">
+                        <span class="login-role-emoji" aria-hidden="true">👤</span>
+                        <span class="login-role-name">Promotor</span>
+                        <span class="login-role-hint">Registro de ventas y promociones.</span>
+                        <span class="login-role-action">Ingresar como Promotor
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </span>
+                    </button>
+                    <button type="button" class="login-role-card login-role-card-supervisor" data-role="supervisor" onclick="mostrarFormularioLogin('supervisor')">
+                        <span class="login-role-emoji" aria-hidden="true">👨‍💼</span>
+                        <span class="login-role-name">Supervisor</span>
+                        <span class="login-role-hint">Análisis, indicadores y gestión comercial.</span>
+                        <span class="login-role-action">Ingresar como <strong>Supervisor</strong>
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formulario promotor -->
+            <div class="login-step login-form" id="login-step-promotor" style="display:none;">
+                <div class="login-form-header">
+                    <button type="button" class="login-back" onclick="mostrarFormularioLogin('roles')" aria-label="Volver">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    </button>
+                    <div class="login-form-badge" aria-hidden="true">👤</div>
+                    <div>
+                        <h2 class="login-form-title">Acceso Promotor</h2>
+                        <p class="login-form-subtitle">Ingresa con tu correo corporativo y contraseña.</p>
+                    </div>
+                </div>
+                <div class="login-field-group">
+                    <label class="login-label" for="login-promotor-email">📧 Correo Electr&oacute;nico</label>
+                    <div class="login-field">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        <input type="email" id="login-promotor-email" placeholder="correo@empresa.com" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('login-promotor-password').focus()">
+                    </div>
+                </div>
+                <div class="login-field-group">
+                    <label class="login-label" for="login-promotor-password">🔒 Contrase&ntilde;a</label>
+                    <div class="login-field">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input type="password" id="login-promotor-password" placeholder="Contrase&ntilde;a" autocomplete="current-password" class="has-toggle" onkeydown="if(event.key==='Enter')ingresarPromotor()">
+                        <button type="button" class="login-toggle-btn" id="login-promotor-toggle" onclick="toggleLoginField('login-promotor-password','login-promotor-toggle')" aria-label="Mostrar contraseña">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="login-error-text" id="login-promotor-error"></div>
+                <button type="button" class="login-submit" onclick="ingresarPromotor()" id="login-promotor-btn">
+                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-submit-icon"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+                    <span class="login-submit-label">Ingresar</span>
+                    <span class="login-submit-spinner"></span>
+                </button>
+            </div>
+
+            <!-- Formulario supervisor -->
+            <div class="login-step login-form" id="login-step-supervisor" style="display:none;">
+                <div class="login-form-header">
+                    <button type="button" class="login-back" onclick="mostrarFormularioLogin('roles')" aria-label="Volver">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    </button>
+                    <div class="login-form-badge login-form-badge-supervisor" aria-hidden="true">👨‍💼</div>
+                    <div>
+                        <h2 class="login-form-title">Acceso Supervisor</h2>
+                        <p class="login-form-subtitle">Ingresa la contraseña de supervisor autorizado.</p>
+                    </div>
+                </div>
+                <div class="login-field-group">
+                    <label class="login-label" for="login-supervisor-password">🔒 Contrase&ntilde;a Supervisor</label>
+                    <div class="login-field">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input type="password" id="login-supervisor-password" placeholder="Contrase&ntilde;a de autorizaci&oacute;n" autocomplete="current-password" class="has-toggle" onkeydown="if(event.key==='Enter')ingresarSupervisor()">
+                        <button type="button" class="login-toggle-btn" id="login-supervisor-toggle" onclick="toggleLoginField('login-supervisor-password','login-supervisor-toggle')" aria-label="Mostrar contraseña">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="login-error-text" id="login-supervisor-error"></div>
+                <button type="button" class="login-submit login-submit-supervisor" onclick="ingresarSupervisor()" id="login-supervisor-submit">
+                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-submit-icon"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+                    <span class="login-submit-label">Ingresar</span>
+                    <span class="login-submit-spinner"></span>
+                </button>
+            </div>
+
+            <footer class="login-footer">
+                <span>Drive AT Sur</span>
+                <span class="login-footer-dot">·</span>
+                <span>Dashboard Comercial</span>
+                <span class="login-footer-dot">·</span>
+                <span>Versión 1.0</span>
+            </footer>
+        </div>
+    </div>
+
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
@@ -37,9 +165,9 @@
         <nav class="sidebar-nav">
 
             <!-- ─── PROMOTOR ─── -->
-            <div class="nav-section-divider"><span>PROMOTOR</span></div>
+            <div class="nav-section-divider promo-only promo-divider"><span>PROMOTOR</span></div>
 
-            <div class="nav-item" onclick="abrirModalVenta()">
+            <div class="nav-item promo-only" onclick="abrirModalVenta()">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -50,7 +178,19 @@
                 <div class="nav-equalizer" id="eq-registrar-ventas"><span></span><span></span><span></span></div>
             </div>
 
-            <div class="nav-item" data-page="avance">
+            <div class="nav-item promo-only" onclick="abrirModalPromociones()">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="8" rx="1"/>
+                        <path d="M12 8V5"/><path d="M7 8V6"/><path d="M17 8V6"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Registrar Promociones</span>
+                <div class="nav-equalizer" id="eq-registrar-promociones"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item promo-only" data-page="avance">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -61,7 +201,7 @@
                 <div class="nav-equalizer" id="eq-avance"><span></span><span></span><span></span></div>
             </div>
 
-            <div class="nav-item" data-page="ranking">
+            <div class="nav-item promo-only" data-page="ranking">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -72,34 +212,8 @@
                 <div class="nav-equalizer" id="eq-ranking"><span></span><span></span><span></span></div>
             </div>
 
-            <div class="nav-item" data-page="resumen-pdv">
-                <div class="nav-indicator"></div>
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-                    </svg>
-                </span>
-                <span class="nav-label">Resumen General PDV</span>
-                <div class="nav-equalizer" id="eq-resumen-pdv"><span></span><span></span><span></span></div>
-            </div>
-
-            <div class="nav-item" data-page="horarios-public">
-                <div class="nav-indicator"></div>
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
-                    </svg>
-                </span>
-                <span class="nav-label">Horarios</span>
-                <div class="nav-equalizer" id="eq-horarios-public"><span></span><span></span><span></span></div>
-            </div>
-
-            <!-- Supervisor unlock toggle (siempre visible) -->
-            <div class="nav-item nav-supervisor-toggle" id="nav-supervisor-toggle" onclick="toggleSupervisorAcceso()">
+            <!-- Supervisor unlock toggle (modo supervisor / no autenticado) -->
+            <div class="nav-item nav-supervisor-toggle" id="nav-supervisor-toggle" onclick="toggleSupervisorAcceso()" style="display:none;">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon" id="supervisor-toggle-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -153,6 +267,18 @@
                 <div class="nav-equalizer" id="eq-super-inf-promotor"><span></span><span></span><span></span></div>
             </div>
 
+            <div class="nav-item supervisor-only" onclick="abrirGestionPromociones()">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="8" rx="1"/>
+                        <path d="M12 8V5"/><path d="M7 8V6"/><path d="M17 8V6"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Gesti&oacute;n de Promociones</span>
+                <div class="nav-equalizer" id="eq-gestion-promociones"><span></span><span></span><span></span></div>
+            </div>
+
             <!-- ─── GESTIÓN ─── (visible solo con supervisor desbloqueado) -->
             <div class="nav-section-divider gestion-divider"><span>GESTI&Oacute;N</span></div>
 
@@ -177,7 +303,7 @@
                         <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
                     </svg>
                 </span>
-                <span class="nav-label">Planificador</span>
+                <span class="nav-label">Gesti&oacute;n de Promotores</span>
                 <div class="nav-equalizer" id="eq-planificador"><span></span><span></span><span></span></div>
             </div>
 
@@ -203,6 +329,7 @@
                 <h2 id="page-title">Resumen Zona</h2>
             </div>
             <div class="top-bar-info">
+                    <span class="top-bar-badge top-bar-welcome" id="top-bar-welcome" style="display:none;"></span>
                     <span class="top-bar-badge">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -250,6 +377,16 @@
                     </div>
                     <div class="resumen-header-legend-item" title="Cumplimiento menor a 50% - Crítico">
                         <span class="resumen-header-dot red"></span> Cr&iacute;tico
+                    </div>
+                </div>
+                <div class="resumen-header-tipo">
+                    <span class="resumen-header-tipo-label">Tipo de Informaci&oacute;n</span>
+                    <div class="tipo-info-select">
+                        <select id="filtro-tipo-info" onchange="cambiarTipoInformacion(this.value)">
+                            <option value="productos">Productos Oficiales</option>
+                            <option value="promociones">Promociones</option>
+                            <option value="todo">Todo</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -395,6 +532,8 @@
                     <div class="resumen-progress-list" id="progress-list"></div>
                 </div>
             </div>
+
+            <div class="resumen-promociones" id="resumen-promociones"></div>
         </section>
 
         <!-- ===== PAGINA 2: AVANCE POR PDV ===== -->
@@ -436,6 +575,17 @@
                         <polyline points="6 9 12 15 18 9"/>
                     </svg>
                 </div>
+            </div>
+
+            <div class="promo-mode-toggle" id="avance-mode-toggle">
+                <button type="button" class="active" data-mode="productos" onclick="cambiarModoAvance('productos')">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Productos Oficiales
+                </button>
+                <button type="button" data-mode="promociones" onclick="cambiarModoAvance('promociones')">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="8" rx="1"/><path d="M12 8V5"/></svg>
+                    Promociones
+                </button>
             </div>
 
             <div class="date-filters">
@@ -497,6 +647,17 @@
                     <div class="ranking-hero-sub">Desempeño y cumplimiento por punto de venta</div>
                 </div>
                 <div class="ranking-hero-stats" id="ranking-hero-stats"></div>
+            </div>
+
+            <div class="promo-mode-toggle" id="ranking-mode-toggle">
+                <button type="button" class="active" data-mode="productos" onclick="cambiarModoRanking('productos')">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Productos Oficiales
+                </button>
+                <button type="button" data-mode="promociones" onclick="cambiarModoRanking('promociones')">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="8" rx="1"/><path d="M12 8V5"/></svg>
+                    Promociones
+                </button>
             </div>
 
             <div class="date-filters">
@@ -617,6 +778,17 @@
                 </div>
             </div>
             <div class="periodo-analizado" id="periodo-analizado-informe"></div>
+
+            <div class="inf-promotor-tabs" id="inf-promotor-tabs">
+                <button type="button" class="active" data-tab="ventas" onclick="cambiarInfPromTab('ventas')">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Ventas
+                </button>
+                <button type="button" data-tab="promociones" onclick="cambiarInfPromTab('promociones')">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="8" rx="1"/><path d="M12 8V5"/></svg>
+                    Promociones
+                </button>
+            </div>
 
             <div class="inf-promotor-filters" id="inf-promotor-filters">
                 <div class="inf-promotor-filter-group">
@@ -1000,6 +1172,136 @@
         </div>
     </div>
 
+    <!-- Modal Registro de Promociones -->
+    <div class="modal-overlay" id="modal-promociones" onclick="if(event.target===this)cerrarModalPromociones()">
+        <div class="modal modal-promociones">
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <svg class="modal-header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="8" width="18" height="4" rx="1"></rect>
+                        <rect x="5" y="12" width="14" height="8" rx="1"></rect>
+                        <path d="M12 8V5"></path>
+                        <path d="M7 8V6"></path>
+                        <path d="M17 8V6"></path>
+                    </svg>
+                    <h3>Registro de Promociones</h3>
+                </div>
+                <button class="modal-close" onclick="cerrarModalPromociones()" aria-label="Cerrar">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="promo-session-bar" id="promo-session-bar" style="display:none;"></div>
+
+            <div class="promo-filters">
+                <div class="promo-filter-group">
+                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <select id="promo-tienda" onchange="cargarPromocionesTabla()"></select>
+                </div>
+                <div class="promo-filter-group">
+                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <input type="date" id="promo-fecha" onchange="cargarPromocionesTabla()">
+                </div>
+                <div class="promo-filter-group">
+                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                    </svg>
+                    <select id="promo-promotor" onchange="cargarPromocionesTabla()"></select>
+                </div>
+            </div>
+
+            <div class="promo-registro-wrap">
+                <table class="promo-registro-table" id="tabla-registro-promociones">
+                    <thead>
+                        <tr>
+                            <th class="promo-th-nombre">Promoci&oacute;n</th>
+                            <th class="promo-th-cant">Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-registro-promociones"></tbody>
+                </table>
+            </div>
+
+            <div class="promo-registro-total" id="promo-registro-total">0 registros</div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalPromociones()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-guardar-promociones" onclick="guardarRegistroPromociones()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Guardar Promociones
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestión de Promociones (Supervisor) -->
+    <div class="modal-overlay" id="modal-gestion-promociones" onclick="if(event.target===this)cerrarGestionPromociones()">
+        <div class="modal modal-promociones modal-lg">
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <svg class="modal-header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="8" width="18" height="4" rx="1"></rect>
+                        <rect x="5" y="12" width="14" height="8" rx="1"></rect>
+                        <path d="M12 8V5"></path>
+                        <path d="M7 8V6"></path>
+                        <path d="M17 8V6"></path>
+                    </svg>
+                    <h3>Gesti&oacute;n de Promociones</h3>
+                </div>
+                <button class="modal-close" onclick="cerrarGestionPromociones()" aria-label="Cerrar">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="promo-gestion-nueva">
+                <input type="text" id="nueva-promocion-nombre" placeholder="Nombre de la nueva promoci&oacute;n..." autocomplete="off" onkeydown="if(event.key==='Enter')crearPromocion()">
+                <button type="button" class="btn btn-primary" onclick="crearPromocion()">+ Nueva Promoci&oacute;n</button>
+            </div>
+
+            <div class="cuotas-wrapper">
+                <table class="cuotas-tabla promo-gestion-table" id="tabla-gestion-promociones">
+                    <thead>
+                        <tr>
+                            <th class="cuotas-th-pdv">Promoci&oacute;n</th>
+                            <th>Estado</th>
+                            <th>Creada</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-gestion-promociones"></tbody>
+                </table>
+            </div>
+
+            <div class="promo-gestion-aviso">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Las promociones activas aparecen autom&aacute;ticamente en &laquo;Registrar Promociones&raquo;, en los reportes y en el dashboard.
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Seguridad - Acceso Restringido -->
     <div class="modal-overlay" id="modal-password" onclick="if(event.target===this)cerrarModalPassword()">
         <div class="modal modal-password">
@@ -1020,7 +1322,7 @@
             </div>
 
             <h2 class="password-title">Acceso de Supervisor</h2>
-            <p class="password-subtitle">Ingresa la clave de supervisor para acceder al Planificador y la edici&oacute;n de cuotas. Los intentos fallidos pueden quedar registrados.</p>
+            <p class="password-subtitle">Ingresa la clave de supervisor para acceder a la gesti&oacute;n de promotores y la edici&oacute;n de cuotas. Los intentos fallidos pueden quedar registrados.</p>
 
             <div class="password-field-wrapper" id="password-field-wrapper">
                 <svg class="password-field-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1192,6 +1494,7 @@
     <script src="js/firestore.js?v=2"></script>
     <script src="js/data.js?v=2"></script>
     <script src="js/charts.js?v=2"></script>
+    <script src="js/promociones.js?v=1"></script>
     <script src="js/horarios-data.js?v=2"></script>
     <script src="js/horarios.js?v=2"></script>
     <script src="js/horarios-view.js?v=2"></script>

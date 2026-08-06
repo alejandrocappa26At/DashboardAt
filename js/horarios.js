@@ -31,10 +31,171 @@ function navegarSemana(direccion) {
 }
 
 function renderHorarios() {
-    if (HorariosDataStore.currentRole === 'supervisor') {
-        renderVistaSupervisor();
-    } else {
-        renderVistaPromotor();
+    renderGestionPromotores();
+}
+
+function renderGestionPromotores() {
+    const container = document.getElementById('horarios-content');
+    if (!container) return;
+
+    const zonas = HorariosDataStore.zonas;
+    const promotores = HorariosDataStore.promotores;
+
+    const estadoOptions = [
+        { value: 'Activo', label: '🟢 Activo' },
+        { value: 'Licencia', label: '🟡 Licencia' },
+        { value: 'Vacaciones', label: '🟠 Vacaciones' },
+        { value: 'Inactivo', label: '🔴 Inactivo' }
+    ];
+
+    const rowsHtml = promotores.map((p, i) => {
+        const zonaOptions = `
+            <option value="" ${!p.zona_principal_id ? 'selected' : ''}>— Sin asignar —</option>
+            ${zonas.map(z =>
+                `<option value="${z.id}" ${p.zona_principal_id === z.id ? 'selected' : ''}>${escHtml(z.nombre)}${z.cadena ? ' · ' + escHtml(z.cadena) : ''}</option>`
+            ).join('')}
+        `;
+
+        const estadoActual = p.estado || 'Activo';
+
+        const estadoOptionsHtml = estadoOptions.map(eo =>
+            `<option value="${eo.value}" ${estadoActual === eo.value ? 'selected' : ''}>${eo.label}</option>`
+        ).join('');
+        const estadoBadgeClass = estadoActual === 'Activo' ? 'promotor-estado-activo' :
+            estadoActual === 'Licencia' ? 'promotor-estado-licencia' :
+            estadoActual === 'Vacaciones' ? 'promotor-estado-vacaciones' :
+            'promotor-estado-inactivo';
+
+        const showReactivar = estadoActual !== 'Activo';
+        const fechaRegistro = p.fecha_creacion
+            ? new Date(p.fecha_creacion).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            : '—';
+
+        return `
+            <tr class="promotor-row" data-id="${escHtml(p.id)}">
+                <td class="promotor-row-num">${i + 1}</td>
+                <td>
+                    <input class="promotor-input-name" type="text" value="${escHtml(p.nombre)}"
+                        data-id="${escHtml(p.id)}"
+                        onchange="aplicarCambiosPromotor('${escHtml(p.id)}')"
+                        placeholder="Nombre del promotor">
+                </td>
+                <td>
+                    <div class="promotor-field-group">
+                        <input class="promotor-input-dni" type="text" value="${escHtml(p.dni || '')}"
+                            data-id="${escHtml(p.id)}"
+                            maxlength="8"
+                            oninput="validarDNIInput(this)"
+                            onchange="aplicarCambiosPromotor('${escHtml(p.id)}')"
+                            placeholder="12345678">
+                        <span class="promotor-dni-error" style="display:none;">Debe tener 8 dígitos numéricos</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="promotor-field-group">
+                        <input class="promotor-input-email" type="email" value="${escHtml(p.email || '')}"
+                            data-id="${escHtml(p.id)}"
+                            onchange="aplicarCambiosPromotor('${escHtml(p.id)}')"
+                            placeholder="correo@ejemplo.com">
+                        <span class="promotor-email-error" style="display:none;">Correo inválido o ya registrado</span>
+                    </div>
+                </td>
+                <td>
+                    <select class="promotor-select-zona" data-id="${escHtml(p.id)}" onchange="aplicarCambiosPromotor('${escHtml(p.id)}')">
+                        ${zonaOptions}
+                    </select>
+                </td>
+                <td>
+                    <select class="promotor-select-estado ${estadoBadgeClass}" data-id="${escHtml(p.id)}" onchange="aplicarCambiosPromotor('${escHtml(p.id)}')">
+                        ${estadoOptionsHtml}
+                    </select>
+                </td>
+                <td class="promotor-fecha-registro">${escHtml(fechaRegistro)}</td>
+                <td class="promotor-actions-cell">
+                    ${showReactivar ? `
+                        <button class="promotor-btn-reactivate" onclick="reactivarPromotorHandler('${escHtml(p.id)}')" title="Reactivar promotor">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                    ` : `
+                        <button class="promotor-btn-pause" onclick="pausarPromotorHandler('${escHtml(p.id)}')" title="Desactivar">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                        </button>
+                    `}
+                    <button class="promotor-btn-delete" onclick="eliminarPromotorHandler('${escHtml(p.id)}')" title="Eliminar promotor">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="horarios-header">
+            <div class="horarios-header-left">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <h2>Gestión de Promotores</h2>
+            </div>
+            <div class="horarios-header-right">
+                <button class="horarios-btn-manage-promotores" onclick="abrirModalImportarExcel()" title="Importar promotores desde Excel">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Importar Excel</span>
+                </button>
+                <button class="horarios-btn-manage-promotores" onclick="agregarNuevoPromotor()" title="Añadir promotor">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Añadir Promotor</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="gestion-promotores-body">
+            <div class="promotores-summary">
+                <span>${promotores.length} promotor${promotores.length !== 1 ? 'es' : ''} registrados</span>
+                <span>· ${HorariosDataStore.zonas.length} tiendas disponibles</span>
+            </div>
+            <div class="promotores-table-scroll-area">
+                <div class="promotores-scroll-top" id="promotores-scroll-top">
+                    <div class="promotores-scroll-top-inner"></div>
+                </div>
+                <div class="promotores-table-wrapper" id="promotores-table-wrapper">
+                    <table class="promotores-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Promotor</th>
+                                <th>DNI</th>
+                                <th>Correo</th>
+                                <th>Tienda Asignada</th>
+                                <th>Estado</th>
+                                <th>Fecha de Registro</th>
+                                <th style="width:100px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml || '<tr><td colspan="8" class="promotores-empty">No hay promotores registrados.</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+
+    requestAnimationFrame(syncPromotorScroll);
+}
+
+function refrescarVistaPromotores() {
+    const container = document.getElementById('horarios-content');
+    if (container && container.querySelector('.gestion-promotores-body')) {
+        renderGestionPromotores();
+        return;
+    }
+    const overlay = document.getElementById('modal-promotores-overlay');
+    if (overlay && overlay.classList.contains('open')) {
+        renderizarModalPromotores();
     }
 }
 
@@ -1342,14 +1503,14 @@ function pausarPromotorHandler(promotorId) {
     if (!promotor) return;
     if (!confirm('¿Desea poner en pausa a este promotor?')) return;
     HorariosDataStore.editarPromotor(promotorId, { estado: 'Licencia' });
-    renderizarModalPromotores();
+    refrescarVistaPromotores();
 }
 
 function reactivarPromotorHandler(promotorId) {
     const promotor = HorariosDataStore.promotores.find(p => p.id === promotorId);
     if (!promotor) return;
     HorariosDataStore.editarPromotor(promotorId, { estado: 'Activo' });
-    renderizarModalPromotores();
+    refrescarVistaPromotores();
 }
 
 function verificarAccesoPromotor(promotorId) {
@@ -1369,7 +1530,7 @@ function agregarNuevoPromotor() {
     const zonas = HorariosDataStore.zonas;
     const nuevaZonaId = zonas.length > 0 ? zonas[0].id : null;
     HorariosDataStore.agregarPromotor('Nuevo promotor', 'fijo', nuevaZonaId);
-    renderizarModalPromotores();
+    refrescarVistaPromotores();
 
     setTimeout(() => {
         const lastInput = document.querySelector('.promotor-row:last-child .promotor-input-name');
@@ -1383,7 +1544,7 @@ function eliminarPromotorHandler(promotorId) {
     if (!confirm(`¿Eliminar a "${promotor.nombre}"? Todos sus turnos asignados se perderán.`)) return;
 
     HorariosDataStore.eliminarPromotor(promotorId);
-    renderizarModalPromotores();
+    refrescarVistaPromotores();
 }
 
 function iniciarEdicionInline(span, promotorId) {
@@ -1843,12 +2004,12 @@ async function confirmarImportacion() {
             cancelBtn.textContent = 'Cerrar';
             cancelBtn.onclick = function () {
                 cerrarModalImportarExcel();
-                renderizarModalPromotores();
+                refrescarVistaPromotores();
             };
         }
     }
 
-    renderizarModalPromotores();
+    refrescarVistaPromotores();
 }
 
 document.addEventListener('DOMContentLoaded', function () {

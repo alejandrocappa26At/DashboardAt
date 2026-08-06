@@ -66,10 +66,97 @@ function renderizarVistaEjecutiva() {
     }
 
     /* ---- Tabla consolidada (todas las tiendas) ---- */
-    main.innerHTML = buildCtlTablaPDVs();
+    main.innerHTML = buildCtlTablaPDVs() + buildCtlPromociones();
 
     /* ---- Ranking + Alertas ---- */
     side.innerHTML = buildCtlRanking() + buildCtlAlertas();
+}
+
+function buildCtlPromociones() {
+    if (typeof PromocionesStore === 'undefined' || !PromocionesStore.initialized || !PromocionesStore._firestoreLoaded) return '';
+    const p = PromocionesStore._periodoEfectivo();
+    const registros = PromocionesStore.getRegistrosEnRango(p.desde, p.hasta);
+    const ranking = PromocionesStore.getRankingPromociones(p.desde, p.hasta);
+    const tiendas = PromocionesStore.getRankingTiendas(p.desde, p.hasta);
+    const total = PromocionesStore.getTotalCantidad(p.desde, p.hasta);
+    if (ranking.length === 0 || total === 0) return '';
+
+    const tiendaTop = tiendas[0];
+    const promoTop = ranking[0];
+
+    const topCards = '<div class="resumen-promo-cards">' +
+        '<div class="resumen-promo-card">' +
+            '<span class="resumen-promo-card-icon">\ud83c\udfc6</span>' +
+            '<span class="resumen-promo-card-label">Tienda con m\u00e1s promociones</span>' +
+            '<span class="resumen-promo-card-value">' + ctlEsc(tiendaTop.tienda) + '</span>' +
+            '<span class="resumen-promo-card-sub">' + tiendaTop.cantidad + ' registros</span>' +
+        '</div>' +
+        '<div class="resumen-promo-card">' +
+            '<span class="resumen-promo-card-icon">\ud83c\udf81</span>' +
+            '<span class="resumen-promo-card-label">Promoci\u00f3n m\u00e1s utilizada</span>' +
+            '<span class="resumen-promo-card-value">' + ctlEsc(promoTop.promocion) + '</span>' +
+            '<span class="resumen-promo-card-sub">' + promoTop.cantidad + ' registros</span>' +
+        '</div>' +
+        '<div class="resumen-promo-card">' +
+            '<span class="resumen-promo-card-icon">\ud83d\udce6</span>' +
+            '<span class="resumen-promo-card-label">Total registrado</span>' +
+            '<span class="resumen-promo-card-value">' + total + '</span>' +
+            '<span class="resumen-promo-card-sub">' + registros.length + ' registros</span>' +
+        '</div>' +
+    '</div>';
+
+    const items = ranking.slice(0, 5).map((r, i) => {
+        const pct = total > 0 ? Math.min((r.cantidad / total) * 100, 100) : 0;
+        return '<div class="ctl-rank-item">' +
+            '<div class="ctl-rank-pos ' + (i < 3 ? 'top-' + (i + 1) : '') + '">' + (i + 1) + '</div>' +
+            '<div class="ctl-rank-info">' +
+            '<div class="ctl-rank-name">' + ctlEsc(r.promocion) + '</div>' +
+            '<div class="ctl-rank-bar"><div class="ctl-rank-bar-fill" style="width:' + pct + '%;background:#3B82F6;"></div></div>' +
+            '</div>' +
+            '<div><div class="ctl-rank-value" style="color:#3B82F6;">' + r.cantidad + '</div>' +
+            '<div class="ctl-rank-sub">' + formatPercent(pct) + '</div></div>' +
+            '</div>';
+    }).join('');
+
+    const porTiendaPromo = {};
+    registros.forEach(r => {
+        const key = r.tienda + '\u0001' + r.promocion;
+        if (!porTiendaPromo[key]) porTiendaPromo[key] = { tienda: r.tienda, promocion: r.promocion, cantidad: 0, promotores: new Set() };
+        porTiendaPromo[key].cantidad += r.cantidad;
+        if (r.promotor_nombre) porTiendaPromo[key].promotores.add(r.promotor_nombre);
+    });
+    const detalleRows = Object.values(porTiendaPromo)
+        .sort((a, b) => b.cantidad - a.cantidad)
+        .map(item => {
+            const promotores = [...item.promotores].join(', ');
+            return '<tr>' +
+                '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(item.tienda) + '</td>' +
+                '<td class="ctl-td-left">' + ctlEsc(item.promocion) + '</td>' +
+                '<td>' + item.cantidad + '</td>' +
+                '<td class="ctl-td-left">' + ctlEsc(promotores || '\u2014') + '</td>' +
+                '</tr>';
+        }).join('');
+
+    const detalleTabla = '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Promociones por Punto de Venta</span>' +
+        '<span class="ctl-card-count">' + Object.keys(porTiendaPromo).length + ' filas</span>' +
+        '</div>' +
+        '<div class="ctl-table-wrap"><table class="ctl-table">' +
+        '<thead><tr><th class="ctl-th-left">Tienda</th><th class="ctl-th-left">Promoci\u00f3n</th><th>Cantidad</th><th class="ctl-th-left">Promotor</th></tr></thead>' +
+        '<tbody>' + detalleRows + '</tbody>' +
+        '</table></div>' +
+        '</div>';
+
+    return topCards +
+        '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="8" rx="1"/><path d="M12 8V5"/><path d="M7 8V6"/><path d="M17 8V6"/></svg>Promociones Destacadas</span>' +
+        '<span class="ctl-card-count">' + total + ' cantidades</span>' +
+        '</div>' +
+        '<div class="ctl-rank-list">' + items + '</div>' +
+        '</div>' +
+        detalleTabla;
 }
 
 function buildCtlKpiStrip() {

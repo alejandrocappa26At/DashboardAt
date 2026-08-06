@@ -583,6 +583,7 @@ const HorariosDataStore = {
             );
             if (matchDirecto) { p.zona_principal_id = matchDirecto.id; continue; }
 
+            console.warn('[AUDITORIA] Punto de venta eliminado. Promotor sin tienda asignada:', p.nombre, '| zona previa:', p.zona_principal_id, '| Reasignar manualmente.');
             p.zona_principal_id = null;
         }
 

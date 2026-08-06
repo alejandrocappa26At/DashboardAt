@@ -137,7 +137,7 @@ function createParticipacionProducto() {
     const participacion = DataStore.getParticipacionProducto();
     const labels = Object.keys(participacion);
     const data = Object.values(participacion);
-    const colors = ['#1DB954', '#22c55e', '#06b6d4', '#f59e0b', '#ef4444', '#a855f7', '#ec4899'];
+    const colors = ['#1DB954', '#22c55e', '#06b6d4', '#f59e0b', '#ef4444', '#a855f7', '#ec4899', '#14b8a6'];
 
     chartInstances[id] = new Chart(canvas, {
         type: 'doughnut',
@@ -227,7 +227,8 @@ function renderAvanceProductoBarras() {
         'Juegos Virtuales': '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h.01M14 12h.01M18 12h.01"/></svg>',
         'Torito': '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/></svg>',
         'VLT': '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>',
-        'LOTOBOLA': '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
+        'LOTOBOLA': '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+        'MI BILLETERA': '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>'
     };
 
     let html = '';
@@ -324,6 +325,64 @@ function createRankingChart() {
                         color: '#b3b3b3',
                         font: { size: 11 }
                     }
+                }
+            }
+        }
+    });
+}
+
+function createPromosChart(ranking) {
+    const id = 'chartPromos';
+    destroyChart(id);
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    if (!ranking || ranking.length === 0) return;
+
+    const labels = ranking.map(r => String(r.tienda).replace(/^Red AT /i, '').replace(/^RED AT /i, '').trim());
+    const data = ranking.map(r => r.cantidad);
+    const colors = data.map((v, i) => i === 0 ? '#1DB954' : i === 1 ? '#3B82F6' : i === 2 ? '#F59E0B' : '#3B82F6');
+
+    chartInstances[id] = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Cantidad',
+                data,
+                backgroundColor: colors,
+                borderRadius: 4,
+                borderSkipped: false,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#282828',
+                    titleColor: '#ffffff',
+                    bodyColor: '#b3b3b3',
+                    borderColor: '#333333',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 6,
+                    callbacks: {
+                        label: ctx => 'Cantidad: ' + ctx.raw
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false, borderDash: [3, 3] },
+                    ticks: { color: '#727272', font: { size: 10 }, precision: 0 }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: '#b3b3b3', font: { size: 11 } }
                 }
             }
         }
