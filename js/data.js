@@ -106,6 +106,8 @@ const DataStore = {
                     this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
                 }
 
+                console.log('[VALIDACION] Ventas encontradas:', this.ventas.length, '| Fuente: dashboard/datos');
+
                 this._mergePDVsFijos();
                 this._guardarEnFirestore();
 
@@ -163,6 +165,8 @@ const DataStore = {
                     this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
                 }
 
+                console.log('[VALIDACION] Ventas encontradas:', this.ventas.length, '| Fuente: dashboard/datos');
+
                 this._mergePDVsFijos();
                 console.log('[AUDITORIA] onSnapshot this.promotores FINAL:', this.promotores.length, 'items', this.promotores.map(p => p.punto_venta));
 
@@ -207,60 +211,6 @@ const DataStore = {
         } catch (e) {
             console.error('Error al guardar en Firestore:', e);
         }
-    },
-
-    parseExcel(data) {
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        if (workbook.SheetNames.includes('JULIO DATA')) {
-            const sheet = workbook.Sheets['JULIO DATA'];
-            const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
-            this.ventas = json.map(row => ({
-                fecha: new Date(row.Fecha || row.fecha || row.FECHA),
-                dia: parseInt(row.Día || row.dia || row.DIA || row.Día),
-                punto_venta: row['Punto de Venta'] || row.punto_venta || row['PUNTO DE VENTA'],
-                producto: normalizarProducto(row.Producto || row.producto || row.PRODUCTO),
-                venta: parseFloat(row.Venta || row.venta || row.VENTA || 0)
-            }));
-        }
-
-        if (workbook.SheetNames.includes('CUOTAS')) {
-            const sheet = workbook.Sheets['CUOTAS'];
-            const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
-            this.cuotas = json.map(row => ({
-                punto_venta: row['Punto de Venta'] || row.punto_venta,
-                producto: normalizarProducto(row.Producto || row.producto),
-                cuota: parseFloat(row.Cuota || row.cuota || row.CUOTA || 0),
-                mes: parseInt(row.Mes || row.mes || row.MES || MES),
-                anio: parseInt(row.Año || row.anio || row.ANIO || row['A\u00f1o'] || ANIO)
-            }));
-        }
-
-        if (workbook.SheetNames.includes('PROMOTORES')) {
-            const sheet = workbook.Sheets['PROMOTORES'];
-            const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
-            this.promotores = json.map(row => ({
-                punto_venta: row['Punto de Venta'] || row.punto_venta,
-                cadena: row.Cadena || row.cadena || row.CADENA || 'AREQUIPA SUR',
-                num_promotores: parseInt(row['N° Promotores'] || row.num_promotores || 1)
-            }));
-        }
-
-        const existentes = new Set(this.promotores.map(p => p.punto_venta));
-        for (const pdv of PDVS_FIJOS) {
-            if (!existentes.has(pdv)) {
-                this.promotores.push({
-                    punto_venta: pdv,
-                    cadena: 'AREQUIPA SUR',
-                    num_promotores: 1
-                });
-            }
-        }
-
-        const hoy = new Date();
-        this.diaActual = Math.min(hoy.getDate(), DIAS_MES);
-
-        this._guardarEnFirestore();
     },
 
     getVentas() { return this.ventas; },

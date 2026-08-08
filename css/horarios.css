@@ -1685,6 +1685,20 @@
     flex-shrink: 0;
 }
 
+.promotor-btn-eye {
+    border-radius: 0;
+    width: 34px;
+}
+
+.promotor-btn-eye.visible {
+    background: rgba(29,185,84,0.18);
+    color: #fff;
+}
+
+.promotor-btn-eye.visible + .promotor-btn-generate {
+    border-radius: 0 8px 8px 0;
+}
+
 .promotor-btn-generate:hover {
     background: rgba(29,185,84,0.2);
     border-color: rgba(29,185,84,0.2);

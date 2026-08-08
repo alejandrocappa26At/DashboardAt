@@ -72,6 +72,7 @@ const HorariosDataStore = {
     currentRole: 'supervisor',
     initialized: false,
     _firestoreLoaded: false,
+    _fuentePromotores: null,
     onUpdate: null,
     realtimeUnsubscribe: null,
 
@@ -612,21 +613,43 @@ const HorariosDataStore = {
         this.generarMockData();
 
         if (typeof db !== 'undefined' && db) {
-            db.collection(HORARIOS_COLLECTION).doc('config').get().then(snap => {
+            db.collection(HORARIOS_COLLECTION).doc('config').get().then(async snap => {
+                let cargados = null;
+                let origen = HORARIOS_COLLECTION + '/config.promotores';
+
                 if (snap.exists) {
                     const data = snap.data();
                     if (data.promotores && data.promotores.length > 0) {
-                        this.promotores = data.promotores;
+                        cargados = data.promotores;
                     }
-                    this._firestoreLoaded = true;
-                } else {
-                    this._firestoreLoaded = true;
-                    this._guardarEnFirestore();
                 }
-                this._limpiarPromotoresFicticios();
-                this._sincronizarZonasConDataStore();
-            }).catch(() => {
+
+                if (!cargados || cargados.length === 0) {
+                    const recuperados = await this._recuperarDesdeColeccionPromotores();
+                    if (recuperados && recuperados.length > 0) {
+                        cargados = recuperados;
+                        origen = PROMOTORES_COLLECTION;
+                    }
+                }
+
+                if (cargados) {
+                    this.promotores = cargados;
+                }
+                this._fuentePromotores = origen;
                 this._firestoreLoaded = true;
+
+                this._limpiarPromotoresFicticios(true);
+                this._sincronizarZonasConDataStore();
+
+                console.log('[VALIDACION] Promotores encontrados:', this.promotores.length);
+                console.log('[VALIDACION] Fuente:', this._fuentePromotores);
+                console.log('[AUDITORIA][PROMOTORES] Promotores visibles:', this.promotores.length);
+                console.log('[AUDITORIA][PROMOTORES] Listado de IDs:', this.promotores.map(p => p.id));
+                console.log('[AUDITORIA][PROMOTORES] Listado de correos:', this.promotores.map(p => p.email || '').filter(Boolean));
+
+                if (typeof this.onUpdate === 'function') this.onUpdate();
+            }).catch(e => {
+                console.error('[AUDITORIA][PROMOTORES] Error al leer la configuración de Firestore. No se sobrescribirá la base de datos.', e);
                 this._sincronizarZonasConDataStore();
             });
 
@@ -650,25 +673,95 @@ const HorariosDataStore = {
         }
     },
 
-    _limpiarPromotoresFicticios() {
+    async _recuperarDesdeColeccionPromotores() {
+        if (typeof db === 'undefined' || !db) return null;
+        try {
+            const snap = await db.collection(PROMOTORES_COLLECTION).get();
+            if (snap.empty) return null;
+
+            const docs = [];
+            snap.forEach(doc => {
+                const d = doc.data() || {};
+                if (!d || (!d.nombre && !d.email)) return;
+                docs.push({
+                    id: d.id || doc.id,
+                    nombre: d.nombre || d.nombre_completo || doc.id,
+                    dni: d.dni || d.documento || '',
+                    email: d.email || d.correo || '',
+                    password: d.password || '',
+                    password_hash: d.password_hash || '',
+                    tipo: d.tipo || 'fijo',
+                    zona_principal_id: d.zona_principal_id || d.tienda || null,
+                    estado: d.estado || 'Activo',
+                    fecha_creacion: d.fecha_creacion || d.createdAt || new Date().toISOString(),
+                    fecha_actualizacion: d.fecha_actualizacion || d.updatedAt || new Date().toISOString()
+                });
+            });
+
+            if (docs.length > 0) {
+                console.log('[AUDITORIA][PROMOTORES] Recuperados desde la colección ' + PROMOTORES_COLLECTION + ':', docs.length);
+            }
+            return docs;
+        } catch (e) {
+            console.warn('[AUDITORIA][PROMOTORES] No se pudo leer la colección ' + PROMOTORES_COLLECTION + ':', e.message);
+            return null;
+        }
+    },
+
+    _esPromotorPlaceholder(p) {
+        if (!p) return true;
+        const nombrePlaceholder = p.nombre === 'Nuevo promotor' || !p.nombre;
+        const dniFicticio = !p.dni || p.dni === '12345678';
+        const emailFicticio = !p.email || p.email === 'correo@ejemplo.com';
+        return nombrePlaceholder && dniFicticio && emailFicticio && !p.password;
+    },
+
+    _limpiarPromotoresFicticios(permitirVacio) {
         if (!this.promotores || this.promotores.length === 0) return;
+
         const nombresFicticios = [
             'Carlos Mamani', 'Ana Condori', 'Luis Quispe', 'Maria Huanca',
             'Jose Lopez', 'Rosa Nina', 'Pedro Torres', 'Sofia Rojas',
-            'Diego Puma', 'Lucia Vargas', 'Raul Choque',
-            'Nuevo promotor'
+            'Diego Puma', 'Lucia Vargas', 'Raul Choque'
         ];
         const idsFicticios = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11'];
+
         const antes = this.promotores.length;
+        const eliminados = [];
+
         this.promotores = this.promotores.filter(p => {
-            if (!p || !p.id) return false;
-            if (idsFicticios.includes(p.id) && nombresFicticios.includes(p.nombre) && !p.dni && !p.email) return false;
-            if (nombresFicticios.includes(p.nombre) && p.id && idsFicticios.includes(p.id) && (!p.dni || p.dni === '') && (!p.email || p.email === '')) return false;
+            if (!p || !p.id) {
+                eliminados.push(p);
+                return false;
+            }
+
+            // 1) Auto-seed histórico de la primera versión (sin DNI/correo/contraseña).
+            if (idsFicticios.includes(p.id) && nombresFicticios.includes(p.nombre)
+                && !p.dni && !p.email && !p.password) {
+                eliminados.push(p);
+                return false;
+            }
+
+            // 2) Placeholder "Nuevo promotor" creado con "Añadir Promotor" sin completar
+            //    (sin DNI/correo/contraseña, o solo con los valores de ejemplo).
+            if (this._esPromotorPlaceholder(p)) {
+                eliminados.push(p);
+                return false;
+            }
+
             return true;
         });
+
         const despues = this.promotores.length;
+
+        if (eliminados.length > 0) {
+            console.log('[AUDITORIA][PROMOTORES] Registros ficticios/placeholder eliminados (' + eliminados.length + '):',
+                eliminados.map(p => (p && p.id ? p.id : '?') + ' · ' + (p && p.nombre ? p.nombre : '(sin nombre)')));
+            this._guardarEnFirestore(permitirVacio);
+        }
+
         if (antes !== despues) {
-            this._guardarEnFirestore();
+            console.log('[AUDITORIA][PROMOTORES] Limpieza: ' + antes + ' → ' + despues + ' promotores.');
         }
     },
 
@@ -696,9 +789,29 @@ const HorariosDataStore = {
         } catch (e) {}
     },
 
-    _guardarEnFirestore() {
+    _guardarEnFirestore(permitirVacio) {
         if (typeof db === 'undefined' || !db) return;
-        if (this.promotores.length === 0 && this._firestoreLoaded) return;
+
+        // AUDITORÍA: protección anti-destrucción de datos.
+        // Nunca sobrescribir la lista de promotores si la sesión aún no confirmó qué
+        // hay realmente en Firestore y la lista en memoria está vacía o solo contiene
+        // placeholders (no proviene aún de la base de datos).
+        const soloPlaceholders = this.promotores.length > 0
+            && this.promotores.every(p => this._esPromotorPlaceholder(p));
+
+        if (!permitirVacio && this.promotores.length === 0 && this._firestoreLoaded) return;
+
+        if (!this._firestoreLoaded && (this.promotores.length === 0 || soloPlaceholders)) {
+            console.warn('[AUDITORIA][PROMOTORES] Escritura omitida: la lista local aún no proviene de Firestore (vacía o solo placeholders). No se sobrescribe la base de datos.');
+            return;
+        }
+
+        // No persistir registros placeholder puros ("Nuevo promotor" sin completar),
+        // aunque Firestore ya haya sido cargado.
+        if (!permitirVacio && soloPlaceholders) {
+            console.warn('[AUDITORIA][PROMOTORES] Escritura omitida: solo hay registros placeholder sin completar. Se guardarán al completar DNI/correo.');
+            return;
+        }
 
         try {
             db.collection(HORARIOS_COLLECTION).doc('config').set({

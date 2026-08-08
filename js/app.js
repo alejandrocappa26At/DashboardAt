@@ -1056,230 +1056,6 @@ function renderizarRanking() {
     createRankingChart();
 }
 
-function renderizarResumenGeneralPDV() {
-    renderAvisoOficial();
-    renderPeriodoAnalizado('periodo-analizado-resumen-pdv');
-    try {
-        const container = document.getElementById('rpdv-hero-kpis');
-        if (!container) return;
-
-        if (DataStore.getInfoPeriodo().activo && !DataStore.getVentasEnRango().length) {
-            const grid = document.getElementById('rpdv-grid');
-            if (grid) grid.innerHTML =
-                '<div class="empty-state" style="grid-column:1/-1;"><p>No existen registros de ventas para el periodo seleccionado.</p></div>';
-            if (container) container.innerHTML = '';
-            const countEl = document.getElementById('rpdv-count');
-            if (countEl) countEl.textContent = '0 tiendas';
-            return;
-        }
-
-        const pdvs = DataStore.getCumplimientoPorPDV();
-        const entries = Object.entries(pdvs).map(([pdv, data]) => ({
-            punto_venta: pdv,
-            cuota: data.cuota || 0,
-            venta: data.venta || 0,
-            cumplimiento: data.cumplimiento || 0,
-            proyeccion: data.proyeccion || 0,
-            diferencia: data.diferencia || 0,
-            cadena: data.cadena || 'General'
-        }));
-
-        const cuotaGlobal = entries.reduce((s, e) => s + e.cuota, 0);
-        const ventaGlobal = entries.reduce((s, e) => s + e.venta, 0);
-        const cumplimientoGlobal = cuotaGlobal > 0 ? (ventaGlobal / cuotaGlobal) * 100 : 0;
-        const proyeccionGlobal = entries.reduce((s, e) => s + e.proyeccion, 0);
-
-        container.innerHTML = `
-            <div class="rpdv-hero-kpi">
-                <span class="rpdv-hero-kpi-value" style="color:var(--accent)">${formatCurrency(cuotaGlobal)}</span>
-                <span class="rpdv-hero-kpi-label">Cuota Global</span>
-            </div>
-            <div class="rpdv-hero-kpi">
-                <span class="rpdv-hero-kpi-value">${formatCurrency(ventaGlobal)}</span>
-                <span class="rpdv-hero-kpi-label">Venta Acumulada</span>
-            </div>
-            <div class="rpdv-hero-kpi">
-                <span class="rpdv-hero-kpi-value" style="color:${cumplimientoGlobal >= 100 ? 'var(--accent)' : cumplimientoGlobal >= 80 ? 'var(--warning)' : 'var(--danger)'}">${formatPercent(cumplimientoGlobal)}</span>
-                <span class="rpdv-hero-kpi-label">Cumplimiento General</span>
-            </div>
-            <div class="rpdv-hero-kpi">
-                <span class="rpdv-hero-kpi-value" style="color:var(--accent)">${formatCurrency(proyeccionGlobal)}</span>
-                <span class="rpdv-hero-kpi-label">Proyección Global</span>
-            </div>
-        `;
-
-        const cadenaSelect = document.getElementById('rpdv-filter-cadena');
-        if (cadenaSelect) {
-            const cadenas = [...new Set(entries.map(e => e.cadena))].sort();
-            cadenaSelect.innerHTML = '<option value="all">Todas las redes</option>' +
-                cadenas.map(c => `<option value="${c}">${c}</option>`).join('');
-        }
-
-                function renderCards(data) {
-            const search = (document.getElementById('rpdv-search').value || '').toLowerCase();
-            const filtroCump = document.getElementById('rpdv-filter-cumplimiento').value;
-            const filtroCadena = document.getElementById('rpdv-filter-cadena').value;
-            const sort = document.getElementById('rpdv-sort').value;
-
-            let filtered = data.filter(e => {
-                if (search && !e.punto_venta.toLowerCase().includes(search)) return false;
-                if (filtroCump === 'green' && e.cumplimiento < 100) return false;
-                if (filtroCump === 'yellow' && (e.cumplimiento < 80 || e.cumplimiento >= 100)) return false;
-                if (filtroCump === 'red' && e.cumplimiento >= 80) return false;
-                if (filtroCadena !== 'all' && e.cadena !== filtroCadena) return false;
-                return true;
-            });
-
-            const [field, dir] = sort.split('-');
-            filtered.sort((a, b) => {
-                const va = a[field === 'cumplimiento' ? 'cumplimiento' : field === 'venta' ? 'venta' : 'cuota'];
-                const vb = b[field === 'cumplimiento' ? 'cumplimiento' : field === 'venta' ? 'venta' : 'cuota'];
-                return dir === 'desc' ? vb - va : va - vb;
-            });
-
-            const countEl = document.getElementById('rpdv-count');
-            if (countEl) countEl.textContent = `${filtered.length} de ${data.length} tiendas`;
-
-            const gridEl = document.getElementById('rpdv-grid');
-            if (!gridEl) return;
-
-            const rows = filtered.map((e, i) => {
-                const proyOk = e.proyeccion >= e.cuota;
-                const dif = e.diferencia;
-                return '<tr>' +
-                    '<td class="ctl-td-pos">' + (i + 1) + '</td>' +
-                    '<td class="ctl-td-left ctl-td-strong">' + ctlDot(e.cumplimiento) + ' ' + ctlEsc(e.punto_venta) + '</td>' +
-                    '<td>' + formatCurrency(e.venta) + '</td>' +
-                    '<td>' + formatCurrency(e.cuota) + '</td>' +
-                    '<td>' + ctlBarCell(e.cumplimiento) + '</td>' +
-                    '<td class="' + (proyOk ? 'ctl-td-good' : 'ctl-td-dim') + '">' + formatCurrency(e.proyeccion) + '</td>' +
-                    '<td class="' + (dif <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (dif <= 0 ? 'S/ 0' : formatCurrency(dif)) + '</td>' +
-                    '<td>' + ctlBadge(e.cumplimiento) + '</td>' +
-                    '</tr>';
-            }).join('');
-
-            gridEl.innerHTML = '' +
-                '<div class="ctl-card">' +
-                '<div class="ctl-table-wrap"><table class="ctl-table">' +
-                '<thead><tr>' +
-                '<th class="ctl-th-left">#</th><th class="ctl-th-left">Tienda</th>' +
-                '<th>Venta</th><th>Meta</th><th>Cumplimiento</th><th>Proyecci\u00f3n</th><th>Diferencia</th><th>Estado</th>' +
-                '</tr></thead><tbody>' + rows + '</tbody>' +
-                '</table></div></div>';
-        }
-
-
-        renderCards(entries);
-
-        ['rpdv-search', 'rpdv-filter-cumplimiento', 'rpdv-filter-cadena', 'rpdv-sort'].forEach(id => {
-            const el = document.getElementById(id);
-            if (!el || !el.parentNode) return;
-            const clone = el.cloneNode(true);
-            el.parentNode.replaceChild(clone, el);
-        });
-
-        const searchInput = document.getElementById('rpdv-search');
-        if (searchInput) searchInput.addEventListener('input', () => renderCards(entries));
-
-        const filterCump = document.getElementById('rpdv-filter-cumplimiento');
-        if (filterCump) filterCump.addEventListener('change', () => renderCards(entries));
-
-        const filterCad = document.getElementById('rpdv-filter-cadena');
-        if (filterCad) filterCad.addEventListener('change', () => renderCards(entries));
-
-        const sortEl = document.getElementById('rpdv-sort');
-        if (sortEl) sortEl.addEventListener('change', () => renderCards(entries));
-
-        createResumenPDVCharts(entries);
-    } catch (e) {
-        console.error('Error en Resumen General PDV:', e);
-    }
-}
-
-function createResumenPDVCharts(entries) {
-    if (typeof Chart === 'undefined') return;
-    const page = document.getElementById('page-resumen-pdv');
-    if (!page || !page.classList.contains('active')) return;
-    const sorted = [...entries].sort((a, b) => b.cumplimiento - a.cumplimiento);
-    const top10 = sorted.slice(0, 10);
-    const bottom10 = sorted.slice(-10).reverse();
-
-    function safeDestroy(id) {
-        const canvas = document.getElementById(id);
-        if (!canvas) return;
-        const existing = Chart.getChart(canvas);
-        if (existing) existing.destroy();
-    }
-
-    function makeChart(id, data, colors) {
-        const canvas = document.getElementById(id);
-        if (!canvas || data.length === 0) return;
-        const labels = data.map(e => {
-            let name = e.punto_venta;
-            name = name.replace(/^Red AT\s+/i, '').replace(/^Red At\s+/i, '');
-            return name.length > 18 ? name.substring(0, 16) + '...' : name;
-        });
-        new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    label: '% Cumplimiento',
-                    data: data.map(e => Math.min(Math.max(e.cumplimiento, 0), 100)),
-                    backgroundColor: colors || data.map(e =>
-                        e.cumplimiento >= 100 ? '#22C55E' : e.cumplimiento >= 80 ? '#F59E0B' : '#EF4444'
-                    ),
-                    borderRadius: 4,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#1a1a1a',
-                        titleColor: '#fff',
-                        bodyColor: '#b3b3b3',
-                        borderColor: '#282828',
-                        borderWidth: 1,
-                        cornerRadius: 8,
-                        padding: 12,
-                        callbacks: {
-                            label: ctx => 'Cumplimiento: ' + formatPercent(ctx.raw)
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        max: 100,
-                        grid: { color: 'rgba(255,255,255,0.04)' },
-                        ticks: { color: '#727272', font: { size: 10 }, callback: v => v + '%' }
-                    },
-                    y: {
-                        grid: { display: false },
-                        ticks: { color: '#b3b3b3', font: { size: 11, weight: '600' } }
-                    }
-                }
-            }
-        });
-    }
-
-    safeDestroy('chartTop10');
-    safeDestroy('chartBottom10');
-    safeDestroy('chartAllPDV');
-
-    const allColors = sorted.map(e =>
-        e.cumplimiento >= 100 ? '#22C55E' : e.cumplimiento >= 80 ? '#F59E0B' : '#EF4444'
-    );
-
-    makeChart('chartTop10', top10);
-    makeChart('chartBottom10', bottom10);
-    makeChart('chartAllPDV', sorted, allColors);
-}
-
 function poblarFiltros() {
     const pdvs = DataStore.getPDVs();
     console.log('[AUDITORIA] poblarFiltros pdvs:', pdvs.length, pdvs);
@@ -1353,7 +1129,7 @@ function poblarSelectMes(modulo) {
 
 function sincronizarInputsFecha() {
     const filtros = DataStore.getFiltrosFecha();
-    ['resumen', 'avance', 'ranking', 'resumen-pdv', 'informe', 'vista-ejecutiva'].forEach(modulo => {
+    ['resumen', 'avance', 'ranking', 'informe', 'vista-ejecutiva'].forEach(modulo => {
         const desde = document.getElementById('filtro-' + modulo + '-desde');
         const hasta = document.getElementById('filtro-' + modulo + '-hasta');
         const mesSel = document.getElementById('filtro-' + modulo + '-mes');
@@ -1445,7 +1221,6 @@ function recargarModulosConFiltro() {
     renderizarResumenEjecutivo();
     renderizarAvancePDV();
     renderizarRanking();
-    renderizarResumenGeneralPDV();
     renderizarVistaEjecutiva();
     recargarInformeSiAplica();
 }
@@ -1505,7 +1280,7 @@ function bloquearSupervisor() {
     const activePage = document.querySelector('.page.active');
     if (activePage) {
         const id = activePage.id.replace('page-', '');
-        if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios' || id === 'horarios-view') {
+        if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios') {
             cambiarPagina('avance');
         }
     }
@@ -1533,7 +1308,7 @@ function actualizarSidebarSupervisor() {
         const activePage = document.querySelector('.page.active');
         if (activePage) {
             const id = activePage.id.replace('page-', '');
-            if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios' || id === 'horarios-view') {
+            if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios') {
                 cambiarPagina('avance');
             }
         }
@@ -1610,26 +1385,18 @@ function sincronizarSelectsPeriodo() {
 function recargarDashboard() {
     poblarFiltros();
 
-    if (typeof HorariosDataStore !== 'undefined') {
+if (typeof HorariosDataStore !== 'undefined') {
         if (!HorariosDataStore.initialized && typeof initHorarios === 'function') {
             initHorarios('supervisor');
             HorariosDataStore.onUpdate = function () {
                 renderHorarios();
-                renderHorariosView();
-                renderizarHorariosPublic();
             };
         }
         if (HorariosDataStore.initialized) {
             HorariosDataStore._sincronizarZonasConDataStore();
             const activePage = document.querySelector('.page.active');
-            if (activePage) {
-                if (activePage.id === 'page-horarios') {
-                    renderHorarios();
-                } else if (activePage.id === 'page-horarios-view') {
-                    renderHorariosView();
-                } else if (activePage.id === 'page-horarios-public') {
-                    renderizarHorariosPublic();
-                }
+            if (activePage && activePage.id === 'page-horarios') {
+                renderHorarios();
             }
         }
     }
@@ -1640,7 +1407,6 @@ function recargarDashboard() {
     renderizarResumenEjecutivo();
     renderizarAvancePDV();
     renderizarRanking();
-    renderizarResumenGeneralPDV();
     renderizarVistaEjecutiva();
 
     if (typeof PromocionesStore !== 'undefined') {
@@ -1663,13 +1429,13 @@ function cambiarPagina(pagina) {
         return;
     }
 
-    const paginasSupervisor = ['resumen', 'vista-ejecutiva', 'horarios', 'horarios-view', 'informe-promotor'];
+    const paginasSupervisor = ['resumen', 'vista-ejecutiva', 'horarios', 'informe-promotor'];
     if (session.rol === 'promotor' && paginasSupervisor.indexOf(pagina) !== -1) {
         cambiarPagina('avance');
         return;
     }
 
-    if ((pagina === 'resumen' || pagina === 'vista-ejecutiva' || pagina === 'horarios' || pagina === 'horarios-view') && !estaSupervisorDesbloqueado()) {
+    if ((pagina === 'resumen' || pagina === 'vista-ejecutiva' || pagina === 'horarios') && !estaSupervisorDesbloqueado()) {
         abrirModalPassword();
         return;
     }
@@ -1682,16 +1448,13 @@ function cambiarPagina(pagina) {
 
     document.querySelectorAll(`.nav-item[data-page="${pagina}"]`).forEach(n => n.classList.add('active'));
 
-    document.getElementById('page-title').textContent =
+document.getElementById('page-title').textContent =
         pagina === 'resumen' ? 'Resumen Zona' :
             pagina === 'vista-ejecutiva' ? 'Vista Ejecutiva' :
                 pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
-                    pagina === 'resumen-pdv' ? 'Resumen General PDV' :
-                        pagina === 'informe-promotor' ? 'Informe por Promotor' :
-                            pagina === 'horarios' ? 'Gestión de Promotores' :
-                                pagina === 'horarios-view' ? 'Horarios Semanales por Tienda' :
-                                    pagina === 'horarios-public' ? 'Horarios Semanales' : 'Dashboard';
+                    pagina === 'informe-promotor' ? 'Informe por Promotor' :
+                        pagina === 'horarios' ? 'Gestión de Promotores' : 'Dashboard';
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
@@ -1701,40 +1464,16 @@ function cambiarPagina(pagina) {
         renderizarAvancePDV();
     } else if (pagina === 'ranking') {
         renderizarRanking();
-    } else if (pagina === 'informe-promotor') {
+} else if (pagina === 'informe-promotor') {
         renderizarInformePromotor();
-    } else if (pagina === 'resumen-pdv') {
-        renderizarResumenGeneralPDV();
     } else if (pagina === 'horarios') {
         if (!HorariosDataStore.initialized) {
             initHorarios('supervisor');
             HorariosDataStore.onUpdate = function () {
                 renderHorarios();
-                renderHorariosView();
-                renderizarHorariosPublic();
             };
         }
         renderHorarios();
-    } else if (pagina === 'horarios-view') {
-        if (!HorariosDataStore.initialized) {
-            initHorarios('supervisor');
-            HorariosDataStore.onUpdate = function () {
-                renderHorarios();
-                renderHorariosView();
-                renderizarHorariosPublic();
-            };
-        }
-        renderHorariosView();
-    } else if (pagina === 'horarios-public') {
-        if (!HorariosDataStore.initialized) {
-            initHorarios('supervisor');
-            HorariosDataStore.onUpdate = function () {
-                renderHorarios();
-                renderHorariosView();
-                renderizarHorariosPublic();
-            };
-        }
-        renderizarHorariosPublic();
     }
 
     if (window.innerWidth <= 768) {
@@ -2288,11 +2027,27 @@ function toggleLoginPasswordVisibility() {
     }
 }
 
+async function hashPassword(password) {
+    try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password + 'dashboard-ventas-salt-2024');
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+        console.error('[LOGIN][ERROR] crypto.subtle no disponible (contexto no seguro). El login continuará con la contraseña en texto plano si existe.', e);
+        return '';
+    }
+}
+
 async function confirmarLogin() {
     const email = document.getElementById('login-email-input').value.trim().toLowerCase();
     const password = document.getElementById('login-password-input').value;
     const btn = document.getElementById('btn-confirmar-login');
     const errorEl = document.getElementById('login-error');
+
+    console.log('[LOGIN] 1. Inicio de login (modal).');
+    console.log('[LOGIN] 2. Correo ingresado:', email);
 
     btn.classList.add('loading');
 
@@ -2311,57 +2066,76 @@ async function confirmarLogin() {
         return;
     }
 
-    const promotor = HorariosDataStore.promotores.find(p => p.email && p.email.toLowerCase() === email);
+    try {
+        const promotor = HorariosDataStore.promotores.find(p => p.email && p.email.toLowerCase() === email);
 
-    if (!promotor) {
+        console.log('[LOGIN] 3. Usuario encontrado:', promotor ? 'SI' : 'NO');
+
+        if (!promotor) {
+            btn.classList.remove('loading');
+            mostrarErrorLogin('El correo ingresado no se encuentra registrado.');
+            registrarAcceso(null, email, 'Usuario inexistente');
+            document.getElementById('login-email-wrapper').classList.add('shake');
+            setTimeout(() => document.getElementById('login-email-wrapper').classList.remove('shake'), 600);
+            return;
+        }
+
+        const estado = promotor.estado || 'Activo';
+        console.log('[LOGIN] 4. Estado:', estado, '(esperado Activo)');
+        console.log('[LOGIN] 5. Password encontrado:', (promotor.password_hash || promotor.password) ? 'SI' : 'NO',
+            '| password_hash:', promotor.password_hash ? 'SI' : 'NO',
+            '| password (plano):', promotor.password ? 'SI' : 'NO');
+        console.log('[LOGIN] 5b. Campo utilizado primero: password_hash (SI si posee valor).');
+
+        let passwordValida = false;
+        if (promotor.password_hash) {
+            const passwordHash = await hashPassword(password);
+            passwordValida = promotor.password_hash === passwordHash;
+            console.log('[LOGIN] 5c. Comparación con password_hash -> válido:', passwordValida ? 'SI' : 'NO');
+        }
+        if (!passwordValida && promotor.password) {
+            passwordValida = password === promotor.password;
+            console.log('[LOGIN] 5d. Fallback con password (plano) -> válido:', passwordValida ? 'SI' : 'NO');
+        }
+        console.log('[LOGIN] 6. Password válido:', passwordValida ? 'SI' : 'NO');
+
+        if (!passwordValida) {
+            btn.classList.remove('loading');
+            mostrarErrorLogin('Contrase\u00f1a incorrecta.');
+            registrarAcceso(promotor, email, 'Contrase\u00f1a incorrecta');
+            document.getElementById('login-password-wrapper').classList.add('shake');
+            setTimeout(() => document.getElementById('login-password-wrapper').classList.remove('shake'), 600);
+            return;
+        }
+
+        if (estado !== 'Activo') {
+            btn.classList.remove('loading');
+            mostrarErrorLogin('Su cuenta se encuentra temporalmente inhabilitada. Comun\u00edquese con su supervisor.');
+            registrarAcceso(promotor, email, 'Usuario bloqueado');
+            return;
+        }
+
+        if (!promotor.zona_principal_id) {
+            btn.classList.remove('loading');
+            mostrarErrorLogin('No tiene una tienda asignada. Comun\u00edquese con su supervisor.');
+            registrarAcceso(promotor, email, 'Sin tienda asignada');
+            return;
+        }
+
+        console.log('[LOGIN] 7. Inicio de carga de Dashboard...');
+        const remember = document.getElementById('login-remember-check').checked;
+        iniciarSesionPromotor(promotor, remember);
+        registrarAcceso(promotor, email, 'Acceso correcto');
+
         btn.classList.remove('loading');
-        mostrarErrorLogin('El correo ingresado no se encuentra registrado.');
-        registrarAcceso(null, email, 'Usuario inexistente');
-        document.getElementById('login-email-wrapper').classList.add('shake');
-        setTimeout(() => document.getElementById('login-email-wrapper').classList.remove('shake'), 600);
-        return;
-    }
-
-    let passwordValida = false;
-    if (promotor.password_hash) {
-        const passwordHash = await hashPassword(password);
-        passwordValida = promotor.password_hash === passwordHash;
-    }
-    if (!passwordValida && promotor.password) {
-        passwordValida = password === promotor.password;
-    }
-
-    if (!passwordValida) {
+        cerrarModalLogin();
+        abrirModalVentaConSesion();
+        console.log('[LOGIN] 8. Fin de carga. Sesión iniciada para:', promotor.nombre);
+    } catch (err) {
+        console.error('[LOGIN][ERROR] Excepción completa en confirmarLogin:', err);
         btn.classList.remove('loading');
-        mostrarErrorLogin('Contrase\u00f1a incorrecta.');
-        registrarAcceso(promotor, email, 'Contrase\u00f1a incorrecta');
-        document.getElementById('login-password-wrapper').classList.add('shake');
-        setTimeout(() => document.getElementById('login-password-wrapper').classList.remove('shake'), 600);
-        return;
+        mostrarErrorLogin('Error inesperado al iniciar sesión. Intenta nuevamente.');
     }
-
-    const estado = promotor.estado || 'Activo';
-    if (estado !== 'Activo') {
-        btn.classList.remove('loading');
-        mostrarErrorLogin('Su cuenta se encuentra temporalmente inhabilitada. Comun\u00edquese con su supervisor.');
-        registrarAcceso(promotor, email, 'Usuario bloqueado');
-        return;
-    }
-
-    if (!promotor.zona_principal_id) {
-        btn.classList.remove('loading');
-        mostrarErrorLogin('No tiene una tienda asignada. Comun\u00edquese con su supervisor.');
-        registrarAcceso(promotor, email, 'Sin tienda asignada');
-        return;
-    }
-
-    const remember = document.getElementById('login-remember-check').checked;
-    iniciarSesionPromotor(promotor, remember);
-    registrarAcceso(promotor, email, 'Acceso correcto');
-
-    btn.classList.remove('loading');
-    cerrarModalLogin();
-    abrirModalVentaConSesion();
 }
 
 function mostrarErrorLogin(mensaje) {
@@ -2509,12 +2283,10 @@ function fechasEfectivasInforme() {
 
 function renderizarInformePromotor() {
     if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized) {
-        if (typeof initHorarios === 'function') {
+if (typeof initHorarios === 'function') {
             initHorarios('supervisor');
             HorariosDataStore.onUpdate = function () {
                 renderHorarios();
-                renderHorariosView();
-                renderizarHorariosPublic();
             };
         }
     }
@@ -3125,7 +2897,9 @@ function leerSesion() {
 function guardarSesion(data) {
     try {
         sessionStorage.setItem('auth_session', JSON.stringify(data));
-    } catch (e) {}
+    } catch (e) {
+        console.error('[LOGIN][ERROR] No se pudo registrar el historial de acceso:', e);
+    }
 }
 
 function mostrarFormularioLogin(step) {
@@ -3191,60 +2965,89 @@ async function ingresarPromotor() {
     const password = document.getElementById('login-promotor-password').value;
     const btn = document.getElementById('login-promotor-btn');
 
+    console.log('[LOGIN] 1. Inicio de login (pantalla Promotor).');
+    console.log('[LOGIN] 2. Correo ingresado:', email);
+
     if (!email) { setErrorLogin('login-promotor-error', 'Ingresa tu correo electrónico.'); return; }
     if (!password) { setErrorLogin('login-promotor-error', 'Ingresa tu contraseña.'); return; }
 
     btn.classList.add('loading');
 
-    if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized && typeof initHorarios === 'function') {
-        initHorarios('supervisor');
-        await new Promise(resolve => {
-            const check = () => {
-                if (HorariosDataStore.initialized) resolve();
-                else setTimeout(check, 150);
-            };
-            check();
-        });
-    }
+    try {
+        if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized && typeof initHorarios === 'function') {
+            console.log('[LOGIN] Inicializando HorariosDataStore antes de loguear...');
+            initHorarios('supervisor');
+            await new Promise(resolve => {
+                const check = () => {
+                    if (HorariosDataStore.initialized) resolve();
+                    else setTimeout(check, 150);
+                };
+                check();
+            });
+            console.log('[LOGIN] HorariosDataStore inicializado.');
+        }
 
-    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
-    const promotor = promotores.find(p => p.email && p.email.toLowerCase() === email);
+        const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+        const promotor = promotores.find(p => p.email && p.email.toLowerCase() === email);
 
-    if (!promotor) {
+        console.log('[AUDITORIA][LOGIN] Login Promotor lee de la MISMA fuente que Gestión de Promotores: ' +
+            ((typeof HorariosDataStore !== 'undefined' && HorariosDataStore._fuentePromotores) ? HorariosDataStore._fuentePromotores : 'HorariosDataStore.promotores'));
+        console.log('[AUDITORIA][LOGIN] Promotores disponibles para login:', promotores.length,
+            '| IDs:', promotores.map(p => p.id),
+            '| Correos:', promotores.map(p => p.email || '').filter(Boolean));
+        console.log('[LOGIN] 3. Usuario encontrado:', promotor ? 'SI' : 'NO');
+
+        if (!promotor) {
+            btn.classList.remove('loading');
+            setErrorLogin('login-promotor-error', 'El correo ingresado no se encuentra registrado.');
+            return;
+        }
+
+        const estado = promotor.estado || 'Activo';
+        console.log('[LOGIN] 4. Estado:', estado, '(esperado Activo)');
+        console.log('[LOGIN] 5. Password encontrado:', (promotor.password_hash || promotor.password) ? 'SI' : 'NO',
+            '| password_hash:', promotor.password_hash ? 'SI' : 'NO',
+            '| password (plano):', promotor.password ? 'SI' : 'NO');
+        console.log('[LOGIN] 5b. Campo utilizado primero: password_hash (SI si posee valor).');
+
+        let passwordValida = false;
+        if (promotor.password_hash) {
+            const passwordHash = await hashPassword(password);
+            passwordValida = promotor.password_hash === passwordHash;
+            console.log('[LOGIN] 5c. Comparación con password_hash -> válido:', passwordValida ? 'SI' : 'NO');
+        }
+        if (!passwordValida && promotor.password) {
+            passwordValida = password === promotor.password;
+            console.log('[LOGIN] 5d. Fallback con password (plano) -> válido:', passwordValida ? 'SI' : 'NO');
+        }
+        console.log('[LOGIN] 6. Password válido:', passwordValida ? 'SI' : 'NO');
+
+        if (!passwordValida) {
+            btn.classList.remove('loading');
+            setErrorLogin('login-promotor-error', 'Contraseña incorrecta.');
+            return;
+        }
+
+        if (estado !== 'Activo') {
+            btn.classList.remove('loading');
+            setErrorLogin('login-promotor-error', 'Su cuenta se encuentra temporalmente inhabilitada. Comuníquese con su supervisor.');
+            return;
+        }
+
+        if (!promotor.zona_principal_id) {
+            btn.classList.remove('loading');
+            setErrorLogin('login-promotor-error', 'No tiene una tienda asignada. Comuníquese con su supervisor.');
+            return;
+        }
+
+        console.log('[LOGIN] 7. Inicio de carga de Dashboard...');
+        finishLogin({ rol: 'promotor', id: promotor.id, nombre: promotor.nombre, email: promotor.email });
+        console.log('[LOGIN] 8. Fin de carga. Dashboard abierto para:', promotor.nombre);
+    } catch (err) {
+        console.error('[LOGIN][ERROR] Excepción completa en ingresarPromotor:', err);
         btn.classList.remove('loading');
-        setErrorLogin('login-promotor-error', 'El correo ingresado no se encuentra registrado.');
-        return;
+        setErrorLogin('login-promotor-error', 'Error inesperado al iniciar sesión. Intenta nuevamente.');
     }
-
-    let passwordValida = false;
-    if (promotor.password_hash) {
-        const passwordHash = await hashPassword(password);
-        passwordValida = promotor.password_hash === passwordHash;
-    }
-    if (!passwordValida && promotor.password) {
-        passwordValida = password === promotor.password;
-    }
-
-    if (!passwordValida) {
-        btn.classList.remove('loading');
-        setErrorLogin('login-promotor-error', 'Contraseña incorrecta.');
-        return;
-    }
-
-    const estado = promotor.estado || 'Activo';
-    if (estado !== 'Activo') {
-        btn.classList.remove('loading');
-        setErrorLogin('login-promotor-error', 'Su cuenta se encuentra temporalmente inhabilitada. Comuníquese con su supervisor.');
-        return;
-    }
-
-    if (!promotor.zona_principal_id) {
-        btn.classList.remove('loading');
-        setErrorLogin('login-promotor-error', 'No tiene una tienda asignada. Comuníquese con su supervisor.');
-        return;
-    }
-
-    finishLogin({ rol: 'promotor', id: promotor.id, nombre: promotor.nombre, email: promotor.email });
 }
 
 function ingresarSupervisor() {

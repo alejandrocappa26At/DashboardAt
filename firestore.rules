@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // CORRECTED RULES - dashboard-ventasat
+    // Current app model: the app does NOT use Firebase Auth
+    // (firebase-auth is not loaded, no signIn/onAuthStateChanged).
+    // These rules allow read/write for the collections the app uses.
+    // ============================================================
+
+    // Dashboard: collection "dashboard" -> doc "datos" (ventas, cuotas, promotores)
+    match /dashboard/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Horarios: docs "config" (promotores) y "semanas"
+    match /horarios/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Historial de accesos (promotor login)
+    match /historial_accesos/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Coleccion "ventas" (guardarVentasFirebase - currently unused)
+    match /ventas/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Coleccion "promotores" (fallback de HorariosDataStore)
+    match /promotores/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Coleccion "zonas" (definida en horarios-data.js)
+    match /zonas/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Promociones y registros de promociones
+    match /promociones/{document=**} {
+      allow read, write: if true;
+    }
+    match /registro_promociones/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Todo lo demas queda denegado por defecto.
+  }
+}
