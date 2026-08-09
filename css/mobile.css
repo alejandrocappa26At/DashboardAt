@@ -6,6 +6,13 @@
 
 .mob-filter-trigger { display: none; }
 
+/* Vista Ejecutiva — versiones desktop/móvil:
+   el bloque móvil solo se muestra en celulares (<=480px). */
+.ctl-table-desktop { display: block; }
+.ctl-table-mobile { display: none; }
+.ctl-promo-desktop { display: block; }
+.ctl-promo-mobile { display: none; }
+
 @media (max-width: 480px) {
 
     /* ---------- Base ---------- */
@@ -147,6 +154,128 @@
     #ve-main table.ctl-table td:nth-child(6),
     #ve-main table.ctl-table td:nth-child(7),
     #ve-main table.ctl-table td:nth-child(8) { display: none; }
+
+    /* En móvil se reemplaza la tabla por tarjetas PDV con
+       Venta / Meta / Faltante / Cumplimiento. */
+    .ctl-table-desktop { display: none; }
+    .ctl-table-mobile { display: block; }
+    .ctl-promo-desktop { display: none; }
+    .ctl-promo-mobile { display: block; }
+
+    .ctl-mob-pdv-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    .ctl-mob-pdv {
+        background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+    .ctl-mob-pdv-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+    .ctl-mob-pdv-store {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: #ffffff;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .ctl-mob-pdv-pct {
+        font-size: 14px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .ctl-mob-pdv-pct.green  { color: #1DB954; }
+    .ctl-mob-pdv-pct.yellow { color: #F59E0B; }
+    .ctl-mob-pdv-pct.red    { color: #EF4444; }
+    .ctl-mob-pdv-bar {
+        height: 4px;
+        background: rgba(255,255,255,0.07);
+        border-radius: 999px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+    .ctl-mob-pdv-fill { height: 100%; border-radius: 999px; }
+    .ctl-mob-pdv-fill.green  { background: linear-gradient(90deg, #1DB954, #1ED760); }
+    .ctl-mob-pdv-fill.yellow { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+    .ctl-mob-pdv-fill.red    { background: linear-gradient(90deg, #EF4444, #F87171); }
+    .ctl-mob-pdv-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    .ctl-mob-pdv-metric {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        padding: 6px 8px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+    }
+    .ctl-mob-pdv-label {
+        font-size: 8.5px;
+        font-weight: 700;
+        color: #8a8a8a;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .ctl-mob-pdv-value {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: #ffffff;
+        font-variant-numeric: tabular-nums;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Promociones móvil: solo más / menos utilizada, sin cantidades */
+    .ctl-mob-promo-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        padding: 10px;
+    }
+    .ctl-mob-promo {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(29,185,84,0.08), rgba(29,185,84,0.02));
+        border: 1px solid rgba(29,185,84,0.2);
+    }
+    .ctl-mob-promo-label {
+        font-size: 9.5px;
+        font-weight: 700;
+        color: #1DB954;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .ctl-mob-promo-value {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #ffffff;
+    }
     .ve-layout { gap: 10px; }
     .ve-side { gap: 10px; }
     .ve-side .ctl-rank-item:nth-child(n+6) { display: none; }

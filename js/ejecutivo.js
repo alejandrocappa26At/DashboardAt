@@ -66,7 +66,7 @@ function renderizarVistaEjecutiva() {
     }
 
     /* ---- Tabla consolidada (todas las tiendas) ---- */
-    main.innerHTML = buildCtlTablaPDVs() + buildCtlPromociones();
+    main.innerHTML = buildCtlTablaPDVsWrapper() + buildCtlPromocionesWrapper();
 
     /* ---- Ranking + Alertas ---- */
     side.innerHTML = buildCtlRanking() + buildCtlAlertas();
@@ -157,6 +157,76 @@ function buildCtlPromociones() {
         '<div class="ctl-rank-list">' + items + '</div>' +
         '</div>' +
         detalleTabla;
+}
+
+function buildCtlTablaPDVsWrapper() {
+    return '<div class="ctl-table-desktop">' + buildCtlTablaPDVs() + '</div>' +
+        '<div class="ctl-table-mobile">' + buildCtlTablaPDVsMobile() + '</div>';
+}
+
+function buildCtlTablaPDVsMobile() {
+    const ranking = DataStore.getRanking();
+    const entries = DataStore.getCumplimientoPorPDV();
+
+    const cards = ranking.map(r => {
+        const d = entries[r.punto_venta] || {};
+        const dif = d.diferencia || 0;
+        const faltante = dif <= 0 ? 0 : dif;
+        const s = ctlSemaforo(r.cumplimiento);
+        const pctCls = s.cls === 'cumple' ? 'green' : s.cls === 'riesgo' ? 'yellow' : 'red';
+        return '<div class="ctl-mob-pdv">' +
+            '<div class="ctl-mob-pdv-head">' +
+            '<span class="ctl-mob-pdv-store"><span class="ctl-dot ' + s.cls + '"></span>' + ctlNombreCorto(r.punto_venta) + '</span>' +
+            '<span class="ctl-mob-pdv-pct ' + pctCls + '">' + formatPercent(r.cumplimiento) + '</span>' +
+            '</div>' +
+            '<div class="ctl-mob-pdv-bar"><div class="ctl-mob-pdv-fill ' + pctCls + '" style="width:' + Math.min(r.cumplimiento, 100) + '%"></div></div>' +
+            '<div class="ctl-mob-pdv-metrics">' +
+            '<div class="ctl-mob-pdv-metric"><span class="ctl-mob-pdv-label">\ud83d\udcb0 Venta</span><span class="ctl-mob-pdv-value">' + formatCurrency(r.venta_total) + '</span></div>' +
+            '<div class="ctl-mob-pdv-metric"><span class="ctl-mob-pdv-label">\ud83c\udfaf Meta</span><span class="ctl-mob-pdv-value">' + formatCurrency(r.cuota) + '</span></div>' +
+            '<div class="ctl-mob-pdv-metric"><span class="ctl-mob-pdv-label">\ud83d\udcc9 Faltante</span><span class="ctl-mob-pdv-value ' + (faltante <= 0 ? 'c-good' : 'c-bad') + '">' + (faltante <= 0 ? 'S/ 0' : formatCurrency(faltante)) + '</span></div>' +
+            '</div>' +
+            '</div>';
+    }).join('');
+
+    return '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>Acumulado Mes Total</span>' +
+        '<span class="ctl-card-count">' + ranking.length + ' tiendas</span>' +
+        '</div>' +
+        '<div class="ctl-mob-pdv-list">' + cards + '</div>' +
+        '</div>';
+}
+
+function buildCtlPromocionesWrapper() {
+    if (typeof PromocionesStore === 'undefined' || !PromocionesStore.initialized || !PromocionesStore._firestoreLoaded) return '';
+    const p = PromocionesStore._periodoEfectivo();
+    const ranking = PromocionesStore.getRankingPromociones(p.desde, p.hasta);
+    const total = PromocionesStore.getTotalCantidad(p.desde, p.hasta);
+    if (ranking.length === 0 || total === 0) return '';
+
+    return '<div class="ctl-promo-desktop">' + buildCtlPromociones() + '</div>' +
+        '<div class="ctl-promo-mobile">' + buildCtlPromocionesMobile(ranking) + '</div>';
+}
+
+function buildCtlPromocionesMobile(ranking) {
+    const mejor = ranking[0];
+    const peor = ranking.length > 1 ? ranking[ranking.length - 1] : null;
+    if (!mejor) return '';
+    const promoBox = (label, nombre) =>
+        '<div class="ctl-mob-promo">' +
+        '<span class="ctl-mob-promo-label">' + label + '</span>' +
+        '<span class="ctl-mob-promo-value">' + ctlEsc(nombre) + '</span>' +
+        '</div>';
+
+    return '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title">\ud83c\udf81 Promociones</span>' +
+        '</div>' +
+        '<div class="ctl-mob-promo-grid">' +
+        promoBox('\ud83c\udf81 Promoci\u00f3n m\u00e1s utilizada', mejor.promocion) +
+        (peor ? promoBox('\ud83c\udf81 Promoci\u00f3n menos utilizada', peor.promocion) : '') +
+        '</div>' +
+        '</div>';
 }
 
 function buildCtlKpiStrip() {
