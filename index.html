@@ -7,6 +7,7 @@
     <title>Drive AT Sur - Dashboard de Ventas</title>
     <link rel="stylesheet" href="css/styles.css?v=99">
     <link rel="stylesheet" href="css/horarios.css">
+    <link rel="stylesheet" href="css/tiendas.css?v=1">
     <link rel="stylesheet" href="css/ejecutivo.css?v=2">
     <link rel="stylesheet" href="css/mobile.css?v=1">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -225,6 +226,8 @@
                     <span class="sidebar-badge" id="sidebar-periodo">Dashboard de Ventas</span>
                 </div>
             </div>
+            <button class="sb-collapse-btn" id="sb-collapse-btn" type="button" title="Fijar menú abierto"
+                aria-label="Fijar menú abierto">&#9776;</button>
         </div>
 
         <nav class="sidebar-nav">
@@ -414,6 +417,20 @@
                 <div class="nav-equalizer" id="eq-planificador"><span></span><span></span><span></span></div>
             </div>
 
+            <div class="nav-item gestion-only" data-page="tiendas">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M3 9l1.5-5h15L21 9" />
+                        <path d="M4 9h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9z" />
+                        <path d="M9 21v-6h6v6" />
+                    </svg>
+                </span>
+                <span class="nav-label">Gesti&oacute;n de Tiendas</span>
+                <div class="nav-equalizer" id="eq-tiendas"><span></span><span></span><span></span></div>
+            </div>
+
         </nav>
 
         <div class="sidebar-footer">
@@ -425,7 +442,7 @@
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     <line x1="1" y1="1" x2="23" y2="23" />
                 </svg>
-                Bloquear supervisor
+                <span class="btn-sidebar-label">Bloquear supervisor</span>
             </button>
         </div>
     </aside>
@@ -1100,6 +1117,11 @@
             <div id="horarios-content"></div>
         </section>
 
+        <!-- ===== PAGINA: GESTION DE TIENDAS ===== -->
+        <section class="page" id="page-tiendas">
+            <div id="tiendas-content"></div>
+        </section>
+
         <!-- ===== PAGINA: VISTA EJECUTIVA (CENTRO DE CONTROL COMERCIAL) ===== -->
         <section class="page" id="page-vista-ejecutiva">
             <div class="ranking-hero">
@@ -1740,6 +1762,7 @@
     <script src="js/promociones.js?v=1"></script>
     <script src="js/horarios-data.js?v=2"></script>
     <script src="js/horarios.js?v=3"></script>
+    <script src="js/tiendas.js?v=1"></script>
     <script src="js/ejecutivo.js?v=2"></script>
     <script src="js/mobile.js?v=1"></script>
     <script src="js/app.js?v=3"></script>

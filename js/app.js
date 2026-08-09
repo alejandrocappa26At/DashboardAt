@@ -906,6 +906,13 @@ function renderizarResumenEjecutivo() {
     actualizarGraficos();
 }
 
+function pdvSumItem(label, value, cls, tip) {
+    return '<div class="pdv-sum-item" data-tip="' + tip + '" title="' + tip + '">' +
+        '<span class="pdv-sum-label">' + label + '</span>' +
+        '<span class="pdv-sum-value ' + cls + '">' + value + '</span>' +
+        '</div>';
+}
+
 function renderizarAvancePDV(pdvSeleccionado) {
     if ((filtroTipoInformacion || 'productos') === 'promociones') {
         renderPromocionesAvancePDV(pdvSeleccionado);
@@ -948,9 +955,29 @@ const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSelecci
         const d = allData[pdv];
         if (!d) continue;
 
+        const ventaPDV = d.venta || 0;
+        const cuotaPDV = d.cuota || 0;
+        const faltPDV = d.diferencia || 0;
+        const cumPDV = d.cumplimiento || 0;
+        const cumClsPDV = cumPDV >= 100 ? 'green' : cumPDV >= 70 ? 'yellow' : 'red';
+        const dotPDV = cumPDV >= 100 ? '\ud83d\udfe2' : cumPDV >= 70 ? '\ud83d\udfe1' : '\ud83d\udd34';
+        let cuotaDiaPDV = '\u2014';
+        if (ventaPDV >= cuotaPDV) cuotaDiaPDV = '\u2713 Meta';
+        else if (esPeriodoPasado) cuotaDiaPDV = 'Fin mes';
+        else if (diasFaltantes > 0) cuotaDiaPDV = formatCurrency(Math.ceil(faltPDV / diasFaltantes));
+
         rowsHtml += '<tr class="ctl-group-row"><td colspan="7">' +
-            '<span class="ctl-group-name">' + ctlDot(d.cumplimiento) + ' ' + ctlEsc(pdv) + '</span>' +
-            '</td><td class="ctl-td-left">' + ctlBadge(d.cumplimiento) + '</td></tr>';
+            '<span class="ctl-group-name">' + ctlDot(d.cumplimiento) + ' ' + ctlEsc(ctlNombreCorto(pdv)) + '</span>' +
+            '</td><td class="ctl-td-left">' + ctlBadge(d.cumplimiento) + '</td></tr>' +
+            '<tr class="ctl-group-summary"><td colspan="8">' +
+            '<div class="pdv-summary-bar">' +
+            pdvSumItem('\ud83d\udcb0 Venta Total', formatCurrency(ventaPDV), 'green', 'Venta acumulada del periodo') +
+            pdvSumItem('\ud83c\udfaf Cuota Total', formatCurrency(cuotaPDV), 'blue', 'Meta / cuota asignada del periodo') +
+            pdvSumItem('\ud83d\udcc9 Faltante', (faltPDV <= 0 ? '\u2713 ' + formatCurrency(Math.abs(faltPDV)) : formatCurrency(faltPDV)), 'orange', 'Cuota pendiente por vender') +
+            pdvSumItem('\ud83d\udcc5 Cuota x D\u00eda', cuotaDiaPDV, 'purple', 'Cuota diaria requerida para cerrar el faltante') +
+            pdvSumItem('\ud83d\udcca Cumplimiento', dotPDV + ' ' + formatPercent(cumPDV), cumClsPDV, 'Cumplimiento general del punto de venta') +
+            '</div>' +
+            '</td></tr>';
 
         for (let prod of DataStore.getProductos()) {
             const p = d.productos[prod];
@@ -1480,7 +1507,7 @@ function bloquearSupervisor() {
     const activePage = document.querySelector('.page.active');
     if (activePage) {
         const id = activePage.id.replace('page-', '');
-        if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios') {
+        if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios' || id === 'tiendas') {
             cambiarPagina('avance');
         }
     }
@@ -1583,6 +1610,10 @@ function sincronizarSelectsPeriodo() {
 }
 
 function recargarDashboard() {
+    if (typeof TiendasStore !== 'undefined' && !TiendasStore.initialized && typeof initGestionTiendas === 'function') {
+        initGestionTiendas();
+    }
+
     poblarFiltros();
 
 if (typeof HorariosDataStore !== 'undefined') {
@@ -1629,13 +1660,13 @@ function cambiarPagina(pagina) {
         return;
     }
 
-    const paginasSupervisor = ['resumen', 'vista-ejecutiva', 'horarios', 'informe-promotor'];
+    const paginasSupervisor = ['resumen', 'vista-ejecutiva', 'horarios', 'informe-promotor', 'tiendas'];
     if (session.rol === 'promotor' && paginasSupervisor.indexOf(pagina) !== -1) {
         cambiarPagina('avance');
         return;
     }
 
-    if ((pagina === 'resumen' || pagina === 'vista-ejecutiva' || pagina === 'horarios') && !estaSupervisorDesbloqueado()) {
+    if ((pagina === 'resumen' || pagina === 'vista-ejecutiva' || pagina === 'horarios' || pagina === 'tiendas') && !estaSupervisorDesbloqueado()) {
         abrirModalPassword();
         return;
     }
@@ -1654,7 +1685,8 @@ document.getElementById('page-title').textContent =
                 pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                     pagina === 'informe-promotor' ? 'Informe por Promotor' :
-                        pagina === 'horarios' ? 'Gestión de Promotores' : 'Dashboard';
+                        pagina === 'horarios' ? 'Gestión de Promotores' :
+                    pagina === 'tiendas' ? 'Gestión de Tiendas' : 'Dashboard';
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
@@ -1674,6 +1706,12 @@ document.getElementById('page-title').textContent =
             };
         }
         renderHorarios();
+    } else if (pagina === 'tiendas') {
+        if (typeof TiendasStore !== 'undefined' && !TiendasStore.initialized && typeof initGestionTiendas === 'function') {
+            initGestionTiendas();
+        } else if (typeof renderGestionTiendas === 'function') {
+            renderGestionTiendas();
+        }
     }
 
     if (window.innerWidth <= 768) {
@@ -3030,9 +3068,54 @@ function renderAvisoOficial() {
     return;
 }
 
+function iniciarSidebarColapsable() {
+    var btn = document.getElementById('sb-collapse-btn');
+    if (!btn) return;
+
+    var KEY = 'dashboard_sb_modo';
+    var CABEZA = {
+        auto: 'Fijar menú abierto',
+        open: 'Fijar menú cerrado',
+        closed: 'Menú automático (colapsa/expande al pasar el mouse)'
+    };
+    var indice = 0;
+    var orden = ['auto', 'open', 'closed'];
+
+    function aplicar(modo) {
+        document.body.setAttribute('data-sb', modo);
+        btn.title = CABEZA[modo] || CABEZA.auto;
+        btn.setAttribute('aria-label', btn.title);
+        try { localStorage.setItem(KEY, modo); } catch (e) { /* sin almacenamiento */ }
+    }
+
+    var inicial = 'auto';
+    try { var guardado = localStorage.getItem(KEY); if (guardado === 'open' || guardado === 'closed' || guardado === 'auto') inicial = guardado; } catch (e) { /* sin almacenamiento */ }
+    indice = orden.indexOf(inicial);
+    if (indice === -1) indice = 0;
+    aplicar(inicial);
+
+    btn.addEventListener('click', function () {
+        indice = (indice + 1) % orden.length;
+        aplicar(orden[indice]);
+    });
+
+    document.querySelectorAll('.nav-item[data-page], .nav-item[data-action]').forEach(function (item) {
+        var lab = item.querySelector('.nav-label');
+        if (lab && !item.getAttribute('title')) {
+            item.setAttribute('title', lab.textContent.trim());
+        }
+    });
+
+    document.querySelectorAll('.nav-section-divider').forEach(function (d) {
+        var tx = d.textContent.trim();
+        if (tx && !d.getAttribute('title')) d.setAttribute('title', tx);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     initPromotorSession();
     configurarVistaAutenticacion();
+    iniciarSidebarColapsable();
 
     document.getElementById('mobile-toggle').addEventListener('click', function () {
         document.getElementById('sidebar').classList.toggle('open');

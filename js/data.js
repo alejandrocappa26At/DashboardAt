@@ -215,7 +215,14 @@ const DataStore = {
 
     getVentas() { return this.ventas; },
     esPDVActivo(pdv) {
-        return !(PDVS_ELIMINADOS || []).includes(pdv);
+        if (typeof pdv !== 'string') return false;
+        if ((PDVS_ELIMINADOS || []).includes(pdv)) return false;
+        if (typeof TiendasStore !== 'undefined' && TiendasStore.tiendas && TiendasStore.tiendas.length > 0) {
+            const t = TiendasStore.getTienda(pdv);
+            if (t) return t.estado === 'Activa';
+            return true;
+        }
+        return true;
     },
     getPDVsEliminados() { return [...PDVS_ELIMINADOS]; },
     getVentasActivas() {
@@ -369,9 +376,22 @@ const DataStore = {
     },
 
     getPDVs() {
+        if (typeof TiendasStore !== 'undefined' && TiendasStore.tiendas && TiendasStore.tiendas.length > 0) {
+            const activos = TiendasStore.getTiendasActivas().map(t => t.nombre);
+            return activos;
+        }
         const result = [...PDVS_FIJOS];
         console.log('[AUDITORIA] PDVs obtenidos desde configuración:', result.length, result);
         return result;
+    },
+
+    getTiendaCadena(nombre) {
+        if (typeof TiendasStore !== 'undefined' && TiendasStore.tiendas && TiendasStore.tiendas.length > 0) {
+            const t = TiendasStore.getTienda(nombre);
+            if (t && t.cadena) return t.cadena;
+        }
+        const promInfo = this.promotores.find(p => p.punto_venta === nombre);
+        return (promInfo && promInfo.cadena) || '';
     },
 
     getPDVObjects() {
@@ -381,7 +401,7 @@ const DataStore = {
             return {
                 id: pdv,
                 nombre: pdv,
-                cadena: promInfo?.cadena || ''
+                cadena: this.getTiendaCadena(pdv) || (promInfo?.cadena || '')
             };
         });
     },
@@ -550,7 +570,7 @@ const DataStore = {
                 diferencia: cuotaTotal - ventaTotal,
                 productos,
                 proyectaCumplir: proyeccion >= cuotaTotal,
-                cadena: this.promotores.find(p => p.punto_venta === pdv)?.cadena || ''
+                cadena: this.getTiendaCadena(pdv)
             };
         }
         return result;
@@ -702,6 +722,54 @@ const DataStore = {
         const otrasCuotas = this.cuotas.filter(c => c.mes !== mes || c.anio !== anio);
         this.cuotas = [...otrasCuotas, ...nuevasCuotas];
         this._guardarEnFirestore();
+    },
+
+    _renombrarTiendaPropagacion(oldName, newName) {
+        if (!oldName || oldName === newName) return false;
+
+        let modificado = false;
+        for (let v of this.ventas || []) {
+            if (v.punto_venta === oldName) { v.punto_venta = newName; modificado = true; }
+        }
+        for (let c of this.cuotas || []) {
+            if (c.punto_venta === oldName) { c.punto_venta = newName; modificado = true; }
+        }
+        for (let p of this.promotores || []) {
+            if (p.punto_venta === oldName) { p.punto_venta = newName; modificado = true; }
+        }
+        if (modificado) this._guardarEnFirestore();
+
+        if (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.initialized) {
+            let hMod = false;
+            for (let p of HorariosDataStore.promotores || []) {
+                if (p.zona_principal_id === oldName) { p.zona_principal_id = newName; hMod = true; }
+            }
+            for (let wk of Object.keys(HorariosDataStore.semanas || {})) {
+                const turnos = HorariosDataStore.semanas[wk].turnos || {};
+                for (let tk of Object.keys(turnos)) {
+                    if (turnos[tk].zona_id === oldName) { turnos[tk].zona_id = newName; hMod = true; }
+                }
+            }
+            if (hMod) HorariosDataStore._guardarEnFirestore();
+        }
+
+        if (typeof PromocionesStore !== 'undefined' && PromocionesStore.registros) {
+            try {
+                const pendientes = PromocionesStore.registros.filter(r => r.tienda === oldName);
+                for (let r of pendientes) {
+                    r.tienda = newName;
+                    if (typeof db !== 'undefined' && db && r.id) {
+                        db.collection(REGISTRO_PROMOCIONES_COLLECTION || 'registro_promociones')
+                            .doc(r.id).set(r).catch(e => console.warn('[TIENDAS] No se pudo renombrar registro de promoción:', e));
+                    }
+                }
+            } catch (e) {
+                console.warn('[TIENDAS] Error al renombrar registros de promociones:', e);
+            }
+        }
+
+        console.log('[AUDITORIA][TIENDAS] Renombrado propagado a todo el sistema:', oldName, '->', newName);
+        return true;
     },
 
 

@@ -7028,3 +7028,147 @@ select option {
         border-radius: 18px;
     }
 }
+
+/* ==========================================================
+   SIDEBAR COLAPSABLE (solo escritorio > 768px)
+   body[data-sb] = auto (colapsado, expande al hover) |
+                   open (fijado abierto) | closed (fijado cerrado)
+   ========================================================== */
+
+body[data-sb] {
+    --sidebar-rail: 72px;
+}
+
+.sb-collapse-btn {
+    display: none;
+}
+
+@media (min-width: 769px) {
+
+    .sb-collapse-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        color: #b9b9b9;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .sb-collapse-btn:hover {
+        background: rgba(29, 185, 84, 0.14);
+        border-color: rgba(29, 185, 84, 0.35);
+        color: #ffffff;
+    }
+
+    body[data-sb=open] .sb-collapse-btn,
+    body[data-sb=closed] .sb-collapse-btn {
+        border-color: rgba(29, 185, 84, 0.35);
+        color: var(--accent);
+    }
+
+    /* Transiciones suaves */
+    body[data-sb] .sidebar {
+        transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+
+    body[data-sb] .sidebar-header {
+        transition: padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body[data-sb] .main-content {
+        transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* --- Estado colapsado (auto sin hover y closed) --- */
+    body[data-sb=auto] .sidebar,
+    body[data-sb=closed] .sidebar {
+        width: var(--sidebar-rail);
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .sidebar-header,
+    body[data-sb=closed] .sidebar .sidebar-header {
+        padding: 16px 10px;
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .sidebar-brand-text,
+    body[data-sb=closed] .sidebar .sidebar-brand-text,
+    body[data-sb=auto] .sidebar:not(:hover) .nav-label,
+    body[data-sb=closed] .sidebar .nav-label,
+    body[data-sb=auto] .sidebar:not(:hover) .nav-equalizer,
+    body[data-sb=closed] .sidebar .nav-equalizer,
+    body[data-sb=auto] .sidebar:not(:hover) .nav-section-divider span,
+    body[data-sb=closed] .sidebar .nav-section-divider span,
+    body[data-sb=auto] .sidebar:not(:hover) .btn-sidebar-label,
+    body[data-sb=closed] .sidebar .btn-sidebar-label {
+        display: none;
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .sidebar-brand,
+    body[data-sb=closed] .sidebar .sidebar-brand {
+        gap: 0;
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .sidebar-avatar,
+    body[data-sb=closed] .sidebar .sidebar-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .sidebar-nav,
+    body[data-sb=closed] .sidebar .sidebar-nav {
+        padding: 12px 8px;
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .nav-item,
+    body[data-sb=closed] .sidebar .nav-item {
+        justify-content: center;
+        gap: 0;
+        padding: 10px 0;
+        width: 100%;
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .nav-section-divider,
+    body[data-sb=closed] .sidebar .nav-section-divider {
+        justify-content: center;
+        padding: 10px 0 10px;
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .sidebar-footer .btn-sidebar,
+    body[data-sb=closed] .sidebar .sidebar-footer .btn-sidebar {
+        justify-content: center;
+        gap: 0;
+        padding: 10px 0;
+    }
+
+    body[data-sb=auto] .sidebar:not(:hover) .sidebar-footer,
+    body[data-sb=closed] .sidebar .sidebar-footer {
+        padding: 12px 10px 16px;
+    }
+
+    /* --- Estado expandido (open, o auto al hacer hover) --- */
+    body[data-sb=open] .sidebar,
+    body[data-sb=auto] .sidebar:hover {
+        width: var(--sidebar-width);
+    }
+
+    body[data-sb=open] .main-content,
+    body[data-sb=auto] .sidebar:hover ~ .main-content {
+        margin-left: var(--sidebar-width);
+    }
+
+    /* --- Ancho del contenido según colapso --- */
+    body[data-sb=auto] .main-content,
+    body[data-sb=closed] .main-content {
+        margin-left: var(--sidebar-rail);
+    }
+}
