@@ -308,6 +308,57 @@
         return summary + '<div class="prm-prod-list">' + cards + '</div>';
     }
 
+    /* ---------- 4. Vista Ejecutiva: 6 KPIs móviles (incluye META TOTAL) ---------- */
+    function buildVeKpisMobile() {
+        var wrap = document.getElementById('ve-kpis');
+        if (!wrap) return;
+        if (wrap.querySelector('.ctl-ve-mob')) return;
+        if (!wrap.querySelector('.ctl-kpi')) return;
+        if (typeof DataStore === 'undefined') return;
+
+        var ventaTotal = (typeof DataStore.getVentaTotal === 'function') ? DataStore.getVentaTotal() : 0;
+        var cuotaTotal = (typeof DataStore.getCuotaTotal === 'function') ? DataStore.getCuotaTotal() : 0;
+        var avance = (typeof DataStore.getAvanceGeneral === 'function') ? DataStore.getAvanceGeneral() : 0;
+        var ranking = (typeof DataStore.getRanking === 'function') ? DataStore.getRanking() : [];
+        var totalPDVs = ranking.length;
+        var pdvCumplen = 0;
+        var pdvRiesgo = 0;
+        for (var i = 0; i < ranking.length; i++) {
+            var c = ranking[i].cumplimiento || 0;
+            if (c >= 100) pdvCumplen++;
+            if (c < 80) pdvRiesgo++;
+        }
+        var faltante = Math.max(0, cuotaTotal - ventaTotal);
+        var avCls = avance >= 100 ? 'c-good' : avance >= 80 ? 'c-warn' : 'c-bad';
+
+        var kpi = function (label, value, cls, sub) {
+            return '<div class="ctl-kpi">' +
+                '<span class="ctl-kpi-label">' + label + '</span>' +
+                '<span class="ctl-kpi-value ' + cls + '">' + value + '</span>' +
+                (sub ? '<span class="ctl-kpi-sub">' + sub + '</span>' : '') +
+                '</div>';
+        };
+
+        var inner =
+            kpi('\ud83d\udcb0 Venta Total', fmtV(ventaTotal), 'c-good', 'Venta acumulada del per\u00edodo') +
+            kpi('\ud83c\udfaf Meta Total', fmtV(cuotaTotal), '', 'Cuota acumulada del per\u00edodo') +
+            kpi('\ud83d\udcca Cumplimiento', fmtP(avance), avCls, '') +
+            kpi('\u2705 PDVs Cumpliendo', pdvCumplen + ' / ' + totalPDVs, 'c-good', '') +
+            kpi('\u26a0\ufe0f PDVs en Riesgo', pdvRiesgo, 'c-bad', '') +
+            '<div class="ctl-kpi ctl-kpi-avance">' +
+            '<span class="ctl-kpi-label">\ud83d\udcc8 Avance General</span>' +
+            '<span class="ctl-kpi-value ' + avCls + '">' + fmtP(avance) + '</span>' +
+            '<span class="ctl-kpi-lines">' +
+            '<span class="ctl-kpi-line"><b>' + fmtV(ventaTotal) + '</b> Venta acum.</span>' +
+            '<span class="ctl-kpi-line"><b>' + fmtV(cuotaTotal) + '</b> Meta acum.</span>' +
+            '<span class="ctl-kpi-line"><b>' + fmtV(faltante) + '</b> Faltante total</span>' +
+            '</span>' +
+            '</div>';
+
+        wrap.setAttribute('data-mob-original', wrap.innerHTML);
+        wrap.innerHTML = '<div class="ctl-ve-mob">' + inner + '</div>';
+    }
+
     /* ---------- Restauración al salir de móvil ---------- */
     function restoreAll() {
         var ids = ['pdv-content', 'inf-promotor-content'];
@@ -319,6 +370,11 @@
                 el.removeAttribute('data-mob-original');
             }
         }
+        var ve = document.getElementById('ve-kpis');
+        if (ve && ve.querySelector('.ctl-ve-mob') && ve.getAttribute('data-mob-original')) {
+            ve.innerHTML = ve.getAttribute('data-mob-original');
+            ve.removeAttribute('data-mob-original');
+        }
     }
 
     function apply() {
@@ -326,6 +382,7 @@
         setupFilterTriggers();
         buildPdvMobile();
         buildPromotorAccordion();
+        buildVeKpisMobile();
     }
 
     /* Delegación de eventos (sobrevive a re-renders) */

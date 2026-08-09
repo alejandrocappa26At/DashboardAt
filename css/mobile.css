@@ -38,15 +38,42 @@
     .ctl-kpi-label { font-size: 8px; letter-spacing: 0.4px; }
     .ctl-kpi-value { font-size: 18px; }
     .ctl-kpi-sub { font-size: 8.5px; }
-    /* Solo KPIs clave (Venta Total, Cumplimiento, PDVs Cumplen, PDVs Riesgo) */
+    /* Solo KPIs clave del Resumen (Venta Total, Cumplimiento, PDVs Cumplen, PDVs Riesgo).
+       La Vista Ejecutiva reemplaza todo su strip por 6 KPIs propios (buildVeKpisMobile). */
     #kpi-row .ctl-kpi:nth-child(2),
     #kpi-row .ctl-kpi:nth-child(6),
     #kpi-row .ctl-kpi:nth-child(7),
-    #kpi-row .ctl-kpi:nth-child(8),
-    #ve-kpis .ctl-kpi:nth-child(2),
-    #ve-kpis .ctl-kpi:nth-child(6),
-    #ve-kpis .ctl-kpi:nth-child(7),
-    #ve-kpis .ctl-kpi:nth-child(8) { display: none; }
+    #kpi-row .ctl-kpi:nth-child(8) { display: none; }
+
+    /* KPI STRIP VISTA EJECUTIVA: 6 KPIs en 3 filas
+       (Venta Total/Meta Total, Cumplimiento/PDVs Cumpliendo, PDVs en Riesgo/Avance General) */
+    .ctl-ve-mob { display: contents; }
+    .ctl-kpi-avance {
+        background: linear-gradient(180deg, rgba(29,185,84,0.10), rgba(29,185,84,0.02));
+        border: 1px solid rgba(29,185,84,0.25);
+    }
+    .ctl-kpi-lines {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 2px;
+    }
+    .ctl-kpi-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        font-size: 8px;
+        font-weight: 600;
+        color: #9a9a9a;
+        letter-spacing: 0.2px;
+    }
+    .ctl-kpi-line b {
+        color: #ffffff;
+        font-size: 9px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+    }
 
     /* ---------- Banner de progreso ---------- */
     #overall-progress { flex-direction: row; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 10px; }
