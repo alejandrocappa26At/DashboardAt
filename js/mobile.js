@@ -47,80 +47,86 @@
         }
     }
 
-    /* ---------- 2. Avance PDV: tablas -> tarjetas con Ver Detalle ---------- */
+    /* ---------- 2. Avance PDV: tabla ejecutiva tipo Excel ----------
+       Producto | Venta | Cuota | Faltante | Alcance % con semáforo y
+       barra de progreso. Restablece la tabla cuando el renderizador
+       desktop la reconstruye (filtros/periodo). */
+    function alcSema(pct) {
+        if (pct >= 100) return { cls: 'green', dot: '\ud83d\udfe2' };
+        if (pct >= 70) return { cls: 'yellow', dot: '\ud83d\udfe1' };
+        return { cls: 'red', dot: '\ud83d\udd34' };
+    }
+
     function buildPdvMobile() {
         var wrap = document.getElementById('pdv-content');
-        if (!wrap || wrap.classList.contains('mob-built')) return;
+        if (!wrap) return;
+        if (wrap.classList.contains('mob-built') && wrap.querySelector('.pdv-mob-table')) return;
         var table = wrap.querySelector('table.ctl-table');
         if (!table) return;
-        var rows = table.querySelectorAll('tbody tr');
-        if (!rows.length) return;
+        var head = table.querySelector('thead');
+        if (!head || head.textContent.indexOf('Producto') === -1) return;
+        if (typeof DataStore === 'undefined') return;
+        if (typeof DataStore.getProductos !== 'function' || typeof DataStore.getCumplimientoPorPDV !== 'function') return;
 
         var original = wrap.innerHTML;
-        var groups = [];
-        var current = null;
+        var allData = DataStore.getCumplimientoPorPDV();
+        var pdvs = DataStore.getPDVs();
+        var select = document.getElementById('pdv-select');
+        var sel = select ? (select.value || 'todos') : 'todos';
+        var lista = (sel && sel !== 'todos') ? [sel] : pdvs;
+        var productos = DataStore.getProductos();
 
-        for (var i = 0; i < rows.length; i++) {
-            var tr = rows[i];
-            var tds = tr.querySelectorAll('td');
-            if (tr.classList.contains('ctl-group-row')) {
-                var nameEl = tr.querySelector('.ctl-group-name');
-                var name = nameEl ? nameEl.textContent.replace(/\s+/g, ' ').trim() : '';
-                var badgeEl = tr.querySelector('.ctl-semaforo');
-                current = {
-                    name: name,
-                    badge: badgeEl ? badgeEl.outerHTML : '',
-                    prods: []
-                };
-                groups.push(current);
-            } else {
-                if (!current || tds.length < 5) continue;
-                var txt = function (n) { return tds[n] ? tds[n].textContent.replace(/\s+/g, ' ').trim() : ''; };
-                current.prods.push({
-                    name: txt(0),
-                    venta: txt(1),
-                    meta: txt(2),
-                    cum: txt(3),
-                    cumCls: cumCls(tds[3]),
-                    dif: txt(4),
-                    proy: txt(5),
-                    req: txt(6),
-                    estado: txt(7)
-                });
+        var rows = '';
+        for (var pIdx = 0; pIdx < lista.length; pIdx++) {
+            var pdv = lista[pIdx];
+            var d = allData[pdv];
+            if (!d) continue;
+
+            var gS = alcSema(d.cumplimiento);
+            rows += '<tr class="pdv-mob-group"><th colspan="5">' +
+                '<span class="pdv-mob-group-dot">' + gS.dot + '</span>' +
+                '<span class="pdv-mob-group-name">' + mobEsc(pdv) + '</span>' +
+                '<span class="pdv-mob-group-pct ' + gS.cls + '">' + fmtP(d.cumplimiento) + '</span>' +
+                '</th></tr>';
+
+            for (var pr = 0; pr < productos.length; pr++) {
+                var prod = productos[pr];
+                var p = d.productos[prod];
+                if (!p) continue;
+                var venta = p.venta || 0;
+                var cuota = p.cuota || 0;
+                var falt = cuota - venta;
+                var cum = p.cumplimiento || 0;
+                var s = alcSema(cum);
+                rows += '<tr class="pdv-mob-row">' +
+                    '<td class="pdv-mob-prod">' + mobEsc(prod) + '</td>' +
+                    '<td class="pdv-mob-num">' + fmtV(venta) + '</td>' +
+                    '<td class="pdv-mob-num">' + fmtV(cuota) + '</td>' +
+                    '<td class="pdv-mob-num pdv-mob-falt ' + (falt <= 0 ? 'ok' : '') + '">' +
+                    (falt <= 0 ? '\u2713 ' + fmtV(Math.abs(falt)) : fmtV(falt)) + '</td>' +
+                    '<td class="pdv-mob-num">' +
+                    '<span class="pdv-mob-alc">' + s.dot + ' <b class="' + s.cls + '">' + fmtP(cum) + '</b></span>' +
+                    '<span class="pdv-mob-bar"><span class="pdv-mob-fill ' + s.cls + '" style="width:' + Math.min(cum, 100) + '%"></span></span>' +
+                    '</td>' +
+                    '</tr>';
             }
         }
-        if (!groups.length) return;
-
-        var html = groups.map(function (g) {
-            var prods = g.prods.map(function (p) {
-                return '<div class="pdv-mob-prod">' +
-                    '<span class="pdv-mob-pname">' + mobEsc(p.name) + '</span>' +
-                    '<span class="pdv-mob-pmain">' + mobEsc(p.venta) + ' <span style="color:#3a3a3a">/</span> ' + mobEsc(p.meta) +
-                    ' <b class="' + p.cumCls + '">' + mobEsc(p.cum) + '</b></span>' +
-                    '</div>';
-            }).join('');
-            var detail = g.prods.map(function (p) {
-                return '<div class="pdv-mob-drow">' +
-                    '<span>' + mobEsc(p.name) + '</span>' +
-                    '<span>Dif <b>' + mobEsc(p.dif) + '</b></span>' +
-                    '<span>Proy <b>' + mobEsc(p.proy) + '</b></span>' +
-                    '<span>Req <b>' + mobEsc(p.req) + '</b></span>' +
-                    '<span>' + mobEsc(p.estado) + '</span>' +
-                    '</div>';
-            }).join('');
-            return '<div class="ctl-card pdv-mob-card">' +
-                '<div class="pdv-mob-head">' +
-                '<span class="ctl-group-name">' + g.badge + ' ' + mobEsc(g.name) + '</span>' +
-                '</div>' +
-                '<div class="pdv-mob-prods">' + prods + '</div>' +
-                '<button type="button" class="pdv-mob-toggle" data-pdv-detail>Ver Detalle <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' +
-                '<div class="pdv-mob-detail">' + detail + '</div>' +
-                '</div>';
-        }).join('');
+        if (!rows) return;
 
         wrap.classList.add('mob-built');
         wrap.setAttribute('data-mob-original', original);
-        wrap.innerHTML = '<div class="pdv-mob-list">' + html + '</div>';
+        wrap.innerHTML =
+            '<div class="pdv-mob-table-wrap">' +
+            '<table class="pdv-mob-table">' +
+            '<thead class="pdv-mob-thead"><tr>' +
+            '<th class="pdv-mob-th-prod">Producto</th>' +
+            '<th>Venta</th>' +
+            '<th>Cuota</th>' +
+            '<th>\ud83d\udcc9 Faltante</th>' +
+            '<th>Alcance</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+            '</table></div>';
     }
 
     /* ---------- 3. Promotores: tabla consolidada -> acordeón ---------- */

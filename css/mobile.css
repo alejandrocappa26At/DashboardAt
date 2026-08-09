@@ -359,68 +359,121 @@
     .mob-filter-trigger .mob-ft-right svg { width: 12px; height: 12px; transition: transform 0.2s ease; }
     .mob-collapsible.open > .mob-filter-trigger .mob-ft-right svg { transform: rotate(180deg); }
 
-    /* ---------- AVANCE PDV: tarjetas móviles ---------- */
-    .pdv-mob-list { display: flex; flex-direction: column; gap: 10px; }
-    .pdv-mob-card { padding: 10px 12px; }
-    .pdv-mob-head {
+    /* ---------- AVANCE PDV: tabla ejecutiva tipo Excel ---------- */
+    .pdv-mob-table-wrap { margin: 10px 0 4px; }
+    .pdv-mob-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 11px;
+        margin: 0;
+    }
+    .pdv-mob-table thead th {
+        position: sticky;
+        top: var(--header-height);
+        z-index: 3;
+        padding: 7px 5px;
+        background: #121212;
+        text-align: center;
+        font-size: 8.5px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #b9b9b9;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .pdv-mob-table thead th.pdv-mob-th-prod { text-align: left; }
+    .pdv-mob-table thead th:not(:last-child) { border-right: 1px solid rgba(255, 255, 255, 0.06); }
+    .pdv-mob-table thead th:nth-child(1) { width: 27%; }
+    .pdv-mob-table thead th:nth-child(2) { width: 20%; }
+    .pdv-mob-table thead th:nth-child(3) { width: 19%; }
+    .pdv-mob-table thead th:nth-child(4) { width: 18%; }
+    .pdv-mob-table thead th:nth-child(5) { width: 16%; }
+
+    /* Líneas sutiles tipo Excel entre filas y columnas */
+    .pdv-mob-table tbody td,
+    .pdv-mob-table tbody th {
+        border-right: 1px solid rgba(255, 255, 255, 0.045);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+    }
+    .pdv-mob-table tbody td:last-child,
+    .pdv-mob-table tbody th:last-child { border-right: none; }
+
+    .pdv-mob-table tbody td { padding: 6px 5px; }
+
+    /* Fila de PDV: destacada */
+    .pdv-mob-group th {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        font-size: 12.5px;
-        font-weight: 700;
+        gap: 7px;
+        text-align: left;
+        padding: 9px 9px;
+        background: linear-gradient(90deg, rgba(29, 185, 84, 0.12), rgba(29, 185, 84, 0.02));
+        border-top: 1px solid rgba(29, 185, 84, 0.28);
+        border-bottom: 1px solid rgba(29, 185, 84, 0.14);
+        font-size: 12px;
+        font-weight: 800;
         color: #ffffff;
-        margin-bottom: 8px;
+        letter-spacing: 0.2px;
     }
-    .pdv-mob-head .ctl-group-name { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
-    .pdv-mob-prods { display: flex; flex-direction: column; }
+    .pdv-mob-group-dot { font-size: 12px; flex-shrink: 0; }
+    .pdv-mob-group-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pdv-mob-group-pct { font-weight: 800; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .pdv-mob-group-pct.green  { color: #1DB954; }
+    .pdv-mob-group-pct.yellow { color: #F59E0B; }
+    .pdv-mob-group-pct.red    { color: #EF4444; }
+
     .pdv-mob-prod {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        padding: 6px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        font-size: 11.5px;
+        text-align: left;
+        color: #d4d4d4;
+        font-weight: 600;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
-    .pdv-mob-prod:last-child { border-bottom: none; }
-    .pdv-mob-pname { color: #d4d4d4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pdv-mob-pmain { display: inline-flex; align-items: center; gap: 6px; color: #8a8a8a; white-space: nowrap; }
-    .pdv-mob-pmain b { font-weight: 800; }
+    .pdv-mob-num {
+        text-align: center;
+        color: #eaeaea;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    /* Fondos sutiles por columna: Venta / Cuota / Faltante / Alcance */
+    .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(2) { background: rgba(29, 185, 84, 0.055); }
+    .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(3) { background: rgba(59, 130, 246, 0.065); }
+    .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(4) { background: rgba(245, 158, 11, 0.065); }
+    .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(5) { background: rgba(168, 85, 247, 0.065); }
+
+    .pdv-mob-falt.ok { color: #1DB954; }
+
+    /* Alcance: %, semáforo y barra de progreso */
+    .pdv-mob-alc { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }
+    .pdv-mob-alc b { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .pdv-mob-alc b.green  { color: #1DB954; }
+    .pdv-mob-alc b.yellow { color: #F59E0B; }
+    .pdv-mob-alc b.red    { color: #EF4444; }
+    .pdv-mob-bar {
+        display: block;
+        height: 4px;
+        margin-top: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        overflow: hidden;
+        max-width: 76px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .pdv-mob-fill { display: block; height: 100%; border-radius: 999px; }
+    .pdv-mob-fill.green  { background: linear-gradient(90deg, #1DB954, #1ED760); }
+    .pdv-mob-fill.yellow { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+    .pdv-mob-fill.red    { background: linear-gradient(90deg, #EF4444, #F87171); }
+
     .c-good { color: #1DB954 !important; }
     .c-warn { color: #F59E0B !important; }
     .c-bad  { color: #EF4444 !important; }
-
-    .pdv-mob-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        width: 100%;
-        margin-top: 8px;
-        padding: 7px;
-        background: rgba(29, 185, 84, 0.08);
-        border: 1px solid rgba(29, 185, 84, 0.2);
-        border-radius: 8px;
-        color: #1DB954;
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-    }
-    .pdv-mob-toggle svg { width: 12px; height: 12px; transition: transform 0.2s ease; }
-    .pdv-mob-card.open .pdv-mob-toggle svg { transform: rotate(180deg); }
-    .pdv-mob-detail { display: none; margin-top: 8px; border-top: 1px dashed rgba(255, 255, 255, 0.08); padding-top: 6px; }
-    .pdv-mob-card.open .pdv-mob-detail { display: block; }
-    .pdv-mob-drow {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px 10px;
-        padding: 4px 0;
-        font-size: 10.5px;
-        color: #8a8a8a;
-    }
-    .pdv-mob-drow b { color: #d4d4d4; font-weight: 700; }
 
     /* ---------- INFORME POR PROMOTOR: acordeón ---------- */
     .prm-acc {
