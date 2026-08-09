@@ -359,6 +359,73 @@
         wrap.innerHTML = '<div class="ctl-ve-mob">' + inner + '</div>';
     }
 
+    /* ---------- 5. Resumen Ejecutivo / Resumen Zona: KPIs móviles ----------
+       Se mantienen los KPIs originales del #kpi-row (el renderer desktop los
+       actualiza vía setText) y solo se añade la tarjeta Avance General, que
+       se sincroniza en cada apply() desde DataStore. */
+    function buildResumenMobKpis() {
+        var wrap = document.getElementById('kpi-row');
+        if (!wrap) return;
+        if (typeof DataStore === 'undefined') return;
+        if (!wrap.querySelector('.ctl-kpi')) return;
+
+        if (!wrap.querySelector('.rz-avance-card')) {
+            wrap.setAttribute('data-mob-original', wrap.innerHTML);
+
+            var labels = [
+                ['\ud83d\udcb0 Venta Total'],
+                ['\ud83c\udfaf Meta Total'],
+                ['\ud83d\udcca Cumplimiento'],
+                ['\u2705 PDVs Cumpliendo'],
+                ['\u26a0\ufe0f PDVs en Riesgo']
+            ];
+            var kids = wrap.children;
+            for (var i = 0; i < 5 && i < kids.length; i++) {
+                var lab = kids[i].querySelector('.ctl-kpi-label');
+                if (lab) lab.textContent = labels[i][0];
+            }
+
+            var av = document.createElement('div');
+            av.className = 'ctl-kpi rz-avance-card ctl-kpi-avance';
+            av.id = 'rz-mob-avance';
+            av.innerHTML =
+                '<span class="ctl-kpi-label">\ud83d\udcc8 Avance General</span>' +
+                '<span class="ctl-kpi-value rz-avance-pct"></span>' +
+                '<span class="ctl-kpi-lines">' +
+                '<span class="ctl-kpi-line"><b class="rz-av-v"></b> Venta acum.</span>' +
+                '<span class="ctl-kpi-line"><b class="rz-av-m"></b> Meta acum.</span>' +
+                '<span class="ctl-kpi-line"><b class="rz-av-f"></b> Faltante total</span>' +
+                '</span>';
+            wrap.appendChild(av);
+        }
+        syncResumenMob();
+    }
+
+    function syncResumenMob() {
+        var v = document.getElementById('kpi-venta-sub');
+        var m = document.getElementById('kpi-meta-sub');
+        if (v) v.textContent = 'Venta acumulada del per\u00edodo';
+        if (m) m.textContent = 'Cuota acumulada del per\u00edodo';
+
+        var card = document.getElementById('rz-mob-avance');
+        if (!card) return;
+        var venta = (typeof DataStore.getVentaTotal === 'function') ? DataStore.getVentaTotal() : 0;
+        var meta = (typeof DataStore.getCuotaTotal === 'function') ? DataStore.getCuotaTotal() : 0;
+        var ava = (typeof DataStore.getAvanceGeneral === 'function') ? DataStore.getAvanceGeneral() : 0;
+        var falt = Math.max(0, meta - venta);
+        var cls = ava >= 100 ? 'c-good' : ava >= 80 ? 'c-warn' : 'c-bad';
+
+        var pct = card.querySelector('.rz-avance-pct');
+        if (pct) {
+            pct.textContent = fmtP(ava);
+            pct.className = 'ctl-kpi-value rz-avance-pct ' + cls;
+        }
+        var setB = function (sel, txt) { var el = card.querySelector(sel); if (el) el.textContent = txt; };
+        setB('.rz-av-v', fmtV(venta));
+        setB('.rz-av-m', fmtV(meta));
+        setB('.rz-av-f', fmtV(falt));
+    }
+
     /* ---------- Restauración al salir de móvil ---------- */
     function restoreAll() {
         var ids = ['pdv-content', 'inf-promotor-content'];
@@ -375,6 +442,11 @@
             ve.innerHTML = ve.getAttribute('data-mob-original');
             ve.removeAttribute('data-mob-original');
         }
+        var rz = document.getElementById('kpi-row');
+        if (rz && rz.getAttribute('data-mob-original')) {
+            rz.innerHTML = rz.getAttribute('data-mob-original');
+            rz.removeAttribute('data-mob-original');
+        }
     }
 
     function apply() {
@@ -383,6 +455,7 @@
         buildPdvMobile();
         buildPromotorAccordion();
         buildVeKpisMobile();
+        buildResumenMobKpis();
     }
 
     /* Delegación de eventos (sobrevive a re-renders) */

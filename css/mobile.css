@@ -38,9 +38,10 @@
     .ctl-kpi-label { font-size: 8px; letter-spacing: 0.4px; }
     .ctl-kpi-value { font-size: 18px; }
     .ctl-kpi-sub { font-size: 8.5px; }
-    /* Solo KPIs clave del Resumen (Venta Total, Cumplimiento, PDVs Cumplen, PDVs Riesgo).
+    /* Resumen Ejecutivo / Resumen Zona: se muestra Venta Total, Meta Total,
+       Cumplimiento, PDVs Cumpliendo, PDVs en Riesgo y Avance General.
+       Se ocultan Mejor PDV, Peor PDV y Proyección (posiciones 6,7,8).
        La Vista Ejecutiva reemplaza todo su strip por 6 KPIs propios (buildVeKpisMobile). */
-    #kpi-row .ctl-kpi:nth-child(2),
     #kpi-row .ctl-kpi:nth-child(6),
     #kpi-row .ctl-kpi:nth-child(7),
     #kpi-row .ctl-kpi:nth-child(8) { display: none; }
