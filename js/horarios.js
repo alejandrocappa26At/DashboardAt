@@ -1,64 +1,59 @@
 let horariosToastTimer = null;
 
-function initHorarios(role, userName) {
-    HorariosDataStore.init(role || 'supervisor', userName || null, function (fromRealtime) {
-        renderHorarios();
-        if (fromRealtime) {
-            mostrarHorariosToast();
-        }
+const ESTADO_PROMOTOR_OPCIONES = [
+    { value: 'Activo', label: '🟢 Activo' },
+    { value: 'Licencia', label: '🟡 Licencia' },
+    { value: 'Vacaciones', label: '🟠 Vacaciones' },
+    { value: 'Inactivo', label: '🔴 Inactivo' }
+];
+
+function _nombreTiendaPromotor(zonaId, zonas) {
+    if (!zonaId) return '';
+    const zona = (zonas || []).find(z => z.id === zonaId);
+    return zona && zona.nombre ? zona.nombre : zonaId;
+}
+
+function ordenarPromotoresPorTienda(promotores, zonas) {
+    return [...promotores].sort((a, b) => {
+        const ta = a.zona_principal_id ? _nombreTiendaPromotor(a.zona_principal_id, zonas).toUpperCase() : null;
+        const tb = b.zona_principal_id ? _nombreTiendaPromotor(b.zona_principal_id, zonas).toUpperCase() : null;
+        const keyA = ta !== null ? '1:' + ta : '2:';
+        const keyB = tb !== null ? '1:' + tb : '2:';
+        if (keyA !== keyB) return keyA < keyB ? -1 : 1;
+        const na = String(a.nombre || '').trim().toUpperCase();
+        const nb = String(b.nombre || '').trim().toUpperCase();
+        if (na !== nb) return na < nb ? -1 : 1;
+        return 0;
     });
 }
 
-function renderHorarios() {
-    renderGestionPromotores();
+function _promotorOpcionesZonaHtml(p, zonas) {
+    const sinAsignar = '<option value="" ' + (!p.zona_principal_id ? 'selected' : '') + '>&mdash; Sin asignar &mdash;</option>';
+    const opciones = (zonas || []).map(z =>
+        '<option value="' + escHtml(z.id) + '" ' + (p.zona_principal_id === z.id ? 'selected' : '') + '>' +
+        escHtml(z.nombre) + (z.cadena ? ' &middot; ' + escHtml(z.cadena) : '') + '</option>'
+    ).join('');
+    return sinAsignar + opciones;
 }
 
-function renderGestionPromotores() {
-    const container = document.getElementById('horarios-content');
-    if (!container) return;
+function _promoFilaHtml(p, numero, zonas) {
+    const zonaOptions = _promotorOpcionesZonaHtml(p, zonas);
+    const estadoActual = p.estado || 'Activo';
+    const estadoOptionsHtml = ESTADO_PROMOTOR_OPCIONES.map(eo =>
+        '<option value="' + eo.value + '" ' + (estadoActual === eo.value ? 'selected' : '') + '>' + eo.label + '</option>'
+    ).join('');
+    const estadoBadgeClass = estadoActual === 'Activo' ? 'promotor-estado-activo' :
+        estadoActual === 'Licencia' ? 'promotor-estado-licencia' :
+        estadoActual === 'Vacaciones' ? 'promotor-estado-vacaciones' :
+        'promotor-estado-inactivo';
+    const showReactivar = estadoActual !== 'Activo';
+    const fechaRegistro = p.fecha_creacion
+        ? new Date(p.fecha_creacion).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '&mdash;';
 
-    const zonas = HorariosDataStore.zonas;
-    const promotores = HorariosDataStore.promotores;
-
-    console.log('[AUDITORIA][PROMOTORES] Promotores visibles:', promotores.length);
-    console.log('[AUDITORIA][PROMOTORES] IDs visibles:', promotores.map(p => p.id));
-    console.log('[AUDITORIA][PROMOTORES] Correos visibles:', promotores.map(p => p.email || '').filter(Boolean));
-    console.log('[AUDITORIA][PROMOTORES] Fuente utilizada:', HorariosDataStore._fuentePromotores || 'HorariosDataStore.promotores (memoria)');
-    console.log('[AUDITORIA][PROMOTORES] Coincide con login (Registro de Ventas): ' + (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores === promotores));
-
-    const estadoOptions = [
-        { value: 'Activo', label: '🟢 Activo' },
-        { value: 'Licencia', label: '🟡 Licencia' },
-        { value: 'Vacaciones', label: '🟠 Vacaciones' },
-        { value: 'Inactivo', label: '🔴 Inactivo' }
-    ];
-
-    const rowsHtml = promotores.map((p, i) => {
-        const zonaOptions = `
-            <option value="" ${!p.zona_principal_id ? 'selected' : ''}>— Sin asignar —</option>
-            ${zonas.map(z =>
-                `<option value="${z.id}" ${p.zona_principal_id === z.id ? 'selected' : ''}>${escHtml(z.nombre)}${z.cadena ? ' · ' + escHtml(z.cadena) : ''}</option>`
-            ).join('')}
-        `;
-
-        const estadoActual = p.estado || 'Activo';
-
-        const estadoOptionsHtml = estadoOptions.map(eo =>
-            `<option value="${eo.value}" ${estadoActual === eo.value ? 'selected' : ''}>${eo.label}</option>`
-        ).join('');
-        const estadoBadgeClass = estadoActual === 'Activo' ? 'promotor-estado-activo' :
-            estadoActual === 'Licencia' ? 'promotor-estado-licencia' :
-            estadoActual === 'Vacaciones' ? 'promotor-estado-vacaciones' :
-            'promotor-estado-inactivo';
-
-        const showReactivar = estadoActual !== 'Activo';
-        const fechaRegistro = p.fecha_creacion
-            ? new Date(p.fecha_creacion).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            : '—';
-
-        return `
+    return `
             <tr class="promotor-row" data-id="${escHtml(p.id)}">
-                <td class="promotor-row-num">${i + 1}</td>
+                <td class="promotor-row-num">${numero}</td>
                 <td>
                     <input class="promotor-input-name" type="text" value="${escHtml(p.nombre)}"
                         data-id="${escHtml(p.id)}"
@@ -109,7 +104,7 @@ function renderGestionPromotores() {
                         ${zonaOptions}
                     </select>
                 </td>
-                <td class="promotor-fecha-registro">${escHtml(fechaRegistro)}</td>
+                <td class="promotor-fecha-registro">${fechaRegistro}</td>
                 <td class="promotor-actions-cell">
                     ${showReactivar ? `
                         <button class="promotor-btn-reactivate" onclick="reactivarPromotorHandler('${escHtml(p.id)}')" title="Reactivar promotor">
@@ -126,7 +121,87 @@ function renderGestionPromotores() {
                 </td>
             </tr>
         `;
-    }).join('');
+}
+
+function _promoRowsHtml(promotores, zonas) {
+    if (!promotores || promotores.length === 0) return '';
+    const ordenados = ordenarPromotoresPorTienda(promotores, zonas);
+    let html = '';
+    let tiendaActual = null;
+    let numero = 0;
+    for (const p of ordenados) {
+        const label = p.zona_principal_id ? _nombreTiendaPromotor(p.zona_principal_id, zonas) : '';
+        const grupo = label || '&mdash; Sin asignar &mdash;';
+        if (grupo !== tiendaActual) {
+            html += `
+                <tr class="tienda-group-header">
+                    <td colspan="9">
+                        <span class="tienda-group-title">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            ${escHtml(grupo)}
+                        </span>
+                    </td>
+                </tr>
+            `;
+            tiendaActual = grupo;
+        }
+        numero += 1;
+        html += _promoFilaHtml(p, numero, zonas);
+    }
+    return html;
+}
+
+function actualizarTiendaEnColeccionPromotores(promotorId, zonaId, tienda) {
+    if (typeof db === 'undefined' || !db) return;
+    try {
+        db.collection('promotores').doc(promotorId).update({
+            tienda: tienda || null,
+            zona_principal_id: zonaId || null
+        }).catch(() => {
+            db.collection('promotores').doc(promotorId).set({
+                id: promotorId,
+                nombre: (HorariosDataStore.promotores.find(p => p.id === promotorId) || {}).nombre || '',
+                tienda: tienda || null,
+                zona_principal_id: zonaId || null,
+                fecha_actualizacion: new Date().toISOString()
+            }, { merge: true }).catch(e => {
+                console.warn('[AUDITORIA][PROMOTORES] No se pudo escribir la tienda en Firestore:', e);
+            });
+        }).then(() => {
+            console.log('[AUDITORIA][PROMOTORES] Tienda actualizada en colección promotores:', promotorId, '->', tienda);
+        });
+    } catch (e) {
+        console.warn('[AUDITORIA][PROMOTORES] Error al actualizar tienda en Firestore:', e);
+    }
+}
+
+function initHorarios(role, userName) {
+    HorariosDataStore.init(role || 'supervisor', userName || null, function (fromRealtime) {
+        renderHorarios();
+        if (fromRealtime) {
+            mostrarHorariosToast();
+        }
+    });
+}
+
+function renderHorarios() {
+    renderGestionPromotores();
+}
+
+function renderGestionPromotores() {
+    const container = document.getElementById('horarios-content');
+    if (!container) return;
+
+    const zonas = HorariosDataStore.zonas;
+    const promotores = HorariosDataStore.promotores;
+
+    console.log('[AUDITORIA][PROMOTORES] Promotores visibles:', promotores.length);
+    console.log('[AUDITORIA][PROMOTORES] IDs visibles:', promotores.map(p => p.id));
+    console.log('[AUDITORIA][PROMOTORES] Correos visibles:', promotores.map(p => p.email || '').filter(Boolean));
+    console.log('[AUDITORIA][PROMOTORES] Fuente utilizada:', HorariosDataStore._fuentePromotores || 'HorariosDataStore.promotores (memoria)');
+    console.log('[AUDITORIA][PROMOTORES] Coincide con login (Registro de Ventas): ' + (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores === promotores));
+
+    const rowsHtml = _promoRowsHtml(promotores, zonas);
 
     container.innerHTML = `
         <div class="horarios-header">

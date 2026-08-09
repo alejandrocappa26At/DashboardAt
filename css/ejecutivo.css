@@ -114,6 +114,8 @@
 
 .ctl-table-wrap {
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
 }
 
 table.ctl-table {
@@ -124,7 +126,7 @@ table.ctl-table {
 }
 
 .ctl-table thead th {
-    background: rgba(255, 255, 255, 0.03);
+    background: #181818;
     color: #8a8a8a;
     font-size: 10px;
     font-weight: 700;
@@ -136,7 +138,7 @@ table.ctl-table {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 10;
 }
 
 .ctl-table thead th.ctl-th-left { text-align: left; }
@@ -506,7 +508,7 @@ table.ctl-table {
     height: 200px;
 }
 
-.ctl-charts .resumen-chart-body-sm { height: 200px; }
+.ctl-charts .resumen-chart-body-sm { height: 280px; }
 
 /* ---------- Informe Promotor consolidado ---------- */
 .ctl-promoter-cell {

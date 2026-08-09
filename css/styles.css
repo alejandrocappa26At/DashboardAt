@@ -976,6 +976,38 @@ body.rol-supervisor .promo-divider {
 .pdv-header-right {
     display: flex;
     align-items: center;
+    gap: 12px;
+}
+
+.date-btn-excel {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 16px;
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    border-radius: 999px;
+    background: rgba(29, 185, 84, 0.12);
+    color: #34d399;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.date-btn-excel:hover {
+    background: rgba(29, 185, 84, 0.22);
+    border-color: #1DB954;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(29,185,84,0.3);
+    transform: translateY(-1px);
+}
+
+.date-btn-excel svg {
+    flex-shrink: 0;
 }
 
 .pdv-date-badge {
@@ -1144,6 +1176,8 @@ body.rol-supervisor .promo-divider {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - var(--header-height) - 48px);
 }
 
 /* Product Card */
@@ -1808,117 +1842,214 @@ body.rol-supervisor .promo-divider {
     height: 280px;
 }
 
-/* Product Progress List */
+@media (max-width: 768px) {
+    .resumen-chart-body-sm {
+        height: auto;
+        min-height: 280px;
+    }
+}
+
+/* Product Luxury Cards (Glassmorphism) */
 .resumen-progress-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.prod-luxury-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 18px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.09);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.resumen-progress-item {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 14px 16px;
-    background: #0f0f0f;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.03);
-    transition: all 0.2s ease;
+.prod-luxury-card::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -20%;
+    width: 140%;
+    height: 120%;
+    background: radial-gradient(closest-side, rgba(29,185,84,0.12), transparent 70%);
+    pointer-events: none;
+    transition: opacity 0.3s ease;
 }
 
-.resumen-progress-item:hover {
-    background: #141414;
-    border-color: rgba(255,255,255,0.06);
+.prod-luxury-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255,255,255,0.16);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 24px rgba(29,185,84,0.08);
 }
 
-.resumen-progress-item-header {
+.prod-luxury-card:hover::before {
+    opacity: 1;
+}
+
+.prod-luxury-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
 }
 
-.resumen-progress-item-left {
+.prod-luxury-title {
     display: flex;
     align-items: center;
     gap: 10px;
     min-width: 0;
 }
 
-.resumen-progress-item-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+.prod-luxury-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
-.resumen-progress-item-icon.green  { background: rgba(29,185,84,0.12); color: #1DB954; }
-.resumen-progress-item-icon.yellow { background: rgba(245,158,11,0.12); color: #F59E0B; }
-.resumen-progress-item-icon.red    { background: rgba(239,68,68,0.12); color: #EF4444; }
+.prod-luxury-icon.green  { background: rgba(29,185,84,0.16); color: #1DB954; box-shadow: inset 0 0 12px rgba(29,185,84,0.2); }
+.prod-luxury-icon.yellow { background: rgba(245,158,11,0.16); color: #F59E0B; box-shadow: inset 0 0 12px rgba(245,158,11,0.2); }
+.prod-luxury-icon.red    { background: rgba(239,68,68,0.16); color: #EF4444; box-shadow: inset 0 0 12px rgba(239,68,68,0.2); }
 
-.resumen-progress-item-name {
+.prod-luxury-name {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.resumen-progress-item-pct {
-    font-size: 14px;
-    font-weight: 700;
+.prod-luxury-badge {
     flex-shrink: 0;
-}
-
-.resumen-progress-item-pct.green  { color: #1DB954; }
-.resumen-progress-item-pct.yellow { color: #F59E0B; }
-.resumen-progress-item-pct.red    { color: #EF4444; }
-
-.resumen-progress-item-track {
-    height: 8px;
-    background: #1a1a1a;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
     border-radius: 999px;
-    overflow: hidden;
+    letter-spacing: 0.3px;
 }
 
-.resumen-progress-item-fill {
+.prod-luxury-badge.green  { background: rgba(29,185,84,0.15); color: #1ed760; border: 1px solid rgba(29,185,84,0.35); box-shadow: 0 0 12px rgba(29,185,84,0.25); }
+.prod-luxury-badge.yellow { background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.35); }
+.prod-luxury-badge.red    { background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.35); }
+
+.prod-luxury-bar {
+    position: relative;
+    height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 999px;
+    overflow: visible;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.prod-luxury-fill {
+    position: relative;
     height: 100%;
     border-radius: 999px;
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 1.1s cubic-bezier(0.35, 0, 0.15, 1);
+    box-shadow: 0 0 14px var(--prod-glow, rgba(29,185,84,0.6));
 }
 
-.resumen-progress-item-fill.green  { background: linear-gradient(90deg, #1DB954, #1ed760); }
-.resumen-progress-item-fill.yellow { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
-.resumen-progress-item-fill.red    { background: linear-gradient(90deg, #EF4444, #F87171); }
+.prod-luxury-glow {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 220%;
+    transform: translateY(-50%) scaleX(0);
+    background: linear-gradient(90deg, transparent, var(--prod-glow, rgba(29,185,84,0.55)), transparent);
+    filter: blur(10px);
+    border-radius: 999px;
+    pointer-events: none;
+}
 
-.resumen-progress-item-stats {
+.prod-luxury-card:hover .prod-luxury-glow {
+    animation: prodGlowPulse 1.6s ease-in-out infinite;
+}
+
+.prod-luxury-fill.green  { --prod-glow: rgba(29,185,84,0.6); background: linear-gradient(90deg, #1DB954, #1ed760); }
+.prod-luxury-fill.yellow { --prod-glow: rgba(245,158,11,0.6); background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+.prod-luxury-fill.red    { --prod-glow: rgba(239,68,68,0.6); background: linear-gradient(90deg, #EF4444, #F87171); }
+
+@keyframes prodGlowPulse {
+    0%, 100% { transform: translateY(-50%) scaleX(0.75); opacity: 0.5; }
+    50%      { transform: translateY(-50%) scaleX(1.05); opacity: 0.95; }
+}
+
+.prod-luxury-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.prod-luxury-metric {
     display: flex;
-    justify-content: space-between;
-    font-size: 11px;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.04);
+    min-width: 0;
+}
+
+.prod-luxury-metric span {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
     color: #727272;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.resumen-progress-item-stats span {
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.resumen-progress-item-stats .stat-green { color: #1DB954; font-weight: 600; }
-.resumen-progress-item-stats .stat-red   { color: #EF4444; font-weight: 600; }
+.prod-luxury-metric strong {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.prod-luxury-metric.ok strong   { color: #1ed760; }
+.prod-luxury-metric.warn strong { color: #F87171; }
+
+@media (max-width: 768px) {
+    .resumen-progress-list {
+        grid-template-columns: 1fr;
+    }
+}
 
 .table-responsive {
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
+}
+
+/* Cabecera de tabla congelada */
+table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bg-elevated);
 }
 
 table thead {
@@ -2771,14 +2902,14 @@ select option {
 }
 
 .calendario-tabla thead th {
-    background: rgba(24,24,27,0.95);
+    background: #18181b;
     color: #a1a1aa;
     font-size: 10px;
     font-weight: 700;
     padding: 10px 6px;
     position: sticky;
     top: 0;
-    z-index: 5;
+    z-index: 10;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -2790,8 +2921,8 @@ select option {
     padding-left: 14px !important;
     position: sticky;
     left: 0;
-    z-index: 7;
-    background: rgba(24,24,27,0.95) !important;
+    z-index: 12;
+    background: #18181b !important;
 }
 
 .calendario-th-dia {
@@ -2803,14 +2934,14 @@ select option {
     min-width: 75px;
     position: sticky;
     right: 0;
-    z-index: 6;
-    background: rgba(6,78,59,0.25) !important;
+    z-index: 11;
+    background: #0c3a2e !important;
     color: #34d399 !important;
     border-left: 1px solid rgba(16,185,129,0.15);
 }
 
 .calendario-th-hoy {
-    background: rgba(52,211,153,0.06) !important;
+    background: #1b6e54 !important;
     color: #34d399 !important;
     box-shadow: inset 0 -2px 0 #34d399;
 }
@@ -2829,7 +2960,7 @@ select option {
     padding-left: 14px;
     font-weight: 600;
     font-size: 12px;
-    background: rgba(24,24,27,0.8);
+    background: #151518;
     position: sticky;
     left: 0;
     z-index: 3;
@@ -3406,11 +3537,11 @@ select option {
 
 .cuotas-wrapper {
     overflow-x: auto;
+    overflow-y: auto;
     margin-bottom: 16px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     max-height: 60vh;
-    overflow-y: auto;
 }
 
 .cuotas-tabla {
@@ -3430,14 +3561,14 @@ select option {
 }
 
 .cuotas-tabla thead th {
-    background: var(--bg-hover);
+    background: #18181b;
     color: var(--text-secondary);
     font-size: 10px;
     font-weight: 600;
     padding: 8px 6px;
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 10;
 }
 
 .cuotas-th-pdv {
@@ -3446,8 +3577,8 @@ select option {
     padding-left: 10px !important;
     position: sticky;
     left: 0;
-    z-index: 3;
-    background: var(--bg-hover) !important;
+    z-index: 12;
+    background: #18181b !important;
 }
 
 .cuotas-th-prod {
@@ -3462,7 +3593,7 @@ select option {
     background: var(--bg-elevated);
     position: sticky;
     left: 0;
-    z-index: 1;
+    z-index: 2;
     color: var(--text-primary);
 }
 
@@ -4465,6 +4596,8 @@ select option {
 /* Product table */
 .inf-promotor-table-container {
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     background: rgba(255,255,255,0.02);
@@ -4486,8 +4619,11 @@ select option {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
-    background: rgba(255,255,255,0.02);
+    background: #1a1a1a;
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .inf-promotor-table td {
@@ -4856,17 +4992,34 @@ select option {
    FILTROS DE FECHA - DISENO EJECUTIVO
    ============================================= */
 .date-filters {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    background: linear-gradient(160deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,0.09);
-    border-radius: 16px;
-    padding: 16px 18px;
-    margin-bottom: 14px;
-    box-shadow: 0 10px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+    background: linear-gradient(160deg, rgba(29,185,84,0.14), rgba(255,255,255,0.03) 35%, rgba(255,255,255,0.02) 70%, rgba(29,185,84,0.08));
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(29,185,84,0.28);
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    box-shadow:
+        0 14px 40px rgba(0,0,0,0.45),
+        0 0 26px rgba(29,185,84,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 0 34px rgba(29,185,84,0.05);
+}
+
+.date-filters::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 14px;
+    right: 14px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(29,185,84,0.65), transparent);
+    border-radius: 999px;
+    pointer-events: none;
 }
 
 .date-filter-bar {
@@ -5087,6 +5240,16 @@ select option {
     border-color: #1DB954;
     color: #ffffff;
     box-shadow: 0 4px 14px rgba(29,185,84,0.3);
+}
+
+.date-btn-quick.active {
+    background: linear-gradient(135deg, #1DB954, #12a344);
+    border-color: #1DB954;
+    color: #ffffff;
+    box-shadow:
+        0 0 0 3px rgba(29,185,84,0.22),
+        0 6px 18px rgba(29,185,84,0.45);
+    text-shadow: 0 0 8px rgba(255,255,255,0.35);
 }
 
 .periodo-analizado {
@@ -5517,6 +5680,7 @@ select option {
 .promo-registro-table th {
     position: sticky;
     top: 0;
+    z-index: 10;
     text-align: left;
     padding: 10px 14px;
     font-size: 11px;

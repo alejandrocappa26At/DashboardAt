@@ -935,11 +935,13 @@ function renderizarAvancePDV(pdvSeleccionado) {
     }
 
     const allData = DataStore.getCumplimientoPorPDV();
-    const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSeleccionado] : pdvs;
+const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSeleccionado] : pdvs;
     const periodo = DataStore.getInfoPeriodo();
-    const mesNumero = MES;
-    const anio = ANIO;
     const diaActual = periodo.elapsed;
+    const totalDiasMes = periodo.total || DIAS_MES;
+    const diasFaltantes = Math.max(totalDiasMes - diaActual + 1, 0);
+    const inicioHoy = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
+    const esPeriodoPasado = !!(periodo.fechaHasta && new Date(periodo.fechaHasta).getTime() < inicioHoy.getTime());
 
     let rowsHtml = '';
     for (let pdv of listaPDVs) {
@@ -955,11 +957,10 @@ function renderizarAvancePDV(pdvSeleccionado) {
             if (!p) continue;
             const dif = p.cuota - p.venta;
             const proyPDV = diaActual > 0 ? (p.venta / diaActual) * periodo.total : 0;
-            const vdrResult = DataStore.calcularVentaDiariaRequerida({ diferencia: dif, anio, mesNumero, diaActual, totalDias: periodo.total });
-            let vdrStr = '\u2014';
-            if (vdrResult.estado === 'meta_cumplida') vdrStr = '<span class="ctl-td-good">\u2713 Meta</span>';
-            else if (vdrResult.estado === 'mes_finalizado') vdrStr = '<span class="ctl-td-dim">Fin mes</span>';
-            else vdrStr = formatCurrency(vdrResult.ventaDiariaRequerida);
+            let cuotaDiaStr = '\u2014';
+            if (p.venta >= p.cuota) cuotaDiaStr = '<span class="ctl-td-good">\u2713 Meta</span>';
+            else if (esPeriodoPasado) cuotaDiaStr = '<span class="ctl-td-dim">Fin mes</span>';
+            else if (diasFaltantes > 0) cuotaDiaStr = formatCurrency(Math.ceil(dif / diasFaltantes));
 
             rowsHtml += '<tr>' +
                 '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(prod) + '</td>' +
@@ -968,7 +969,7 @@ function renderizarAvancePDV(pdvSeleccionado) {
                 '<td>' + ctlBarCell(p.cumplimiento) + '</td>' +
                 '<td class="' + (p.venta >= p.cuota ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (p.venta >= p.cuota ? '\u2713 ' + formatCurrency(Math.abs(dif)) : formatCurrency(dif)) + '</td>' +
                 '<td class="' + (proyPDV >= p.cuota ? 'ctl-td-good' : 'ctl-td-dim') + '">' + formatCurrency(proyPDV) + '</td>' +
-                '<td class="ctl-td-dim">' + vdrStr + '</td>' +
+                '<td class="ctl-td-dim">' + cuotaDiaStr + '</td>' +
                 '<td>' + ctlBadge(p.cumplimiento) + '</td>' +
                 '</tr>';
         }
@@ -981,10 +982,154 @@ function renderizarAvancePDV(pdvSeleccionado) {
         '<span class="ctl-card-count">' + ((pdvSeleccionado && pdvSeleccionado !== 'todos') ? ctlEsc(pdvSeleccionado) : listaPDVs.length + ' PDVs') + '</span>' +
         '</div>' +
         '<div class="ctl-table-wrap"><table class="ctl-table">' +
-        '<thead><tr>' +
-        '<th class="ctl-th-left">Producto</th><th>Venta</th><th>Meta</th><th>Alcance</th><th>Diferencia</th><th>Proyecci\u00f3n</th><th>Req. D\u00eda</th><th>Estado</th>' +
+'<thead><tr>' +
+        '<th class="ctl-th-left">Producto</th><th>Venta</th><th>Cuota</th><th>Alcance</th><th>Faltante</th><th>Proyecci\u00f3n</th><th>Cuota x D\u00eda</th><th>Estado</th>' +
         '</tr></thead><tbody>' + rowsHtml + '</tbody>' +
         '</table></div></div>';
+}
+
+function exportarAvancePDVExcel() {
+    try {
+        if (typeof ExcelJS === 'undefined' || typeof saveAs === 'undefined') {
+            console.error('[EXPORT] ExcelJS o FileSaver no disponibles.');
+            return;
+        }
+
+        const pdvSeleccionado = (document.getElementById('pdv-select') || {}).value || 'todos';
+        const pdvs = DataStore.getPDVs();
+        const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSeleccionado] : pdvs;
+        const allData = DataStore.getCumplimientoPorPDV();
+        const productos = DataStore.getProductos();
+        const periodo = DataStore.getInfoPeriodo();
+        const diaActual = periodo.elapsed || 0;
+        const totalDias = periodo.total || DataStore.diaActual || DIAS_MES;
+
+        const workbook = new ExcelJS.Workbook();
+        const ws = workbook.addWorksheet('Avance PDV');
+
+        const columnCount = 9;
+        const columns = [
+            { header: 'PUNTO DE VENTA', key: 'pdv', width: 30 },
+            { header: 'PRODUCTO', key: 'producto', width: 24 },
+            { header: 'VENTA (S/)', key: 'venta', width: 14 },
+            { header: 'CUOTA (S/)', key: 'cuota', width: 14 },
+            { header: '% ALCANCE', key: 'alcance', width: 12 },
+            { header: 'FALTANTE (S/)', key: 'faltante', width: 16 },
+            { header: 'PROYECCI\u00d3N (S/)', key: 'proyeccion', width: 16 },
+            { header: 'CUOTA X D\u00cdA', key: 'cuotaDia', width: 14 },
+            { header: 'ESTADO', key: 'estado', width: 12 }
+        ];
+        ws.columns = columns;
+
+        const titleRow = ws.addRow(['Informe de Avance por Punto de Venta']);
+        ws.mergeCells(titleRow.number, 1, titleRow.number, columnCount);
+        titleRow.height = 28;
+        titleRow.getCell(1).value = 'Informe de Avance por Punto de Venta';
+        titleRow.getCell(1).font = { bold: true, size: 15, color: { argb: 'FFFFFFFF' } };
+        titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+        for (let t = 1; t <= columnCount; t++) {
+            titleRow.getCell(t).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF155a3a' } };
+        }
+
+        const periodoTexto = listaPDVs.length === 1 ? listaPDVs[0] : 'Todos los PDVs';
+        const sub = ws.addRow(['Periodo: ' + periodoTexto + (totalDias ? ' \u00b7 Al d\u00eda ' + diaActual + ' de ' + totalDias + ' d\u00edas' : '')]);
+        ws.mergeCells(sub.number, 1, sub.number, columnCount);
+        sub.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF8A8A8A' } };
+        sub.getCell(1).alignment = { vertical: 'middle' };
+
+        const headRow = ws.addRow(columns.map(c => c.header));
+        headRow.height = 22;
+        headRow.eachCell(c => {
+            c.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+            c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F0F0F' } };
+            c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            c.border = { bottom: { style: 'medium', color: { argb: 'FF1DB954' } } };
+        });
+        ws.views = [{ state: 'frozen', ySplit: headRow.number }];
+
+        const dinero = '"S/ "#,##0.00';
+
+        let num = 0;
+        for (let pdv of listaPDVs) {
+            const d = allData[pdv];
+            if (!d) continue;
+
+            const grupo = ws.addRow([pdv]);
+            ws.mergeCells(grupo.number, 1, grupo.number, columnCount);
+            grupo.height = 20;
+            grupo.getCell(1).value = pdv;
+            grupo.getCell(1).font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+            grupo.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+            for (let t = 1; t <= columnCount; t++) {
+                grupo.getCell(t).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F6E4D' } };
+            }
+
+            for (let prod of productos) {
+                const p = d.productos[prod];
+                if (!p) continue;
+                num++;
+
+                const dif = p.cuota - p.venta;
+                const proyPDV = diaActual > 0 ? (p.venta / diaActual) * totalDias : 0;
+                const diasFaltantes = Math.max(totalDias - diaActual + 1, 0);
+                const inicioHoy = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
+                const esPeriodoPasado = !!(periodo.fechaHasta && new Date(periodo.fechaHasta).getTime() < inicioHoy.getTime());
+                let reqValor;
+                if (p.venta >= p.cuota) reqValor = 'Meta';
+                else if (esPeriodoPasado) reqValor = 'Fin mes';
+                else if (diasFaltantes > 0) reqValor = Math.ceil(dif / diasFaltantes);
+                else reqValor = 'Fin mes';
+
+                const estado = p.cumplimiento >= 100 ? 'CUMPLE' : (p.cumplimiento >= 80 ? 'ALERTA' : 'CR\u00cdTICO');
+                const estadoFill = p.cumplimiento >= 100 ? 'FFD4EDDA' : (p.cumplimiento >= 80 ? 'FFF3CD' : 'FFF8D7DA');
+                const estadoColor = p.cumplimiento >= 100 ? 'FF155724' : (p.cumplimiento >= 80 ? 'FF856404' : 'FF721C24');
+
+                const dataRow = ws.addRow([
+                    pdv,
+                    prod,
+                    p.venta,
+                    p.cuota,
+                    p.cumplimiento / 100,
+                    dif,
+                    proyPDV,
+                    reqValor,
+                    estado
+                ]);
+                dataRow.getCell(1).font = { color: { argb: 'FF155724' } };
+                dataRow.getCell(2).alignment = { horizontal: 'left' };
+                dataRow.getCell(3).numFmt = dinero;
+                dataRow.getCell(4).numFmt = dinero;
+                dataRow.getCell(5).numFmt = '0.0%';
+                dataRow.getCell(5).alignment = { horizontal: 'center' };
+                dataRow.getCell(6).numFmt = dinero;
+                dataRow.getCell(7).numFmt = dinero;
+                if (typeof reqValor === 'number') {
+                    dataRow.getCell(8).numFmt = dinero;
+                }
+                dataRow.getCell(9).font = { bold: true, color: { argb: estadoColor } };
+                dataRow.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: estadoFill } };
+                dataRow.getCell(9).alignment = { horizontal: 'center' };
+            }
+        }
+
+        if (num === 0) {
+            ws.addRow(['No existen registros para el periodo seleccionado.']);
+            ws.mergeCells(ws.lastRow.number, 1, ws.lastRow.number, columnCount);
+        }
+
+        const hoy = new Date();
+        const stamp = hoy.getFullYear() + '-' +
+            String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+            String(hoy.getDate()).padStart(2, '0');
+        const nombreArchivo = 'Avance_PDV_' + stamp + '.xlsx';
+
+        workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, nombreArchivo);
+        });
+    } catch (e) {
+        console.error('[EXPORT] Error al generar el Excel:', e);
+    }
 }
 
 function renderizarRanking() {
@@ -1157,25 +1302,68 @@ function aplicarRangoFechas(modulo, desde, hasta) {
     if (d) d.value = desde;
     if (h) h.value = hasta;
     DataStore.setFiltrosFecha(desde, hasta);
-    recargarModulosConFiltro();
+    sincronizarInputsFecha();
+    actualizarDatosPorSeccion(modulo);
+}
+
+function actualizarDatosPorSeccion(seccion) {
+    if (seccion === 'resumen') renderizarResumenEjecutivo();
+    else if (seccion === 'avance') renderizarAvancePDV();
+    else if (seccion === 'ranking') renderizarRanking();
+    else if (seccion === 'informe') recargarInformeSiAplica();
+    else if (seccion === 'vista-ejecutiva') renderizarVistaEjecutiva();
+    else recargarModulosConFiltro();
+}
+
+const RANGOS_ETIQUETA = {
+    'hoy': 'Hoy',
+    'esta-semana': 'Semana',
+    'mes-actual': 'Mes',
+    'mes-anterior': 'Mes Anterior',
+    'ultimos-3': '3 Meses',
+    'anio-actual': 'Año'
+};
+
+function _convContainerRango(modulo) {
+    const pageId = modulo === 'informe' ? 'page-informe-promotor' : 'page-' + modulo;
+    const page = document.getElementById(pageId);
+    return page ? page.querySelector('.date-filter-fastrow') : null;
+}
+
+function marcarRangoActivo(modulo, tipo) {
+    const fastrow = _convContainerRango(modulo);
+    if (!fastrow) return;
+    const etiqueta = (RANGOS_ETIQUETA[tipo] || '').toLowerCase();
+    fastrow.querySelectorAll('.date-btn-quick').forEach(b => {
+        b.classList.toggle('active', b.textContent.trim().toLowerCase() === etiqueta);
+    });
+}
+
+function limpiarRangoActivo(modulo) {
+    const fastrow = _convContainerRango(modulo);
+    if (!fastrow) return;
+    fastrow.querySelectorAll('.date-btn-quick').forEach(b => b.classList.remove('active'));
 }
 
 function cambiarMesFecha(modulo) {
     const sel = document.getElementById('filtro-' + modulo + '-mes');
     if (!sel) return;
-    const val = sel.value;
+const val = sel.value;
     if (!val) {
         toggleCustomPeriodo(modulo, false);
+        limpiarRangoActivo(modulo);
         return;
     }
     if (val === 'custom') {
         toggleCustomPeriodo(modulo, true);
+        limpiarRangoActivo(modulo);
         return;
     }
     const [anio, mes] = val.split('-').map(Number);
     const desde = fmtAnioMesDia(anio, mes, 1);
     const hasta = fmtAnioMesDia(anio, mes, diasDelMes(anio, mes));
     aplicarRangoFechas(modulo, desde, hasta);
+    limpiarRangoActivo(modulo);
 }
 
 function aplicarRangoRapido(modulo, tipo) {
@@ -1213,16 +1401,15 @@ function aplicarRangoRapido(modulo, tipo) {
         desde = fmtAnioMesDia(y, 1, 1);
         hasta = fmtAnioMesDia(y, 12, 31);
     }
-    if (desde && hasta) aplicarRangoFechas(modulo, desde, hasta);
+    if (desde && hasta) {
+        aplicarRangoFechas(modulo, desde, hasta);
+        marcarRangoActivo(modulo, tipo);
+    }
 }
 
 function recargarModulosConFiltro() {
     sincronizarInputsFecha();
-    renderizarResumenEjecutivo();
-    renderizarAvancePDV();
-    renderizarRanking();
-    renderizarVistaEjecutiva();
-    recargarInformeSiAplica();
+    ['resumen', 'avance', 'ranking', 'informe', 'vista-ejecutiva'].forEach(seccion => actualizarDatosPorSeccion(seccion));
 }
 
 function recargarInformeSiAplica() {
@@ -1236,19 +1423,30 @@ function recargarInformeSiAplica() {
     } else renderizarTablaPromotores();
 }
 
-function aplicarFiltrosFecha(modulo) {
+function aplicarFiltrosFecha(modulo, silencioso) {
     const desde = document.getElementById('filtro-' + modulo + '-desde').value;
     const hasta = document.getElementById('filtro-' + modulo + '-hasta').value;
+    if (!desde && !hasta) {
+        if (!silencioso) {
+            DataStore.limpiarFiltrosFecha();
+            sincronizarInputsFecha();
+            limpiarRangoActivo(modulo);
+            actualizarDatosPorSeccion(modulo);
+        }
+        return;
+    }
     if (!desde || !hasta) {
-        mostrarNotificacion('Selecciona fecha inicial y fecha final', 'error');
+        if (!silencioso) mostrarNotificacion('Selecciona fecha inicial y fecha final', 'error');
         return;
     }
     if (desde > hasta) {
-        mostrarNotificacion('La fecha inicial no puede ser posterior a la fecha final', 'error');
+        if (!silencioso) mostrarNotificacion('La fecha inicial no puede ser posterior a la fecha final', 'error');
         return;
     }
     DataStore.setFiltrosFecha(desde, hasta);
-    recargarModulosConFiltro();
+    sincronizarInputsFecha();
+    limpiarRangoActivo(modulo);
+    actualizarDatosPorSeccion(modulo);
 }
 
 function limpiarFiltrosFecha(modulo) {
@@ -1257,7 +1455,9 @@ function limpiarFiltrosFecha(modulo) {
     if (desde) desde.value = '';
     if (hasta) hasta.value = '';
     DataStore.limpiarFiltrosFecha();
-    recargarModulosConFiltro();
+    sincronizarInputsFecha();
+    limpiarRangoActivo(modulo);
+    actualizarDatosPorSeccion(modulo);
 }
 
 /* ===== SUPERVISOR SESSION STATE ===== */
@@ -1705,21 +1905,30 @@ function cargarVentasCalendario() {
     const anio = parseInt(document.getElementById('venta-anio').value);
     const tbody = document.getElementById('tbody-calendario');
     const thead = document.querySelector('#tabla-calendario thead tr');
-    const productos = DataStore.getProductos();
+const productos = DataStore.getProductos();
     const diaActual = DataStore.getDiaActual();
     const diasMes = new Date(anio, mes, 0).getDate();
+
+    const hoy = new Date();
+    const mesActual = hoy.getMonth() + 1;
+    const anioActual = hoy.getFullYear();
+    const esMesActual = mes === mesActual && anio === anioActual;
+    const esMesFuturo = anio > anioActual || (anio === anioActual && mes > mesActual);
+    const esMesPasado = anio < anioActual || (anio === anioActual && mes < mesActual);
+    const diaMaximo = esMesActual ? diaActual : (esMesFuturo ? 0 : diasMes);
 
     if (diaSeleccionado > diasMes) diaSeleccionado = diasMes;
 
     thead.innerHTML = '<th class="calendario-th-producto">Producto</th>';
     for (let d = 1; d <= diasMes; d++) {
-        const cls = d <= diaActual ? '' : 'style="opacity:0.4;"';
-        thead.innerHTML += `<th class="calendario-th-dia ${d === diaActual ? 'calendario-th-hoy' : ''}" data-dia="${d}" ${cls}>${d}</th>`;
+        const cls = d <= diaMaximo ? '' : 'style="opacity:0.4;"';
+        const esHoy = esMesActual && d === diaActual;
+        thead.innerHTML += `<th class="calendario-th-dia ${esHoy ? 'calendario-th-hoy' : ''}" data-dia="${d}" ${cls}>${d}</th>`;
     }
     thead.innerHTML += '<th class="calendario-th-dia">Total</th>';
 
     const ventas = DataStore.getVentasDelMes(mes, anio).filter(v => {
-        if (v.punto_venta !== pdv || v.dia > diaActual) return false;
+        if (v.punto_venta !== pdv || v.dia > diaMaximo) return false;
         if (promotorSession && v.promotor_id && v.promotor_id !== promotorSession.id) return false;
         return true;
     });
@@ -1737,13 +1946,13 @@ function cargarVentasCalendario() {
         let suma = 0;
 
         for (let d = 1; d <= diasMes; d++) {
-            const venta = d <= diaActual ? ventas.find(v => v.producto === prod && v.dia === d) : null;
+            const venta = d <= diaMaximo ? ventas.find(v => v.producto === prod && v.dia === d) : null;
             const val = venta !== null && venta !== undefined ? venta.venta : '';
             suma += venta ? venta.venta : 0;
 
             const td = document.createElement('td');
             td.setAttribute('data-dia', d);
-            if (d > diaActual) td.style.opacity = '0.4';
+            if (d > diaMaximo) td.style.opacity = '0.4';
 
             const input = document.createElement('input');
             input.className = 'calendario-input' + (val === '' || val === 0 ? ' calendario-input-zero' : ' calendario-input-filled');
@@ -1753,7 +1962,7 @@ function cargarVentasCalendario() {
             if (val !== '') input.value = val;
             input.dataset.prod = prod;
             input.dataset.dia = d;
-            if (d > diaActual) input.readOnly = true;
+            if (d > diaMaximo) input.readOnly = true;
 
             if (val !== '' && d > 1) {
                 const cAnterior = ventas.find(v => v.producto === prod && v.dia === d - 1);
@@ -1781,7 +1990,7 @@ function cargarVentasCalendario() {
     tbody.appendChild(fragment);
 
     const totalRegistros = ventas.length;
-    const maxRegistros = productos.length * diaActual;
+    const maxRegistros = productos.length * diaMaximo;
     document.getElementById('ventas-progress-text').textContent = `${totalRegistros} / ${maxRegistros}`;
 
     aplicarFiltroVistaVentas(diasMes);

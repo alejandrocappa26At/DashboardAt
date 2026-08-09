@@ -216,7 +216,7 @@ function buildCtlTablaPDVs() {
         '<div class="ctl-table-wrap"><table class="ctl-table">' +
         '<thead><tr>' +
         '<th class="ctl-th-left">#</th><th class="ctl-th-left">Tienda</th>' +
-        '<th>Venta</th><th>Meta</th><th>Cumplimiento</th><th>Proyecci\u00f3n</th><th>Diferencia</th><th>Estado</th>' +
+        '<th>Venta</th><th>Cuota</th><th>Cumplimiento</th><th>Proyecci\u00f3n</th><th>Faltante</th><th>Estado</th>' +
         '</tr></thead><tbody>' + rows + '</tbody>' +
         '</table></div></div>';
 }
