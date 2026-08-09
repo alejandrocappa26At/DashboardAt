@@ -370,9 +370,6 @@
         margin: 0;
     }
     .pdv-mob-table thead th {
-        position: sticky;
-        top: var(--header-height);
-        z-index: 3;
         padding: 7px 5px;
         background: #121212;
         text-align: center;
@@ -385,11 +382,10 @@
     }
     .pdv-mob-table thead th.pdv-mob-th-prod { text-align: left; }
     .pdv-mob-table thead th:not(:last-child) { border-right: 1px solid rgba(255, 255, 255, 0.06); }
-    .pdv-mob-table thead th:nth-child(1) { width: 27%; }
-    .pdv-mob-table thead th:nth-child(2) { width: 20%; }
-    .pdv-mob-table thead th:nth-child(3) { width: 19%; }
-    .pdv-mob-table thead th:nth-child(4) { width: 18%; }
-    .pdv-mob-table thead th:nth-child(5) { width: 16%; }
+    .pdv-mob-table thead th:nth-child(1) { width: 32%; }
+    .pdv-mob-table thead th:nth-child(2) { width: 25%; }
+    .pdv-mob-table thead th:nth-child(3) { width: 22%; }
+    .pdv-mob-table thead th:nth-child(4) { width: 21%; }
 
     /* Líneas sutiles tipo Excel entre filas y columnas */
     .pdv-mob-table tbody td,
@@ -418,7 +414,13 @@
         letter-spacing: 0.2px;
     }
     .pdv-mob-group-dot { font-size: 12px; flex-shrink: 0; }
-    .pdv-mob-group-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pdv-mob-group-name {
+        flex: 1;
+        min-width: 0;
+        color: #ffffff;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
     .pdv-mob-group-pct { font-weight: 800; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .pdv-mob-group-pct.green  { color: #1DB954; }
     .pdv-mob-group-pct.yellow { color: #F59E0B; }
@@ -428,10 +430,8 @@
         text-align: left;
         color: #d4d4d4;
         font-weight: 600;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
     }
     .pdv-mob-num {
         text-align: center;
@@ -439,15 +439,33 @@
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
+        overflow: hidden;
     }
 
-    /* Fondos sutiles por columna: Venta / Cuota / Faltante / Alcance */
+    /* Fondos sutiles por columna: Venta / Cuota / Alcance */
     .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(2) { background: rgba(29, 185, 84, 0.055); }
     .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(3) { background: rgba(59, 130, 246, 0.065); }
-    .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(4) { background: rgba(245, 158, 11, 0.065); }
-    .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(5) { background: rgba(168, 85, 247, 0.065); }
+    .pdv-mob-table tbody tr.pdv-mob-row td:nth-child(4) { background: rgba(168, 85, 247, 0.065); }
 
-    .pdv-mob-falt.ok { color: #1DB954; }
+    /* Faltante en una segunda fila (columna completa) */
+    .pdv-mob-info td {
+        padding: 4px 10px 6px;
+        text-align: center;
+        background: rgba(245, 158, 11, 0.05);
+        font-size: 9.5px;
+    }
+    .pdv-mob-info-label {
+        margin-right: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #9a9a9a;
+    }
+    .pdv-mob-info-value {
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        color: #eaeaea;
+    }
+    .pdv-mob-info-value.ok { color: #1DB954; }
 
     /* Alcance: %, semáforo y barra de progreso */
     .pdv-mob-alc { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; }

@@ -82,10 +82,11 @@
             var d = allData[pdv];
             if (!d) continue;
 
+            var nombrePdv = String(pdv || '').replace(/^RED AT\s+/i, '');
             var gS = alcSema(d.cumplimiento);
-            rows += '<tr class="pdv-mob-group"><th colspan="5">' +
+            rows += '<tr class="pdv-mob-group"><th colspan="4">' +
                 '<span class="pdv-mob-group-dot">' + gS.dot + '</span>' +
-                '<span class="pdv-mob-group-name">' + mobEsc(pdv) + '</span>' +
+                '<span class="pdv-mob-group-name">' + mobEsc(nombrePdv) + '</span>' +
                 '<span class="pdv-mob-group-pct ' + gS.cls + '">' + fmtP(d.cumplimiento) + '</span>' +
                 '</th></tr>';
 
@@ -98,16 +99,19 @@
                 var falt = cuota - venta;
                 var cum = p.cumplimiento || 0;
                 var s = alcSema(cum);
+                var faltTxt = (falt <= 0 ? '\u2713 ' + fmtV(Math.abs(falt)) : fmtV(falt));
                 rows += '<tr class="pdv-mob-row">' +
                     '<td class="pdv-mob-prod">' + mobEsc(prod) + '</td>' +
                     '<td class="pdv-mob-num">' + fmtV(venta) + '</td>' +
                     '<td class="pdv-mob-num">' + fmtV(cuota) + '</td>' +
-                    '<td class="pdv-mob-num pdv-mob-falt ' + (falt <= 0 ? 'ok' : '') + '">' +
-                    (falt <= 0 ? '\u2713 ' + fmtV(Math.abs(falt)) : fmtV(falt)) + '</td>' +
                     '<td class="pdv-mob-num">' +
                     '<span class="pdv-mob-alc">' + s.dot + ' <b class="' + s.cls + '">' + fmtP(cum) + '</b></span>' +
                     '<span class="pdv-mob-bar"><span class="pdv-mob-fill ' + s.cls + '" style="width:' + Math.min(cum, 100) + '%"></span></span>' +
                     '</td>' +
+                    '</tr>' +
+                    '<tr class="pdv-mob-info">' +
+                    '<td colspan="4"><span class="pdv-mob-info-label">\ud83d\udcc9 Faltante</span>' +
+                    '<span class="pdv-mob-info-value ' + (falt <= 0 ? 'ok' : '') + '">' + faltTxt + '</span></td>' +
                     '</tr>';
             }
         }
@@ -122,7 +126,6 @@
             '<th class="pdv-mob-th-prod">Producto</th>' +
             '<th>Venta</th>' +
             '<th>Cuota</th>' +
-            '<th>\ud83d\udcc9 Faltante</th>' +
             '<th>Alcance</th>' +
             '</tr></thead>' +
             '<tbody>' + rows + '</tbody>' +
