@@ -126,7 +126,8 @@
     /* ---------- 3. Promotores: tabla consolidada -> acordeón ---------- */
     function buildPromotorAccordion() {
         var wrap = document.getElementById('inf-promotor-content');
-        if (!wrap || wrap.classList.contains('mob-built')) return;
+        if (!wrap) return;
+        if (wrap.classList.contains('mob-built') && wrap.querySelector('details.prm-acc')) return;
         var table = wrap.querySelector('table.ctl-table');
         if (!table) return;
         var head = table.querySelector('thead');
@@ -143,33 +144,27 @@
             var txt = function (n) { return tds[n] ? tds[n].textContent.replace(/\s+/g, ' ').trim() : ''; };
             items.push({
                 name: tds[1].innerHTML,
+                nameText: txt(1),
                 tienda: txt(2),
                 venta: txt(3),
                 meta: txt(4),
                 cum: txt(5),
                 cumCls: cumCls(tds[5]),
                 dif: txt(6),
-                mejor: txt(7),
-                peor: txt(8),
                 estado: tds[9] ? tds[9].innerHTML : ''
             });
         }
         if (!items.length) return;
 
         var details = items.map(function (it) {
-            return '<details class="prm-acc">' +
+            return '<details class="prm-acc" data-pname="' + mobEsc(it.nameText) + '" data-tienda="' + mobEsc(it.tienda) + '">' +
                 '<summary>' +
                 '<span class="prm-name">' + it.name + '</span>' +
                 '<span class="prm-cump ' + it.cumCls + '">' + mobEsc(it.cum) + '</span>' +
                 '<span class="prm-venta">' + mobEsc(it.venta) + '</span>' +
                 '</summary>' +
-                '<div class="prm-detail"><div class="prm-grid">' +
-                '<div><span>Meta</span><b>' + mobEsc(it.meta) + '</b></div>' +
-                '<div><span>Tienda</span><b>' + mobEsc(it.tienda) + '</b></div>' +
-                '<div><span>Diferencia</span><b>' + mobEsc(it.dif) + '</b></div>' +
-                '<div><span>Mejor Producto</span><b>' + mobEsc(it.mejor) + '</b></div>' +
-                '<div><span>Peor Producto</span><b>' + mobEsc(it.peor) + '</b></div>' +
-                '<div><span>Estado</span><b>' + it.estado + '</b></div>' +
+                '<div class="prm-detail"><div class="prm-detail-inner">' +
+                '<div class="prm-loading">Cargando detalle...</div>' +
                 '</div></div>' +
                 '</details>';
         }).join('');
@@ -180,6 +175,137 @@
         wrap.classList.add('mob-built');
         wrap.setAttribute('data-mob-original', original);
         wrap.innerHTML = details + footerHtml;
+
+        var accs = wrap.querySelectorAll('details.prm-acc');
+        for (var a = 0; a < accs.length; a++) {
+            accs[a].addEventListener('toggle', function (ev) {
+                lazyLoadPromotorDetail(ev.target || this);
+            });
+        }
+    }
+
+    /* ---------- Lazy load del detalle de productos por promotor ---------- */
+    function lazyLoadPromotorDetail(acc) {
+        if (!acc || !acc.open) return;
+        var inner = acc.querySelector('.prm-detail-inner');
+        if (!inner || inner.getAttribute('data-loaded')) return;
+        var name = acc.getAttribute('data-pname') || '';
+        var tienda = acc.getAttribute('data-tienda') || '';
+        var html = buildPromotorDetail(name, tienda);
+        if (html) {
+            inner.innerHTML = html;
+            inner.setAttribute('data-loaded', '1');
+        }
+    }
+
+    function fmtV(n) {
+        return 'S/ ' + Number(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function fmtP(n) {
+        return Number(n || 0).toFixed(1) + '%';
+    }
+
+    function sema(pct) {
+        if (pct >= 100) return { cls: 'c-good', dot: '\ud83d\udfe2' };
+        if (pct >= 70) return { cls: 'c-warn', dot: '\ud83d\udfe1' };
+        return { cls: 'c-bad', dot: '\ud83d\udd34' };
+    }
+
+    function buildPromotorDetail(name, tienda) {
+        var fechas = (typeof fechasEfectivasInforme === 'function') ? fechasEfectivasInforme() : { desde: null, hasta: null };
+        var desde = fechas.desde;
+        var hasta = fechas.hasta;
+        var ventas = (typeof DataStore !== 'undefined' && DataStore.getVentasActivas) ? DataStore.getVentasActivas() : [];
+        var productos = (typeof DataStore !== 'undefined' && DataStore.getProductos) ? DataStore.getProductos() : [];
+        var cuotas = (typeof DataStore !== 'undefined' && DataStore.getCuotasActivas) ? DataStore.getCuotasActivas() : [];
+        var promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+        var zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+        if (!ventas.length && !productos.length) return '';
+
+        var prom = null;
+        for (var i = 0; i < promotores.length; i++) {
+            if (promotores[i].nombre === name) { prom = promotores[i]; break; }
+        }
+        var tiendaNombre = null;
+        if (prom && prom.zona_principal_id) {
+            for (var j = 0; j < zonas.length; j++) {
+                if (zonas[j].id === prom.zona_principal_id) { tiendaNombre = zonas[j].nombre; break; }
+            }
+        }
+        if (!tiendaNombre && tienda && tienda !== 'Sin tienda') tiendaNombre = tienda;
+
+        var ventasProm = [];
+        for (var k = 0; k < ventas.length; k++) {
+            var v = ventas[k];
+            if (!v) continue;
+            if (desde && new Date(v.fecha) < new Date(desde + 'T00:00:00')) continue;
+            if (hasta && new Date(v.fecha) > new Date(hasta + 'T23:59:59')) continue;
+            if (v.promotor_id) {
+                if (prom && v.promotor_id !== prom.id) continue;
+            } else if (tiendaNombre && v.punto_venta !== tiendaNombre) continue;
+            ventasProm.push(v);
+        }
+
+        var fechaRef = desde ? new Date(desde + 'T00:00:00') : new Date();
+        var mes = fechaRef.getMonth() + 1;
+        var anio = fechaRef.getFullYear();
+
+        var ventaProd = {};
+        for (var k2 = 0; k2 < ventasProm.length; k2++) {
+            var pname = ventasProm[k2].producto;
+            if (!ventaProd[pname]) ventaProd[pname] = 0;
+            ventaProd[pname] += (ventasProm[k2].venta || 0);
+        }
+
+        var prodList = [];
+        for (var p = 0; p < productos.length; p++) {
+            var prod = productos[p];
+            var vv = ventaProd[prod] || 0;
+            var cuo = 0;
+            for (var c = 0; c < cuotas.length; c++) {
+                var q = cuotas[c];
+                if (q.punto_venta === tiendaNombre && q.producto === prod && q.mes === mes && q.anio === anio) {
+                    cuo = q.cuota || 0;
+                    break;
+                }
+            }
+            prodList.push({ name: prod, venta: vv, cuota: cuo, cumpl: cuo > 0 ? (vv / cuo) * 100 : 0, dif: vv - cuo });
+        }
+
+        var totalVenta = 0, totalCuota = 0;
+        for (var t = 0; t < prodList.length; t++) {
+            totalVenta += prodList[t].venta;
+            totalCuota += prodList[t].cuota;
+        }
+        var totalCumpl = totalCuota > 0 ? (totalVenta / totalCuota) * 100 : 0;
+        var totalDif = totalCuota - totalVenta;
+
+        prodList.sort(function (a, b) { return b.venta - a.venta; });
+
+        var sTot = sema(totalCumpl);
+        var summary =
+            '<div class="prm-summary">' +
+            '<div class="prm-summary-item"><span class="prm-summary-label">\ud83d\udcb0 Venta Total</span><span class="prm-summary-value">' + fmtV(totalVenta) + '</span></div>' +
+            '<div class="prm-summary-item"><span class="prm-summary-label">\ud83c\udfaf Meta Total</span><span class="prm-summary-value">' + fmtV(totalCuota) + '</span></div>' +
+            '<div class="prm-summary-item"><span class="prm-summary-label">\ud83d\udcc9 Faltante Total</span><span class="prm-summary-value ' + (totalDif <= 0 ? 'c-good' : 'c-bad') + '">' + (totalDif <= 0 ? 'S/ 0' : fmtV(totalDif)) + '</span></div>' +
+            '<div class="prm-summary-item"><span class="prm-summary-label">\ud83d\udcca Cumplimiento</span><span class="prm-summary-value ' + sTot.cls + '">' + sTot.dot + ' ' + fmtP(totalCumpl) + '</span></div>' +
+            '</div>';
+
+        var cards = prodList.map(function (r) {
+            var s = sema(r.cumpl);
+            return '<div class="prm-prod">' +
+                '<div class="prm-prod-head"><span class="prm-prod-name">' + mobEsc(r.name) + '</span>' +
+                '<span class="prm-prod-pct ' + s.cls + '">' + s.dot + ' ' + fmtP(r.cumpl) + '</span></div>' +
+                '<div class="prm-prod-grid">' +
+                '<div class="prm-prod-metric"><span class="prm-prod-label">\ud83c\udfaf Cuota</span><span class="prm-prod-value">' + fmtV(r.cuota) + '</span></div>' +
+                '<div class="prm-prod-metric"><span class="prm-prod-label">\ud83d\udcb0 Venta</span><span class="prm-prod-value">' + fmtV(r.venta) + '</span></div>' +
+                '<div class="prm-prod-metric"><span class="prm-prod-label">\ud83d\udcc9 Faltante</span><span class="prm-prod-value ' + (r.dif <= 0 ? 'c-good' : 'c-bad') + '">' + (r.dif <= 0 ? 'S/ 0' : fmtV(r.dif)) + '</span></div>' +
+                '</div>' +
+                '</div>';
+        }).join('');
+
+        return summary + '<div class="prm-prod-list">' + cards + '</div>';
     }
 
     /* ---------- Restauración al salir de móvil ---------- */

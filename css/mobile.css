@@ -425,10 +425,113 @@
         flex-shrink: 0;
     }
     .prm-acc[open] summary::after { transform: rotate(-135deg) translateY(-2px); }
-    .prm-detail { padding: 0 12px 10px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
-    .prm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 10px; padding-top: 8px; }
-    .prm-grid div { display: flex; flex-direction: column; gap: 1px; font-size: 10px; color: #8a8a8a; min-width: 0; }
-    .prm-grid b { font-size: 11px; color: #d4d4d4; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prm-detail {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        border-top: 1px dashed rgba(255,255,255,0.08);
+    }
+    .prm-acc[open] .prm-detail { grid-template-rows: 1fr; }
+    .prm-detail-inner { min-height: 0; overflow: hidden; padding: 10px 12px 12px; }
+    .prm-loading { font-size: 11px; color: #727272; padding: 6px 0; text-align: center; }
+
+    /* Resumen del promotor */
+    .prm-summary {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+    .prm-summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        padding: 8px 10px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+    }
+    .prm-summary-label {
+        font-size: 9px;
+        font-weight: 700;
+        color: #8a8a8a;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .prm-summary-value {
+        font-size: 13px;
+        font-weight: 800;
+        color: #ffffff;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Detalle por producto */
+    .prm-prod-list { display: flex; flex-direction: column; gap: 8px; }
+    .prm-prod {
+        background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+    .prm-prod-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .prm-prod-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #ffffff;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .prm-prod-pct { font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .prm-prod-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    .prm-prod-metric {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        padding: 6px 8px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 8px;
+    }
+    .prm-prod-label {
+        font-size: 8.5px;
+        font-weight: 700;
+        color: #8a8a8a;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .prm-prod-value {
+        font-size: 12px;
+        font-weight: 800;
+        color: #ffffff;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
     /* ---------- Informe individual (productos) ---------- */
     .inf-promotor-hero { padding: 10px 12px; margin-bottom: 8px; }
