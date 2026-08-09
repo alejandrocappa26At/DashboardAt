@@ -84,10 +84,18 @@
 
             var nombrePdv = String(pdv || '').replace(/^RED AT\s+/i, '');
             var gS = alcSema(d.cumplimiento);
+            var estado = gS.cls === 'green' ? 'CUMPLE' : gS.cls === 'yellow' ? 'EN RIESGO' : 'CR\u00cdTICO';
             rows += '<tr class="pdv-mob-group"><th colspan="4">' +
+                '<div class="pdv-mob-group-top">' +
                 '<span class="pdv-mob-group-dot">' + gS.dot + '</span>' +
                 '<span class="pdv-mob-group-name">' + mobEsc(nombrePdv) + '</span>' +
-                '<span class="pdv-mob-group-pct ' + gS.cls + '">' + fmtP(d.cumplimiento) + '</span>' +
+                '</div>' +
+                '<div class="pdv-mob-group-meta">' +
+                '<span class="pdv-mob-meta-row"><span class="pdv-mob-meta-label">\ud83d\udcca Cumplimiento</span>' +
+                '<span class="pdv-mob-meta-val ' + gS.cls + '">' + fmtP(d.cumplimiento) + '</span></span>' +
+                '<span class="pdv-mob-meta-row"><span class="pdv-mob-meta-label">Estado</span>' +
+                '<span class="pdv-mob-meta-state ' + gS.cls + '">' + estado + '</span></span>' +
+                '</div>' +
                 '</th></tr>';
 
             for (var pr = 0; pr < productos.length; pr++) {
