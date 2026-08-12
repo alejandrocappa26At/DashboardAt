@@ -135,8 +135,6 @@ const DataStore = {
                         producto: normalizarProducto(v.producto),
                         fecha: new Date(v.fecha)
                     }));
-                } else {
-                    this.ventas = [];
                 }
                 if (data.cuotas && data.cuotas.length > 0) {
                     this.cuotas = data.cuotas.map(c => ({
@@ -145,8 +143,6 @@ const DataStore = {
                         mes: c.mes || MES,
                         anio: c.anio || ANIO
                     }));
-                } else {
-                    this.cuotas = [];
                 }
                 if (data.promotores && data.promotores.length > 0) {
                     const pdvMap = new Map();
@@ -770,94 +766,6 @@ const DataStore = {
 
         console.log('[AUDITORIA][TIENDAS] Renombrado propagado a todo el sistema:', oldName, '->', newName);
         return true;
-    },
-
-
-
-    _iniciarFirestore() {
-        db.collection('dashboard').doc('datos').get().then(snap => {
-            if (snap.exists) {
-                const data = snap.data();
-
-                if (!data.ventas || data.ventas.length === 0) {
-                    this.ventas = [];
-                    this.cuotas = [];
-                    this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
-                    if (typeof recargarDashboard === 'function') recargarDashboard();
-                    return;
-                }
-
-                const hoy = new Date();
-                const diaHoy = hoy.getDate();
-
-                this.ventas = data.ventas.map(v => ({
-                    ...v,
-                    producto: normalizarProducto(v.producto),
-                    fecha: new Date(v.fecha)
-                }));
-
-                let cuotasCargadas = (data.cuotas || []).map(c => ({
-                    ...c,
-                    producto: normalizarProducto(c.producto),
-                    mes: c.mes || MES,
-                    anio: c.anio || ANIO
-                }));
-                this.cuotas = cuotasCargadas;
-                this.promotores = data.promotores;
-                this.diaActual = Math.min(diaHoy, DIAS_MES);
-
-                if (typeof recargarDashboard === 'function') recargarDashboard();
-            } else {
-                this._guardarEnFirestore();
-            }
-        });
-
-        db.collection('dashboard').doc('datos')
-            .onSnapshot(snap => {
-                if (!snap.exists) return;
-                const data = snap.data();
-
-                if (!data.ventas || data.ventas.length === 0) {
-                    this.ventas = [];
-                    this.cuotas = [];
-                    this.diaActual = Math.min(new Date().getDate(), DIAS_MES);
-                    if (typeof recargarDashboard === 'function') recargarDashboard();
-                    return;
-                }
-
-                const hoy = new Date();
-                const hoyDia = hoy.getDate();
-
-                this.ventas = data.ventas.map(v => ({
-                    ...v,
-                    producto: normalizarProducto(v.producto),
-                    fecha: new Date(v.fecha)
-                }));
-
-                let cuotasCargadas = (data.cuotas || []).map(c => ({
-                    ...c,
-                    producto: normalizarProducto(c.producto),
-                    mes: c.mes || MES,
-                    anio: c.anio || ANIO
-                }));
-                this.cuotas = cuotasCargadas;
-                this.promotores = data.promotores;
-                this.diaActual = Math.min(hoyDia, DIAS_MES);
-
-                if (typeof recargarDashboard === 'function') recargarDashboard();
-            });
-    },
-
-    _guardarEnFirestore() {
-        db.collection('dashboard').doc('datos').set({
-            ventas: this.ventas.map(v => ({
-                ...v,
-                fecha: v.fecha.toISOString()
-            })),
-            cuotas: this.cuotas,
-            promotores: this.promotores,
-            diaActual: this.diaActual
-        });
     }
 
 

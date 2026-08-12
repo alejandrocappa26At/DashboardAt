@@ -66,11 +66,11 @@
         gap: 6px;
         font-size: 8px;
         font-weight: 600;
-        color: #9a9a9a;
+        color: var(--t-dim);
         letter-spacing: 0.2px;
     }
     .ctl-kpi-line b {
-        color: #ffffff;
+        color: var(--t-text);
         font-size: 9px;
         font-weight: 800;
         font-variant-numeric: tabular-nums;
@@ -197,7 +197,7 @@
         padding: 10px;
     }
     .ctl-mob-pdv {
-        background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+        background: linear-gradient(180deg, var(--t-w035), rgba(255,255,255,0.01));
         border: 1px solid rgba(255,255,255,0.07);
         border-radius: 12px;
         padding: 10px 12px;
@@ -216,7 +216,7 @@
         min-width: 0;
         font-size: 13px;
         font-weight: 700;
-        color: #ffffff;
+        color: var(--t-text);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -252,14 +252,14 @@
         gap: 2px;
         min-width: 0;
         padding: 6px 8px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.05);
+        background: var(--t-w03);
+        border: 1px solid var(--t-w05);
         border-radius: 8px;
     }
     .ctl-mob-pdv-label {
         font-size: 8.5px;
         font-weight: 700;
-        color: #8a8a8a;
+        color: var(--t-dim2);
         text-transform: uppercase;
         letter-spacing: 0.3px;
         white-space: nowrap;
@@ -269,7 +269,7 @@
     .ctl-mob-pdv-value {
         font-size: 12.5px;
         font-weight: 800;
-        color: #ffffff;
+        color: var(--t-text);
         font-variant-numeric: tabular-nums;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -302,7 +302,7 @@
     .ctl-mob-promo-value {
         font-size: 13.5px;
         font-weight: 800;
-        color: #ffffff;
+        color: var(--t-text);
     }
     .ve-layout { gap: 10px; }
     .ve-side { gap: 10px; }
@@ -337,10 +337,10 @@
         width: 100%;
         padding: 8px 12px;
         margin-bottom: 8px;
-        background: #181818;
+        background: var(--t-bg3);
         border: 1px solid rgba(255, 255, 255, 0.07);
         border-radius: 10px;
-        color: #e6e6e6;
+        color: var(--t-soft2);
         font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.3px;
@@ -371,17 +371,17 @@
     }
     .pdv-mob-table thead th {
         padding: 7px 5px;
-        background: #121212;
+        background: var(--t-bgP);
         text-align: center;
         font-size: 8.5px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: #b9b9b9;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--t-textSec);
+        border-bottom: 1px solid var(--t-w10);
     }
     .pdv-mob-table thead th.pdv-mob-th-prod { text-align: left; }
-    .pdv-mob-table thead th:not(:last-child) { border-right: 1px solid rgba(255, 255, 255, 0.06); }
+    .pdv-mob-table thead th:not(:last-child) { border-right: 1px solid var(--t-w06); }
     .pdv-mob-table thead th:nth-child(1) { width: 32%; }
     .pdv-mob-table thead th:nth-child(2) { width: 25%; }
     .pdv-mob-table thead th:nth-child(3) { width: 22%; }
@@ -411,13 +411,13 @@
         display: flex;
         align-items: flex-start;
         gap: 7px;
-        color: #ffffff;
+        color: var(--t-text);
     }
     .pdv-mob-group-dot { font-size: 12px; flex-shrink: 0; line-height: 1.3; }
     .pdv-mob-group-name {
         flex: 1;
         min-width: 0;
-        color: #ffffff;
+        color: var(--t-text);
         font-size: 12.5px;
         font-weight: 800;
         letter-spacing: 0.2px;
@@ -430,7 +430,7 @@
         gap: 5px 18px;
         margin-top: 7px;
         padding-top: 7px;
-        border-top: 1px dashed rgba(255, 255, 255, 0.09);
+        border-top: 1px dashed var(--t-w09);
     }
     .pdv-mob-meta-row {
         display: inline-flex;
@@ -439,7 +439,7 @@
         font-size: 10px;
     }
     .pdv-mob-meta-label {
-        color: #9a9a9a;
+        color: var(--t-dim);
         text-transform: uppercase;
         letter-spacing: 0.3px;
         font-weight: 700;
@@ -462,14 +462,14 @@
 
     .pdv-mob-prod {
         text-align: left;
-        color: #d4d4d4;
+        color: var(--t-soft);
         font-weight: 600;
         line-height: 1.3;
         overflow-wrap: anywhere;
     }
     .pdv-mob-num {
         text-align: center;
-        color: #eaeaea;
+        color: var(--t-soft4);
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
@@ -492,12 +492,12 @@
         margin-right: 6px;
         text-transform: uppercase;
         letter-spacing: 0.3px;
-        color: #9a9a9a;
+        color: var(--t-dim);
     }
     .pdv-mob-info-value {
         font-weight: 800;
         font-variant-numeric: tabular-nums;
-        color: #eaeaea;
+        color: var(--t-soft4);
     }
     .pdv-mob-info-value.ok { color: #1DB954; }
 
@@ -511,7 +511,7 @@
         display: block;
         height: 4px;
         margin-top: 4px;
-        background: rgba(255, 255, 255, 0.08);
+        background: var(--t-w08);
         border-radius: 999px;
         overflow: hidden;
         max-width: 76px;
@@ -529,8 +529,8 @@
 
     /* ---------- INFORME POR PROMOTOR: acordeón ---------- */
     .prm-acc {
-        background: #181818;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--t-bg3);
+        border: 1px solid var(--t-w06);
         border-radius: 10px;
         margin-bottom: 8px;
         overflow: hidden;
@@ -545,9 +545,9 @@
         position: relative;
     }
     .prm-acc summary::-webkit-details-marker { display: none; }
-    .prm-name { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prm-name { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--t-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .prm-cump { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .prm-venta { font-size: 10.5px; color: #8a8a8a; white-space: nowrap; }
+    .prm-venta { font-size: 10.5px; color: var(--t-dim2); white-space: nowrap; }
     .prm-acc summary::after {
         content: "";
         width: 7px; height: 7px;
@@ -563,11 +563,11 @@
         grid-template-rows: 0fr;
         transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         overflow: hidden;
-        border-top: 1px dashed rgba(255,255,255,0.08);
+        border-top: 1px dashed var(--t-w08);
     }
     .prm-acc[open] .prm-detail { grid-template-rows: 1fr; }
     .prm-detail-inner { min-height: 0; overflow: hidden; padding: 10px 12px 12px; }
-    .prm-loading { font-size: 11px; color: #727272; padding: 6px 0; text-align: center; }
+    .prm-loading { font-size: 11px; color: var(--t-textSub); padding: 6px 0; text-align: center; }
 
     /* Resumen del promotor */
     .prm-summary {
@@ -582,14 +582,14 @@
         gap: 2px;
         min-width: 0;
         padding: 8px 10px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.05);
+        background: var(--t-w03);
+        border: 1px solid var(--t-w05);
         border-radius: 8px;
     }
     .prm-summary-label {
         font-size: 9px;
         font-weight: 700;
-        color: #8a8a8a;
+        color: var(--t-dim2);
         text-transform: uppercase;
         letter-spacing: 0.3px;
         white-space: nowrap;
@@ -599,7 +599,7 @@
     .prm-summary-value {
         font-size: 13px;
         font-weight: 800;
-        color: #ffffff;
+        color: var(--t-text);
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
         overflow: hidden;
@@ -609,7 +609,7 @@
     /* Detalle por producto */
     .prm-prod-list { display: flex; flex-direction: column; gap: 8px; }
     .prm-prod {
-        background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+        background: linear-gradient(180deg, var(--t-w035), rgba(255,255,255,0.01));
         border: 1px solid rgba(255,255,255,0.07);
         border-radius: 10px;
         padding: 10px 12px;
@@ -624,7 +624,7 @@
     .prm-prod-name {
         font-size: 12.5px;
         font-weight: 700;
-        color: #ffffff;
+        color: var(--t-text);
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -642,14 +642,14 @@
         gap: 2px;
         min-width: 0;
         padding: 6px 8px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.05);
+        background: var(--t-w03);
+        border: 1px solid var(--t-w05);
         border-radius: 8px;
     }
     .prm-prod-label {
         font-size: 8.5px;
         font-weight: 700;
-        color: #8a8a8a;
+        color: var(--t-dim2);
         text-transform: uppercase;
         letter-spacing: 0.3px;
         white-space: nowrap;
@@ -659,7 +659,7 @@
     .prm-prod-value {
         font-size: 12px;
         font-weight: 800;
-        color: #ffffff;
+        color: var(--t-text);
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
         overflow: hidden;

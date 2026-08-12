@@ -584,8 +584,10 @@ const HorariosDataStore = {
             );
             if (matchDirecto) { p.zona_principal_id = matchDirecto.id; continue; }
 
-            console.warn('[AUDITORIA] Punto de venta eliminado. Promotor sin tienda asignada:', p.nombre, '| zona previa:', p.zona_principal_id, '| Reasignar manualmente.');
-            p.zona_principal_id = null;
+            // AUDITORÍA: nunca anular la tienda asignada si la sincronización
+            // aún no ha confirmado el listado real de tiendas (carrera de carga
+            // de TiendasStore/Firestore). La asignación se conserva intacta.
+            console.warn('[AUDITORIA] No se encontró la tienda del promotor en la lista actual. Se CONSERVA la asignación sin modificarla:', p.nombre, '| zona previa:', p.zona_principal_id);
         }
 
         for (let key in this.semanas) {

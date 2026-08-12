@@ -1,0 +1,757 @@
+/* ============================================================
+   SISTEMA DE TEMAS — Claro / Oscuro
+   ============================================================
+   - :root  → valores OSCUROS (idénticos a los literales originales)
+   - html[data-theme="light"] → sobreescrituras del tema claro
+   El tema se activa con document.documentElement.dataset.theme
+   (ver js/theme.js). Cargar SIEMPRE después de los demás CSS.
+   ============================================================ */
+
+:root,
+:root[data-theme="dark"] {
+    /* Texto */
+    --t-text: #ffffff;
+    --t-textSec: #b3b3b3;
+    --t-textSub: #727272;
+    --t-dim: #9a9a9a;
+    --t-dim2: #8a8a8a;
+    --t-dim3: #a1a1aa;
+    --t-dim4: #52525b;
+    --t-dim5: #555;
+    --t-soft: #d4d4d4;
+    --t-soft2: #e6e6e6;
+    --t-soft3: #e4e4e7;
+    --t-soft4: #eaeaea;
+
+    /* Superficies */
+    --t-bgP: #121212;
+    --t-bgE: #1a1a1a;
+    --t-bgH: #282828;
+    --t-bg2: #0f0f0f;
+    --t-bg3: #181818;
+    --t-bg4: #18181b;
+    --t-bgS: #191414;
+    --t-bgT: #0d0d0d;
+    --t-bgX: #141414;
+    --t-bgY: #151518;
+    --t-bgM: #171314;
+    --t-bgG: #0c3a2e;
+    --t-txG: #34d399;
+
+    /* Bordes */
+    --t-bd: #2a2a2a;
+    --t-bdL: #333333;
+
+    /* Translúcidos blancos (bordes / fondos sutiles / sombras internas) */
+    --t-w02: rgba(255,255,255,0.02);
+    --t-w025: rgba(255,255,255,0.025);
+    --t-w03: rgba(255,255,255,0.03);
+    --t-w035: rgba(255,255,255,0.035);
+    --t-w04: rgba(255,255,255,0.04);
+    --t-w05: rgba(255,255,255,0.05);
+    --t-w06: rgba(255,255,255,0.06);
+    --t-w08: rgba(255,255,255,0.08);
+    --t-w09: rgba(255,255,255,0.09);
+    --t-w10: rgba(255,255,255,0.10);
+    --t-w12: rgba(255,255,255,0.12);
+    --t-w15: rgba(255,255,255,0.15);
+    --t-w16: rgba(255,255,255,0.16);
+    --t-w2: rgba(255,255,255,0.2);
+    --t-w25: rgba(255,255,255,0.25);
+    --t-w55: rgba(255,255,255,0.55);
+
+    /* Gráficos (Chart.js) */
+    --chart-grid: rgba(255,255,255,0.04);
+    --chart-grid2: rgba(255,255,255,0.05);
+    --chart-grid3: rgba(255,255,255,0.03);
+    --chart-tick: #727272;
+    --chart-tick2: #b3b3b3;
+    --chart-tooltip: rgba(15,15,18,0.95);
+    --chart-tooltip2: rgba(20,20,20,0.95);
+    --chart-tooltip-border: #333333;
+}
+
+/* ================= TEMA CLARO ================= */
+html[data-theme="light"] {
+    /* Texto */
+    --t-text: #111827;
+    --t-textSec: #374151;
+    --t-textSub: #6B7280;
+    --t-dim: #4B5563;
+    --t-dim2: #6B7280;
+    --t-dim3: #374151;
+    --t-dim4: #6B7280;
+    --t-dim5: #667085;
+    --t-soft: #111827;
+    --t-soft2: #1F2937;
+    --t-soft3: #334155;
+    --t-soft4: #111827;
+
+    /* Superficies */
+    --t-bgP: #F5F7FA;
+    --t-bgE: #FFFFFF;
+    --t-bgH: #EEF2F7;
+    --t-bg2: #FFFFFF;
+    --t-bg3: #FFFFFF;
+    --t-bg4: #EEF2F7;
+    --t-bgS: #F8FAFC;
+    --t-bgT: #FFFFFF;
+    --t-bgX: #EEF2F7;
+    --t-bgY: #F8FAFC;
+    --t-bgM: #FFFFFF;
+    --t-bgG: #E6F4EB;
+    --t-txG: #059669;
+
+    /* Bordes */
+    --t-bd: #D8DEE8;
+    --t-bdL: #E2E8F0;
+
+    /* Translúcidos (negro sutil sobre superficie clara) */
+    --t-w02: rgba(15,23,42,0.03);
+    --t-w025: rgba(15,23,42,0.035);
+    --t-w03: rgba(15,23,42,0.05);
+    --t-w035: rgba(15,23,42,0.055);
+    --t-w04: rgba(15,23,42,0.06);
+    --t-w05: rgba(15,23,42,0.07);
+    --t-w06: rgba(15,23,42,0.08);
+    --t-w08: rgba(15,23,42,0.10);
+    --t-w09: rgba(15,23,42,0.12);
+    --t-w10: rgba(15,23,42,0.14);
+    --t-w12: rgba(15,23,42,0.16);
+    --t-w15: rgba(15,23,42,0.20);
+    --t-w16: rgba(15,23,42,0.22);
+    --t-w2: rgba(15,23,42,0.26);
+    --t-w25: rgba(15,23,42,0.32);
+    --t-w55: rgba(15,23,42,0.62);
+
+    /* Gráficos */
+    --chart-grid: rgba(15,23,42,0.10);
+    --chart-grid2: rgba(15,23,42,0.11);
+    --chart-grid3: rgba(15,23,42,0.07);
+    --chart-tick: #4B5563;
+    --chart-tick2: #374151;
+    --chart-tooltip: rgba(255,255,255,0.98);
+    --chart-tooltip2: rgba(255,255,255,0.98);
+    --chart-tooltip-border: rgba(15,23,42,0.15);
+
+    /* Variables heredadas de styles.css / horarios.css que se mantienen literales */
+    --bg-card: #ffffff;
+    --bg-sidebar: #EEF1F6;
+    --danger-bg: #FDE3E3;
+    --warning-bg: #FEF3C7;
+    --success-bg: #DCF5E4;
+    --cell-turno: #E4F5EA;
+    --cell-descanso: #FDE3E3;
+    --cell-flotante: #F1E8FB;
+    --cell-cobertura: #E3F1FB;
+    --header-domingo: #FDE3E3;
+
+    /* Acento "glow" más suave sobre claro */
+    --accent-glow: rgba(16,185,129,0.20);
+}
+
+/* ============================================================
+   PANTALLA DE ACCESO — adaptación al tema claro
+   ============================================================ */
+html[data-theme="light"] .login-screen-luxury {
+    background:
+        radial-gradient(1100px 720px at 12% 8%, rgba(29,185,84,0.12), transparent 55%),
+        radial-gradient(900px 700px at 92% 92%, rgba(99,102,241,0.10), transparent 55%),
+        radial-gradient(700px 500px at 82% 12%, rgba(236,72,153,0.06), transparent 55%),
+        linear-gradient(180deg, #f7faf7 0%, #eef4ee 100%);
+}
+
+html[data-theme="light"] .login-ambient-grid {
+    background-image:
+        linear-gradient(rgba(15,23,42,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,0.05) 1px, transparent 1px);
+}
+
+html[data-theme="light"] .login-bg-vignette {
+    background: radial-gradient(circle at 50% 40%, transparent 55%, rgba(15,23,42,0.10) 100%);
+}
+
+html[data-theme="light"] .login-glow-orb-1,
+html[data-theme="light"] .login-glow-orb-2,
+html[data-theme="light"] .login-glow-orb-3 {
+    opacity: 0.5;
+}
+
+html[data-theme="light"] .login-card-luxury {
+    background: linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.86) 100%);
+    border: 1px solid rgba(15,23,42,0.08);
+    box-shadow:
+        0 0 0 1px rgba(29,185,84,0.18) inset,
+        inset 0 1px 0 rgba(255,255,255,0.9),
+        0 30px 80px rgba(15,23,42,0.16),
+        0 0 90px rgba(29,185,84,0.10);
+}
+
+html[data-theme="light"] .login-card-luxury::before {
+    background: linear-gradient(135deg, rgba(29,185,84,0.60), rgba(15,23,42,0.06), rgba(99,102,241,0.50));
+}
+
+html[data-theme="light"] .login-card-luxury::after {
+    background: linear-gradient(90deg, transparent, rgba(29,185,84,0.50), rgba(99,102,241,0.50), transparent);
+    opacity: 0.5;
+}
+
+/* ============================================================
+   COMPONENTES — adaptación al tema claro (premium corporativo)
+   Fondo #F5F7FA · Tarjetas blancas · Tablas Excel ejecutivo
+   Filtros con borde/hover/focus verde · Estados intensos
+   ============================================================ */
+
+/* ---------- Tarjetas KPI y contenedores ---------- */
+html[data-theme="light"] .card,
+html[data-theme="light"] .kpi-card,
+html[data-theme="light"] .resumen-kpi-card,
+html[data-theme="light"] .resumen-chart-card,
+html[data-theme="light"] .ranking-chart-card,
+html[data-theme="light"] .rpdv-card,
+html[data-theme="light"] .ctl-kpi,
+html[data-theme="light"] .ctl-panel,
+html[data-theme="light"] .ctl-card,
+html[data-theme="light"] .ctl-progress-compact,
+html[data-theme="light"] .pdv-stat-card,
+html[data-theme="light"] .pdv-card,
+html[data-theme="light"] .horarios-week-selector {
+    background: #FFFFFF;
+    border: 1px solid #D9DEE7;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 4px 16px rgba(15,23,42,0.05);
+}
+
+html[data-theme="light"] .kpi-card:hover,
+html[data-theme="light"] .resumen-kpi-card:hover {
+    border-color: #C3CBD8;
+    box-shadow: 0 6px 24px rgba(15,23,42,0.10);
+    transform: translateY(-2px);
+}
+
+html[data-theme="light"] .card:hover,
+html[data-theme="light"] .rpdv-card:hover {
+    border-color: #C3CBD8;
+    box-shadow: 0 8px 28px rgba(15,23,42,0.10);
+}
+
+html[data-theme="light"] .pdv-card:hover {
+    box-shadow: 0 6px 24px rgba(15,23,42,0.10);
+    transform: translateY(-2px);
+}
+
+html[data-theme="light"] .pdv-card.card-green { border-color: #BFE6CE; }
+html[data-theme="light"] .pdv-card.card-yellow { border-color: #F0DEAA; }
+html[data-theme="light"] .pdv-card.card-red { border-color: #F5C7C7; }
+
+html[data-theme="light"] .prod-luxury-card {
+    background: linear-gradient(160deg, #FFFFFF, #F8FAFC);
+    border: 1px solid #D9DEE7;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.05), 0 6px 24px rgba(15,23,42,0.06);
+}
+
+html[data-theme="light"] .inf-ind-card {
+    background: linear-gradient(160deg, #FFFFFF, #F8FAFC);
+    border: 1px solid #D9DEE7;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+}
+
+html[data-theme="light"] .inf-promotor-table-container {
+    background: #FFFFFF;
+    border: 1px solid #D9DEE7;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+}
+
+/* ---------- Tablas estilo Excel ejecutivo ---------- */
+html[data-theme="light"] table thead th,
+html[data-theme="light"] table thead td {
+    background: #EEF2F7;
+    color: #1F2937;
+    font-weight: 700;
+    border-bottom: 1px solid #DDE3EC !important;
+}
+
+html[data-theme="light"] table thead {
+    background: #EEF2F7;
+    color: #1F2937;
+}
+
+html[data-theme="light"] table tbody td {
+    border-bottom: 1px solid #D8DEE8;
+    color: #374151;
+}
+
+html[data-theme="light"] .table-responsive tbody tr:nth-child(even) td,
+html[data-theme="light"] .cuotas-tabla tbody tr:nth-child(even) td,
+html[data-theme="light"] .ctl-table tbody tr:nth-child(even) td {
+    background: #F8FAFC;
+}
+
+html[data-theme="light"] .table-responsive tbody tr:nth-child(odd) td,
+html[data-theme="light"] .cuotas-tabla tbody tr:nth-child(odd) td,
+html[data-theme="light"] .ctl-table tbody tr:nth-child(odd) td {
+    background: #FFFFFF;
+}
+
+html[data-theme="light"] .table-responsive tbody tr:hover td,
+html[data-theme="light"] .cuotas-tabla tbody tr:hover td,
+html[data-theme="light"] .ctl-table tbody tr:hover td {
+    background: #EAF2EB;
+}
+
+html[data-theme="light"] .inf-promotor-table tbody td {
+    color: #374151;
+    border-bottom: 1px solid #D8DEE8;
+}
+
+html[data-theme="light"] .inf-promotor-table tbody tr:nth-child(even) td { background: #F8FAFC; }
+html[data-theme="light"] .inf-promotor-table tbody tr:nth-child(odd) td { background: #FFFFFF; }
+html[data-theme="light"] .inf-promotor-table tbody tr:hover td { background: #EAF2EB; }
+
+html[data-theme="light"] .calendario-tabla thead th {
+    background: #EEF2F7;
+    color: #1F2937;
+    border-bottom: 1px solid #D8DEE8;
+}
+
+html[data-theme="light"] .calendario-tabla th,
+html[data-theme="light"] .calendario-tabla td {
+    border-left: 1px solid #E4E9F0;
+    border-bottom: 1px solid #E4E9F0;
+}
+
+html[data-theme="light"] .calendario-tabla tbody td {
+    background: #FFFFFF;
+}
+
+html[data-theme="light"] .calendario-tabla tbody tr:nth-child(even) td { background: #F8FAFC; }
+html[data-theme="light"] .calendario-tabla tbody tr:hover td { background: #EAF2EB; }
+
+html[data-theme="light"] .calendario-tabla tbody td:first-child {
+    background: #F8FAFC !important;
+    color: #111827;
+}
+
+html[data-theme="light"] .calendario-input { color: #374151; }
+html[data-theme="light"] .calendario-input.calendario-input-filled { color: #111827; }
+html[data-theme="light"] .calendario-input[readonly] { color: #9CA3AF; }
+html[data-theme="light"] .calendario-input::-webkit-calendar-picker-indicator { filter: invert(0.4); }
+
+/* Columnas / filas verdes (totales calendario y horarios) */
+html[data-theme="light"] .calendario-tabla thead th:last-child {
+    background: #E6F4EB !important;
+    color: #047857 !important;
+    border-left: 1px solid #BFE6CE;
+}
+
+html[data-theme="light"] .calendario-th-hoy {
+    background: #D1F2E1 !important;
+    color: #047857 !important;
+    box-shadow: inset 0 -2px 0 #059669;
+}
+
+html[data-theme="light"] .calendario-tabla tbody td.calendario-total {
+    background: #E6F4EB;
+    color: #047857;
+    border-left: 1px solid #BFE6CE;
+}
+
+html[data-theme="light"] .calendario-tabla tbody td.calendario-total:hover { background: #CDEDD9; }
+
+html[data-theme="light"] .horarios-th-total,
+html[data-theme="light"] .horarios-td-total {
+    background: #E6F4EB;
+    color: #047857;
+}
+
+/* ---------- Filtros y selectores ---------- */
+html[data-theme="light"] .pdv-selector-wrapper,
+html[data-theme="light"] .ventas-filter-group,
+html[data-theme="light"] .ventas-dia-select,
+html[data-theme="light"] .rpdv-filters select,
+html[data-theme="light"] .rpdv-search input,
+html[data-theme="light"] .inf-promotor-filter-group,
+html[data-theme="light"] .date-filter-field,
+html[data-theme="light"] .promo-filter-group select,
+html[data-theme="light"] .promo-filter-group input[type="date"],
+html[data-theme="light"] .tipo-info-select select,
+html[data-theme="light"] .hcf-select,
+html[data-theme="light"] .promotor-select-tipo,
+html[data-theme="light"] .promotor-select-zona,
+html[data-theme="light"] .promotor-input-name,
+html[data-theme="light"] .cuotas-selector-mes select {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #374151;
+}
+
+html[data-theme="light"] .rpdv-search input::placeholder { color: #9AA3B2; }
+html[data-theme="light"] .promo-filter-group input[type="date"],
+html[data-theme="light"] .date-filter-field input[type="date"] { color: #111827; }
+html[data-theme="light"] .date-filter-field input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.35); }
+html[data-theme="light"] .date-filter-field label { color: #6B7280; }
+
+html[data-theme="light"] .pdv-selector-wrapper:hover,
+html[data-theme="light"] .ventas-filter-group:hover,
+html[data-theme="light"] .ventas-dia-select:hover,
+html[data-theme="light"] .rpdv-filters select:hover,
+html[data-theme="light"] .inf-promotor-filter-group:hover,
+html[data-theme="light"] .date-filter-field:hover,
+html[data-theme="light"] .cuotas-selector-mes select:hover {
+    border-color: #10B981;
+}
+
+html[data-theme="light"] .pdv-selector-wrapper:focus-within,
+html[data-theme="light"] .ventas-filter-group:focus-within,
+html[data-theme="light"] .ventas-dia-select:focus-within,
+html[data-theme="light"] .inf-promotor-filter-group:focus-within,
+html[data-theme="light"] .date-filter-field:focus-within,
+html[data-theme="light"] .rpdv-filters select:focus,
+html[data-theme="light"] .rpdv-search input:focus,
+html[data-theme="light"] .promo-filter-group select:focus,
+html[data-theme="light"] .tipo-info-select select:focus,
+html[data-theme="light"] .hcf-select:focus,
+html[data-theme="light"] .promotor-select-tipo:focus,
+html[data-theme="light"] .promotor-select-zona:focus,
+html[data-theme="light"] .promotor-input-name:focus,
+html[data-theme="light"] .cuotas-selector-mes select:focus {
+    border-color: #059669 !important;
+    box-shadow: 0 0 0 4px rgba(5,150,105,0.12);
+}
+
+html[data-theme="light"] .date-btn-quick {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #374151;
+}
+
+html[data-theme="light"] .date-btn-quick:hover {
+    background: #10B981;
+    border-color: #10B981;
+    color: #FFFFFF;
+}
+
+html[data-theme="light"] .date-btn-quick.active {
+    background: linear-gradient(135deg, #10B981, #059669);
+    border-color: #059669;
+    color: #FFFFFF;
+    text-shadow: none;
+}
+
+html[data-theme="light"] .date-btn-limpiar {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #4B5563;
+}
+
+html[data-theme="light"] .date-btn-limpiar:hover {
+    background: #F1F5F9;
+    color: #111827;
+    border-color: #10B981;
+}
+
+html[data-theme="light"] .date-filters {
+    background: linear-gradient(160deg, rgba(16,185,129,0.10), #FFFFFF 40%, #FFFFFF 72%, rgba(16,185,129,0.08));
+    border: 1px solid #D1E7DD;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.05), 0 10px 30px rgba(15,23,42,0.08);
+}
+
+html[data-theme="light"] .inf-promotor-filters {
+    background: #FFFFFF;
+    border: 1px solid #D8DEE8;
+}
+
+/* ---------- Toggles segmentados y pestañas ---------- */
+html[data-theme="light"] .ventas-view-toggle,
+html[data-theme="light"] .promo-mode-toggle,
+html[data-theme="light"] .inf-promotor-tabs {
+    background: #EEF2F7;
+    border: 1px solid #D8DEE8;
+}
+
+html[data-theme="light"] .ventas-toggle-btn,
+html[data-theme="light"] .promo-mode-toggle button,
+html[data-theme="light"] .inf-promotor-tabs button { color: #6B7280; }
+
+html[data-theme="light"] .ventas-toggle-btn:hover,
+html[data-theme="light"] .promo-mode-toggle button:hover,
+html[data-theme="light"] .inf-promotor-tabs button:hover { color: #111827; }
+
+html[data-theme="light"] .ventas-toggle-btn.active,
+html[data-theme="light"] .promo-mode-toggle button.active,
+html[data-theme="light"] .inf-promotor-tabs button.active {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.35);
+}
+
+/* ---------- Sidebar ---------- */
+html[data-theme="light"] .sidebar {
+    background: #EEF1F6;
+    border-right: 1px solid #D8DEE8;
+    box-shadow: 4px 0 30px rgba(15,23,42,0.06);
+}
+
+html[data-theme="light"] .sidebar-header {
+    border-bottom: 1px solid #DCE2EC;
+}
+
+html[data-theme="light"] .sidebar-brand-text h1 {
+    text-shadow: none;
+    color: #111827;
+}
+
+html[data-theme="light"] .sidebar-avatar-dot {
+    border-color: #EEF1F6;
+}
+
+html[data-theme="light"] .nav-item:hover::after { background: rgba(15,23,42,0.07); }
+html[data-theme="light"] .nav-item:hover .nav-icon { color: #10B981; }
+
+html[data-theme="light"] .nav-item.active {
+    color: #047857;
+    background: linear-gradient(90deg, rgba(16,185,129,0.16) 0%, rgba(16,185,129,0.02) 100%);
+}
+
+html[data-theme="light"] .nav-item.active .nav-icon { color: #059669; }
+
+html[data-theme="light"] .nav-item .nav-icon { color: #64748B; }
+
+html[data-theme="light"] .nav-section-divider { color: #6B7280; }
+
+html[data-theme="light"] .nav-section-divider::before,
+html[data-theme="light"] .nav-section-divider::after { background: #CBD5E1; }
+
+html[data-theme="light"] .btn-sidebar-secondary {
+    border: 1px solid #CBD5E1;
+    color: #374151;
+}
+
+html[data-theme="light"] .btn-sidebar-secondary:hover {
+    border-color: #059669;
+    color: #047857;
+    background: rgba(16,185,129,0.08);
+}
+
+html[data-theme="light"] .top-bar-badge {
+    background: #FFFFFF;
+    border: 1px solid #D8DEE8;
+    color: #374151;
+}
+
+/* ---------- Estados / semáforos / badges intensos ---------- */
+html[data-theme="light"] .ctl-semaforo { border: 1px solid transparent; }
+
+html[data-theme="light"] .ctl-semaforo.cumple {
+    background: #D2F5DE;
+    color: #047857;
+    border-color: #AEE7C6;
+}
+
+html[data-theme="light"] .ctl-semaforo.riesgo {
+    background: #FEF3C7;
+    color: #B45309;
+    border-color: #F5DE8F;
+}
+
+html[data-theme="light"] .ctl-semaforo.critico {
+    background: #FDE3E3;
+    color: #B91C1C;
+    border-color: #F6B7B7;
+}
+
+html[data-theme="light"] .ctl-dot.cumple { background: #059669; box-shadow: none; }
+html[data-theme="light"] .ctl-dot.riesgo { background: #D97706; box-shadow: none; }
+html[data-theme="light"] .ctl-dot.critico { background: #DC2626; box-shadow: none; }
+
+html[data-theme="light"] .pdv-pct-badge.green,
+html[data-theme="light"] .resumen-progress-badge.green,
+html[data-theme="light"] .rpdv-card-badge.green,
+html[data-theme="light"] .inf-promotor-badge.cumple,
+html[data-theme="light"] .inf-promotor-badge-excelente,
+html[data-theme="light"] .promo-estado-badge.activa,
+html[data-theme="light"] .tienda-estado-badge.activa,
+html[data-theme="light"] .badge-green,
+html[data-theme="light"] .badge-success {
+    background: #DCF5E4;
+    color: #047857;
+    border: 1px solid #AEE7C6;
+}
+
+html[data-theme="light"] .pdv-pct-badge.yellow,
+html[data-theme="light"] .resumen-progress-badge.yellow,
+html[data-theme="light"] .rpdv-card-badge.yellow,
+html[data-theme="light"] .inf-promotor-badge.alerta,
+html[data-theme="light"] .inf-promotor-badge-normal,
+html[data-theme="light"] .badge-yellow,
+html[data-theme="light"] .badge-warning {
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #F5DE8F;
+}
+
+html[data-theme="light"] .pdv-pct-badge.red,
+html[data-theme="light"] .resumen-progress-badge.red,
+html[data-theme="light"] .rpdv-card-badge.red,
+html[data-theme="light"] .inf-promotor-badge.riesgo,
+html[data-theme="light"] .inf-promotor-badge-bajo,
+html[data-theme="light"] .inf-promotor-badge-oportunidad,
+html[data-theme="light"] .badge-red,
+html[data-theme="light"] .badge-danger {
+    background: #FDE3E3;
+    color: #B91C1C;
+    border: 1px solid #F6B7B7;
+}
+
+html[data-theme="light"] .promo-estado-badge.inactiva,
+html[data-theme="light"] .tienda-estado-badge.inactiva {
+    background: #EEF2F7;
+    color: #475569;
+    border: 1px solid #D8DEE8;
+}
+
+/* Producto lujo */
+html[data-theme="light"] .prod-luxury-badge {
+    background: #DCF5E4;
+    color: #047857;
+    border: 1px solid #AEE7C6;
+}
+
+html[data-theme="light"] .resumen-kpi-icon-box.green,
+html[data-theme="light"] .pdv-card-icon.green,
+html[data-theme="light"] .rpdv-card-icon.green {
+    background: #DCF5E4;
+    color: #047857;
+}
+
+/* ---------- Ranking ---------- */
+html[data-theme="light"] .podium-card {
+    background: #FFFFFF;
+    border: 1px solid #D8DEE8;
+}
+
+html[data-theme="light"] .podium-name,
+html[data-theme="light"] .podium-score,
+html[data-theme="light"] .podium-stat-value { color: #111827; }
+
+html[data-theme="light"] .podium-position,
+html[data-theme="light"] .podium-stat-label { color: #6B7280; }
+
+html[data-theme="light"] .podium-bar-track,
+html[data-theme="light"] .rank-row-bar-track {
+    background: #E5EAF0;
+    border: 1px solid #DCE1EB;
+}
+
+html[data-theme="light"] .rank-row-pos { color: #111827; }
+html[data-theme="light"] .rank-row-pos.top { color: #047857; }
+html[data-theme="light"] .rank-row-name,
+html[data-theme="light"] .rank-row-pct { color: #111827; }
+html[data-theme="light"] .rank-row-sub { color: #6B7280; }
+
+html[data-theme="light"] .ctl-rank-pos { background: #DDE3EC; color: #111827; }
+html[data-theme="light"] .ctl-rank-pos.top-1 { background: rgba(255,215,0,0.20); color: #946F00; }
+html[data-theme="light"] .ctl-rank-pos.top-2 { background: #E3E8F0; color: #475569; }
+html[data-theme="light"] .ctl-rank-pos.top-3 { background: rgba(205,127,50,0.22); color: #9A5C1E; }
+
+html[data-theme="light"] .ctl-rank-name,
+html[data-theme="light"] .ctl-rank-value,
+html[data-theme="light"] .pdv-sum-value { color: #111827; }
+
+html[data-theme="light"] .ctl-rank-bar,
+html[data-theme="light"] .ctl-cell-bar-track {
+    background: #E5EAF0;
+    border: 1px solid #DCE1EB;
+}
+
+html[data-theme="light"] .ctl-group-row td {
+    background: #EAF6F0 !important;
+    color: #047857;
+}
+
+html[data-theme="light"] .ctl-group-summary td {
+    background: #F6FAF7;
+    color: #047857;
+}
+
+html[data-theme="light"] .pdv-sum-item {
+    background: #F8FAFC;
+    border: 1px solid #D8DEE8;
+}
+
+html[data-theme="light"] .ctl-alert {
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #F5DE8F;
+}
+
+html[data-theme="light"] .ctl-alert-critical {
+    background: #FDE3E3;
+    color: #B91C1C;
+    border: 1px solid #F6B7B7;
+}
+
+html[data-theme="light"] .ctl-alert-info {
+    background: #E3F1FB;
+    color: #0369A1;
+    border: 1px solid #BADEF5;
+}
+
+/* ---------- Modales (cristal claro) ---------- */
+html[data-theme="light"] .modal-overlay {
+    background: rgba(15,23,42,0.45);
+}
+
+html[data-theme="light"] .modal-ventas,
+html[data-theme="light"] .modal-promociones {
+    background: rgba(255,255,255,0.97);
+    border: 1px solid #D9DEE7;
+    box-shadow: 0 25px 80px rgba(15,23,42,0.18), 0 0 0 1px rgba(15,23,42,0.05);
+}
+
+html[data-theme="light"] #horarios-cobertura-editor,
+html[data-theme="light"] .modal-password,
+html[data-theme="light"] .modal-login {
+    box-shadow: 0 20px 60px rgba(15,23,42,0.16), 0 0 0 1px rgba(15,23,42,0.05);
+}
+
+/* ============================================================
+   BOTÓN DE CAMBIO DE TEMA (top-bar)
+   ============================================================ */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--t-bgH);
+    border: 1px solid var(--t-w08);
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.theme-toggle:hover {
+    background: var(--t-bg3);
+    color: var(--text-primary);
+    border-color: var(--t-w12);
+}
+.theme-toggle:active {
+    transform: scale(0.94);
+}
+.theme-toggle svg {
+    width: 17px;
+    height: 17px;
+    display: block;
+}
+
+#theme-icon-sol { display: inline-block; }
+#theme-icon-luna { display: none; }
+html[data-theme="light"] #theme-icon-sol { display: none; }
+html[data-theme="light"] #theme-icon-luna { display: inline-block; }
+
+/* Transición suave al alternar tema (respeta transiciones existentes) */
+html[data-theme] * {
+    transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease,
+        fill 0.35s ease, stroke 0.35s ease, box-shadow 0.35s ease;
+}

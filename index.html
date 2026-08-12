@@ -5,11 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive AT Sur - Dashboard de Ventas</title>
-    <link rel="stylesheet" href="css/styles.css?v=99">
+    <link rel="stylesheet" href="css/styles.css?v=103">
     <link rel="stylesheet" href="css/horarios.css">
     <link rel="stylesheet" href="css/tiendas.css?v=1">
     <link rel="stylesheet" href="css/ejecutivo.css?v=2">
     <link rel="stylesheet" href="css/mobile.css?v=1">
+    <link rel="stylesheet" href="css/themes.css?v=1">
+    <script>
+        (function () {
+            var tema = 'dark';
+            try {
+                var guardado = localStorage.getItem('dashboard_tema');
+                if (guardado === 'light' || guardado === 'dark') tema = guardado;
+            } catch (e) {}
+            document.documentElement.dataset.theme = tema;
+        })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -235,7 +246,7 @@
             <!-- ─── PROMOTOR ─── -->
             <div class="nav-section-divider promo-only promo-divider"><span>PROMOTOR</span></div>
 
-            <div class="nav-item promo-only" onclick="abrirModalVenta()">
+            <div class="nav-item promo-only" onclick="navegarRegistrarVentas()">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -248,7 +259,7 @@
                 <div class="nav-equalizer" id="eq-registrar-ventas"><span></span><span></span><span></span></div>
             </div>
 
-            <div class="nav-item promo-only" onclick="abrirModalPromociones()">
+            <div class="nav-item promo-only" onclick="navegarRegistrarPromociones()">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -286,6 +297,21 @@
                 </span>
                 <span class="nav-label">Ranking de Tiendas</span>
                 <div class="nav-equalizer" id="eq-ranking"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item promo-only" data-page="informe-individual">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14z" />
+                        <path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12" />
+                        <path d="M3.22 12H9.5" />
+                        <path d="M22.78 12H14.5" />
+                    </svg>
+                </span>
+                <span class="nav-label">Informe Individual</span>
+                <div class="nav-equalizer" id="eq-mi-informe"><span></span><span></span><span></span></div>
             </div>
 
             <!-- Supervisor unlock toggle (modo supervisor / no autenticado) -->
@@ -456,6 +482,25 @@
                 <h2 id="page-title">Resumen Zona</h2>
             </div>
             <div class="top-bar-info">
+                <button type="button" class="theme-toggle" id="theme-toggle" title="Cambiar tema claro/oscuro"
+                    aria-label="Cambiar tema claro/oscuro">
+                    <svg id="theme-icon-sol" viewBox="0 0 24 24" width="17" height="17" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5" />
+                        <line x1="12" y1="1" x2="12" y2="3" />
+                        <line x1="12" y1="21" x2="12" y2="23" />
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                        <line x1="1" y1="12" x2="3" y2="12" />
+                        <line x1="21" y1="12" x2="23" y2="12" />
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                    </svg>
+                    <svg id="theme-icon-luna" viewBox="0 0 24 24" width="17" height="17" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                </button>
                 <span class="top-bar-badge top-bar-welcome" id="top-bar-welcome" style="display:none;"></span>
                 <span class="top-bar-badge">
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"
@@ -690,7 +735,7 @@
             <div class="resumen-promociones" id="resumen-promociones"></div>
         </section>
 
-        <!-- ===== PAGINA 2: AVANCE POR PDV ===== -->
+        <!-- ===== PAGINA 2: AVANCE POR PDV (CENTRO DE TRABAJO DEL PROMOTOR) ===== -->
         <section class="page" id="page-avance">
             <div class="pdv-header">
                 <div class="pdv-header-left">
@@ -727,61 +772,301 @@
                 </div>
             </div>
 
-            <div class="pdv-selector-wrapper">
-                <div class="pdv-selector-glow"></div>
-                <svg class="pdv-selector-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                </svg>
-                <div class="pdv-selector-field">
-                    <select id="pdv-select">
-                        <option value="">Seleccionar punto de venta...</option>
-                    </select>
-                    <span class="pdv-selector-label" id="pdv-selector-label">Punto de Venta</span>
-                </div>
-                <div class="pdv-selector-arrow">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round">
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                </div>
-            </div>
-
-            <div class="promo-mode-toggle" id="avance-mode-toggle">
-                <button type="button" class="active" data-mode="productos" onclick="cambiarModoAvance('productos')">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+            <!-- Barra fija de acciones -->
+            <div class="avance-acciones" id="avance-acciones">
+                <button type="button" class="avance-accion avance-accion-ventas" onclick="abrirPanelVentas()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="20" x2="18" y2="10" />
-                        <line x1="12" y1="20" x2="12" y2="4" />
-                        <line x1="6" y1="20" x2="6" y2="14" />
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    Productos Oficiales
+                    <span class="avance-accion-text">Registrar Ventas</span>
                 </button>
-                <button type="button" data-mode="promociones" onclick="cambiarModoAvance('promociones')">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                <button type="button" class="avance-accion avance-accion-promo" onclick="abrirPanelPromociones()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="8" width="18" height="4" rx="1" />
                         <rect x="5" y="12" width="14" height="8" rx="1" />
                         <path d="M12 8V5" />
                     </svg>
-                    Promociones
+                    <span class="avance-accion-text">Registrar Promociones</span>
+                </button>
+                <button type="button" class="avance-accion avance-accion-informe" onclick="cambiarPagina('informe-individual')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14z" />
+                        <path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12" />
+                    </svg>
+                    <span class="avance-accion-text">Informe Individual</span>
                 </button>
             </div>
 
-            <div class="date-filters">
-                <div class="date-filter-bar">
-                    <span class="date-filters-title">
+            <!-- Panel expandible: Registrar Ventas -->
+            <div class="avance-panel" id="avance-panel-ventas" style="display:none;">
+                <div class="avance-panel-header">
+                    <div class="avance-panel-header-left">
+                        <svg class="avance-panel-header-icon" viewBox="0 0 24 24" width="20" height="20" fill="none"
+                            stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"></path>
+                        </svg>
+                        <h3 class="avance-panel-title">Registro de Ventas por D&iacute;a</h3>
+                    </div>
+                    <button class="avance-panel-close" onclick="cerrarPanelVentas()" aria-label="Cerrar">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="ventas-session-bar" class="ventas-session-bar" style="display:none;"></div>
+
+                <div class="ventas-filters">
+                    <div class="ventas-filter-group">
+                        <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <select id="modal-pdv" onchange="cargarVentasCalendario()" required></select>
+                    </div>
+                    <div class="ventas-filter-group">
+                        <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <select id="venta-mes" onchange="cargarVentasCalendario()">
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="ventas-filter-group">
+                        <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                        </svg>
+                        <select id="venta-anio" onchange="cargarVentasCalendario()">
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                    </div>
+
+                    <div class="ventas-view-toggle" id="ventas-view-toggle">
+                        <button class="ventas-toggle-btn active" data-view="mes" onclick="cambiarModoVista('mes')"
+                            title="Vista mes completo">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
+                            </svg>
+                            Mes
+                        </button>
+                        <button class="ventas-toggle-btn" data-view="dia" onclick="cambiarModoVista('dia')"
+                            title="Vista por día">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            Día
+                        </button>
+                    </div>
+                    <select id="ventas-dia-select" class="ventas-dia-select" onchange="cambiarDiaSeleccionado(this.value)"
+                        style="display:none;"></select>
+
+                    <div class="ventas-progress-badge" id="ventas-progress-badge">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
                         </svg>
-                        Periodo
-                    </span>
-                    <div class="date-filter-main">
+                        <span id="ventas-progress-text">0 / 0</span>
+                    </div>
+                    <button class="ventas-expand-btn" id="ventas-expand-btn" onclick="toggleVentasFullscreen()"
+                        title="Pantalla completa">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <polyline points="9 21 3 21 3 15"></polyline>
+                            <line x1="21" y1="3" x2="14" y2="10"></line>
+                            <line x1="3" y1="21" x2="10" y2="14"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-save-ventas btn-save-ventas-top" id="btn-guardar-ventas"
+                        onclick="guardarVentasCalendario()">
+                        <span class="btn-save-content" id="btn-save-content">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Guardar Ventas
+                        </span>
+                        <span class="btn-spinner" id="btn-save-spinner">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"
+                                    stroke-linecap="round">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12"
+                                        dur="1s" repeatCount="indefinite" />
+                                    <animate attributeName="stroke-dashoffset" values="32;0;32" dur="1.5s"
+                                        repeatCount="indefinite" />
+                                </circle>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="calendario-wrapper" id="calendario-wrapper">
+                    <table class="calendario-tabla" id="tabla-calendario">
+                        <thead>
+                            <tr>
+                                <th class="calendario-th-producto">Producto</th>
+                                <th class="calendario-th-dia">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-calendario"></tbody>
+                    </table>
+                </div>
+
+                <div class="ventas-unsaved-bar" id="ventas-unsaved-bar">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>Tienes cambios sin guardar</span>
+                </div>
+            </div>
+
+            <!-- Panel expandible: Registrar Promociones -->
+            <div class="avance-panel" id="avance-panel-promociones" style="display:none;">
+                <div class="avance-panel-header">
+                    <div class="avance-panel-header-left">
+                        <svg class="avance-panel-header-icon" viewBox="0 0 24 24" width="20" height="20" fill="none"
+                            stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="8" width="18" height="4" rx="1"></rect>
+                            <rect x="5" y="12" width="14" height="8" rx="1"></rect>
+                            <path d="M12 8V5"></path>
+                            <path d="M7 8V6"></path>
+                            <path d="M17 8V6"></path>
+                        </svg>
+                        <h3 class="avance-panel-title">Registro de Promociones</h3>
+                    </div>
+                    <button class="avance-panel-close" onclick="cerrarPanelPromociones()" aria-label="Cerrar">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="promo-session-bar" id="promo-session-bar" style="display:none;"></div>
+
+                <div class="promo-filters">
+                    <div class="promo-filter-group">
+                        <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <select id="promo-tienda" onchange="cargarPromocionesTabla()"></select>
+                    </div>
+                    <div class="promo-filter-group">
+                        <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <input type="date" id="promo-fecha" onchange="cargarPromocionesTabla()">
+                    </div>
+                    <div class="promo-filter-group">
+                        <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        <select id="promo-promotor" onchange="cargarPromocionesTabla()"></select>
+                    </div>
+                </div>
+
+                <div class="promo-registro-wrap">
+                    <table class="promo-registro-table" id="tabla-registro-promociones">
+                        <thead>
+                            <tr>
+                                <th class="promo-th-nombre">Promoci&oacute;n</th>
+                                <th class="promo-th-cant">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-registro-promociones"></tbody>
+                    </table>
+                </div>
+
+                <div class="promo-registro-total" id="promo-registro-total">0 registros</div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarPanelPromociones()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-guardar-promociones"
+                        onclick="guardarRegistroPromociones()">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Guardar Promociones
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtros simplificados: Tienda · Mes/Año · Tipo de Información -->
+            <div class="avance-filtros">
+                <div class="pdv-selector-wrapper">
+                    <div class="pdv-selector-glow"></div>
+                    <svg class="pdv-selector-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <div class="pdv-selector-field">
+                        <select id="pdv-select">
+                            <option value="">Seleccionar punto de venta...</option>
+                        </select>
+                        <span class="pdv-selector-label" id="pdv-selector-label">Punto de Venta</span>
+                    </div>
+                    <div class="pdv-selector-arrow">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="avance-filtro-mes">
+                    <div class="avance-filtro-mes-inner">
                         <svg class="date-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -793,40 +1078,30 @@
                             <option value="">Seleccionar periodo...</option>
                         </select>
                     </div>
-                    <div class="date-filter-custom" id="custom-avance">
-                        <div class="date-filter-field">
-                            <label for="filtro-avance-desde">Desde</label>
-                            <input type="date" id="filtro-avance-desde" onchange="aplicarFiltrosFecha('avance',true)">
-                        </div>
-                        <div class="date-filter-field">
-                            <label for="filtro-avance-hasta">Hasta</label>
-                            <input type="date" id="filtro-avance-hasta" onchange="aplicarFiltrosFecha('avance',true)">
-                        </div>
-                    </div>
-                    <button class="date-btn-limpiar" onclick="limpiarFiltrosFecha('avance')">
+                </div>
+
+                <div class="promo-mode-toggle" id="avance-mode-toggle">
+                    <button type="button" class="active" data-mode="productos" onclick="cambiarModoAvance('productos')">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10" />
+                            <line x1="12" y1="20" x2="12" y2="4" />
+                            <line x1="6" y1="20" x2="6" y2="14" />
                         </svg>
-                        Limpiar
+                        Productos Oficiales
+                    </button>
+                    <button type="button" data-mode="promociones" onclick="cambiarModoAvance('promociones')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="8" width="18" height="4" rx="1" />
+                            <rect x="5" y="12" width="14" height="8" rx="1" />
+                            <path d="M12 8V5" />
+                        </svg>
+                        Promociones
                     </button>
                 </div>
-                <div class="date-filter-fastrow">
-                    <button type="button" class="date-btn-quick"
-                        onclick="aplicarRangoRapido('avance','hoy')">Hoy</button>
-                    <button type="button" class="date-btn-quick"
-                        onclick="aplicarRangoRapido('avance','esta-semana')">Semana</button>
-                    <button type="button" class="date-btn-quick"
-                        onclick="aplicarRangoRapido('avance','mes-actual')">Mes</button>
-                    <button type="button" class="date-btn-quick"
-                        onclick="aplicarRangoRapido('avance','mes-anterior')">Mes Anterior</button>
-                    <button type="button" class="date-btn-quick" onclick="aplicarRangoRapido('avance','ultimos-3')">3
-                        Meses</button>
-                    <button type="button" class="date-btn-quick"
-                        onclick="aplicarRangoRapido('avance','anio-actual')">A&ntilde;o</button>
-                </div>
             </div>
+
             <div class="periodo-analizado" id="periodo-analizado-avance"></div>
 
             <div class="pdv-content" id="pdv-content"></div>
@@ -1112,6 +1387,231 @@
             </div>
         </section>
 
+        <!-- ===== PAGINA 5: INFORME INDIVIDUAL (PROMOTOR) ===== -->
+        <section class="page" id="page-informe-individual">
+            <div class="inf-ind-hero">
+                <div class="inf-ind-hero-left">
+                    <div class="inf-ind-hero-icon">
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14z" />
+                            <path d="M8.21 13.89 7 23l5-3 5 3-1.21-9.12" />
+                            <path d="M3.22 12H9.5" />
+                            <path d="M22.78 12H14.5" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="inf-ind-hero-title">Informe Individual</div>
+                        <div class="inf-ind-hero-sub">Tu desempe&ntilde;o personal del mes, en tiempo real</div>
+                    </div>
+                </div>
+                <div class="inf-ind-hero-user" id="inf-ind-hero-user"></div>
+            </div>
+
+            <div class="date-filters">
+                <div class="date-filter-bar">
+                    <span class="date-filters-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Periodo
+                    </span>
+                    <div class="date-filter-main">
+                        <svg class="date-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <select id="filtro-individual-mes" onchange="cambiarMesFecha('individual')">
+                            <option value="">Seleccionar periodo...</option>
+                        </select>
+                    </div>
+                    <div class="date-filter-custom" id="custom-individual">
+                        <div class="date-filter-field">
+                            <label for="filtro-individual-desde">Desde</label>
+                            <input type="date" id="filtro-individual-desde"
+                                onchange="aplicarFiltrosFecha('individual',true)">
+                        </div>
+                        <div class="date-filter-field">
+                            <label for="filtro-individual-hasta">Hasta</label>
+                            <input type="date" id="filtro-individual-hasta"
+                                onchange="aplicarFiltrosFecha('individual',true)">
+                        </div>
+                    </div>
+                    <button class="date-btn-limpiar" onclick="limpiarFiltrosFecha('individual')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        Limpiar
+                    </button>
+                </div>
+                <div class="date-filter-fastrow">
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('individual','hoy')">Hoy</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('individual','esta-semana')">Semana</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('individual','mes-actual')">Mes</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('individual','mes-anterior')">Mes Anterior</button>
+                    <button type="button" class="date-btn-quick" onclick="aplicarRangoRapido('individual','ultimos-3')">3
+                        Meses</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('individual','anio-actual')">A&ntilde;o</button>
+                </div>
+            </div>
+            <div class="periodo-analizado" id="periodo-analizado-individual"></div>
+
+            <div class="inf-ind-session-warning" id="inf-ind-session-warning" style="display:none;"></div>
+
+            <div class="inf-ind-dashboard" id="inf-ind-dashboard" style="display:none;">
+
+                <div class="inf-ind-top-grid">
+                    <div class="inf-ind-card inf-ind-gauge-card">
+                        <div class="inf-ind-card-title">&#128202; Cumplimiento de Meta</div>
+                        <div class="inf-ind-gauge-wrap">
+                            <svg id="inf-ind-gauge" viewBox="0 0 220 128"></svg>
+                        </div>
+                    </div>
+
+                    <div class="inf-ind-card inf-ind-meta-card">
+                        <div class="inf-ind-card-title">Detalle de Meta</div>
+                        <div class="inf-ind-meta">
+                            <div class="inf-ind-meta-item">
+                                <span class="inf-ind-meta-icon">&#128176;</span>
+                                <div>
+                                    <div class="inf-ind-meta-value" id="inf-ind-venta">S/ 0</div>
+                                    <div class="inf-ind-meta-label">Venta Acumulada</div>
+                                </div>
+                            </div>
+                            <div class="inf-ind-meta-item">
+                                <span class="inf-ind-meta-icon">&#127919;</span>
+                                <div>
+                                    <div class="inf-ind-meta-value" id="inf-ind-meta">S/ 0</div>
+                                    <div class="inf-ind-meta-label">Cuota Total</div>
+                                </div>
+                            </div>
+                            <div class="inf-ind-meta-item">
+                                <span class="inf-ind-meta-icon">&#128201;</span>
+                                <div>
+                                    <div class="inf-ind-meta-value" id="inf-ind-faltante">S/ 0</div>
+                                    <div class="inf-ind-meta-label">Faltante</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="inf-ind-card inf-ind-pos-card">
+                        <div class="inf-ind-card-title">&#127942; Mi Posici&oacute;n</div>
+                        <div class="inf-ind-pos-big">
+                            <span id="inf-ind-posicion">-</span>
+                            <span class="inf-ind-pos-de">de <span id="inf-ind-pos-total">-</span> Promotores</span>
+                        </div>
+                        <div class="inf-ind-pos-item">
+                            <span>Venta Acumulada</span>
+                            <strong id="inf-ind-pos-venta">S/ 0</strong>
+                        </div>
+                        <div class="inf-ind-pos-item">
+                            <span>Cumplimiento</span>
+                            <strong id="inf-ind-pos-cump">0%</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inf-ind-motiv" id="inf-ind-motiv"></div>
+
+                <div class="inf-ind-tabs" id="inf-ind-tabs">
+                    <button type="button" class="active" data-indtab="desempeno"
+                        onclick="cambiarTabInformeIndividual('desempeno')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10" />
+                            <line x1="12" y1="20" x2="12" y2="4" />
+                            <line x1="6" y1="20" x2="6" y2="14" />
+                        </svg>
+                        Mi Desempe&ntilde;o
+                    </button>
+                    <button type="button" data-indtab="promociones" onclick="cambiarTabInformeIndividual('promociones')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="8" width="18" height="4" rx="1" />
+                            <rect x="5" y="12" width="14" height="8" rx="1" />
+                            <path d="M12 8V5" />
+                        </svg>
+                        Mis Promociones
+                    </button>
+                </div>
+
+                <div id="inf-ind-tab-desempeno">
+                    <div class="inf-ind-charts-grid">
+                        <div class="inf-ind-card inf-ind-chart-card inf-ind-chart-wide">
+                            <div class="inf-ind-card-title">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"
+                                    stroke="none"><path d="M3 3v18h18v-2H5V3H3zm16.7 4.3-1-1L12 13 8.3 9.3l-1 1L12 15l7.7-7.7z" /></svg>
+                                Evoluci&oacute;n de Ventas
+                            </div>
+                            <div class="inf-ind-chart-body"><canvas id="infIndChartEvolucion"></canvas></div>
+                        </div>
+                        <div class="inf-ind-card inf-ind-chart-card">
+                            <div class="inf-ind-card-title">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"
+                                    stroke="none"><path d="M5 3v18H3V3h2zm16 0v18h-2V3h2zm-3 2v14h-2V5h2zM8 5v14H6V5h2zm5 0v14h-2V5h2z" /></svg>
+                                Desempe&ntilde;o por Producto
+                            </div>
+                            <div class="inf-ind-chart-body"><canvas id="infIndChartProductos"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="inf-ind-topbottom-grid">
+                        <div class="inf-ind-card inf-ind-topbottom">
+                            <div class="inf-ind-tb-icon best">&#127942;</div>
+                            <div class="inf-ind-tb-label">Producto con Mejor Desempe&ntilde;o</div>
+                            <div class="inf-ind-tb-name" id="inf-ind-mejor">&mdash;</div>
+                            <div class="inf-ind-tb-value" id="inf-ind-mejor-valor">S/ 0</div>
+                            <div class="inf-ind-tb-pct" id="inf-ind-mejor-pct">&mdash;</div>
+                        </div>
+                        <div class="inf-ind-card inf-ind-topbottom">
+                            <div class="inf-ind-tb-icon worst">&#9888;&#65039;</div>
+                            <div class="inf-ind-tb-label">Producto con Menor Desempe&ntilde;o</div>
+                            <div class="inf-ind-tb-name" id="inf-ind-peor">&mdash;</div>
+                            <div class="inf-ind-tb-value" id="inf-ind-peor-valor">S/ 0</div>
+                            <div class="inf-ind-tb-pct" id="inf-ind-peor-pct">&mdash;</div>
+                        </div>
+                    </div>
+
+                    <div class="inf-ind-card inf-ind-table-card">
+                        <div class="inf-ind-card-title">Detalle por Producto</div>
+                        <div class="inf-ind-table-wrap">
+                            <table class="inf-ind-table">
+                                <thead>
+                                    <tr>
+                                        <th class="inf-ind-th-left">Producto</th>
+                                        <th>Venta</th>
+                                        <th>Cuota</th>
+                                        <th>Faltante</th>
+                                        <th>Cumplimiento</th>
+                                        <th>Participaci&oacute;n</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inf-ind-tabla-productos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="inf-ind-tab-promociones" style="display:none;"></div>
+
+            </div>
+        </section>
+
         <!-- ===== PAGINA 6: PLANIFICADOR DE HORARIOS ===== -->
         <section class="page" id="page-horarios">
             <div id="horarios-content"></div>
@@ -1213,267 +1713,6 @@
                 <div class="ve-side" id="ve-side"></div>
             </div>
         </section>
-    </div>
-
-    <!-- Modal Calendario de Ventas -->
-    <div class="modal-overlay" id="modal-venta" onclick="if(event.target===this)cerrarModalVenta()">
-        <div class="modal modal-ventas">
-            <div class="modal-header">
-                <div class="modal-header-left">
-                    <svg class="modal-header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"></path>
-                    </svg>
-                    <h3>Registro de Ventas por D&iacute;a</h3>
-                </div>
-                <button class="modal-close" onclick="cerrarModalVenta()" aria-label="Cerrar">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="ventas-filters">
-                <div class="ventas-filter-group">
-                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    <select id="modal-pdv" onchange="cargarVentasCalendario()" required></select>
-                </div>
-                <div class="ventas-filter-group">
-                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    <select id="venta-mes" onchange="cargarVentasCalendario()">
-                        <option value="1">Enero</option>
-                        <option value="2">Febrero</option>
-                        <option value="3">Marzo</option>
-                        <option value="4">Abril</option>
-                        <option value="5">Mayo</option>
-                        <option value="6">Junio</option>
-                        <option value="7">Julio</option>
-                        <option value="8">Agosto</option>
-                        <option value="9">Setiembre</option>
-                        <option value="10">Octubre</option>
-                        <option value="11">Noviembre</option>
-                        <option value="12">Diciembre</option>
-                    </select>
-                </div>
-                <div class="ventas-filter-group">
-                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                    </svg>
-                    <select id="venta-anio" onchange="cargarVentasCalendario()">
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                    </select>
-                </div>
-
-                <div class="ventas-view-toggle" id="ventas-view-toggle">
-                    <button class="ventas-toggle-btn active" data-view="mes" onclick="cambiarModoVista('mes')"
-                        title="Vista mes completo">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
-                        </svg>
-                        Mes
-                    </button>
-                    <button class="ventas-toggle-btn" data-view="dia" onclick="cambiarModoVista('dia')"
-                        title="Vista por día">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        Día
-                    </button>
-                </div>
-                <select id="ventas-dia-select" class="ventas-dia-select" onchange="cambiarDiaSeleccionado(this.value)"
-                    style="display:none;"></select>
-
-                <div class="ventas-progress-badge" id="ventas-progress-badge">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                    </svg>
-                    <span id="ventas-progress-text">0 / 0</span>
-                </div>
-                <button class="ventas-expand-btn" id="ventas-expand-btn" onclick="toggleVentasFullscreen()"
-                    title="Pantalla completa">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 3 21 3 21 9"></polyline>
-                        <polyline points="9 21 3 21 3 15"></polyline>
-                        <line x1="21" y1="3" x2="14" y2="10"></line>
-                        <line x1="3" y1="21" x2="10" y2="14"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="calendario-wrapper" id="calendario-wrapper">
-                <table class="calendario-tabla" id="tabla-calendario">
-                    <thead>
-                        <tr>
-                            <th class="calendario-th-producto">Producto</th>
-                            <th class="calendario-th-dia">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-calendario"></tbody>
-                </table>
-            </div>
-
-            <div class="ventas-unsaved-bar" id="ventas-unsaved-bar">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>Tienes cambios sin guardar</span>
-            </div>
-
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="cerrarModalVenta()">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Cancelar
-                </button>
-                <button type="button" class="btn btn-primary btn-save-ventas" id="btn-guardar-ventas"
-                    onclick="guardarVentasCalendario()">
-                    <span class="btn-save-content" id="btn-save-content">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Guardar Ventas
-                    </span>
-                    <span class="btn-spinner" id="btn-save-spinner">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"
-                                stroke-linecap="round">
-                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12"
-                                    dur="1s" repeatCount="indefinite" />
-                                <animate attributeName="stroke-dashoffset" values="32;0;32" dur="1.5s"
-                                    repeatCount="indefinite" />
-                            </circle>
-                        </svg>
-                    </span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Registro de Promociones -->
-    <div class="modal-overlay" id="modal-promociones" onclick="if(event.target===this)cerrarModalPromociones()">
-        <div class="modal modal-promociones">
-            <div class="modal-header">
-                <div class="modal-header-left">
-                    <svg class="modal-header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="8" width="18" height="4" rx="1"></rect>
-                        <rect x="5" y="12" width="14" height="8" rx="1"></rect>
-                        <path d="M12 8V5"></path>
-                        <path d="M7 8V6"></path>
-                        <path d="M17 8V6"></path>
-                    </svg>
-                    <h3>Registro de Promociones</h3>
-                </div>
-                <button class="modal-close" onclick="cerrarModalPromociones()" aria-label="Cerrar">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="promo-session-bar" id="promo-session-bar" style="display:none;"></div>
-
-            <div class="promo-filters">
-                <div class="promo-filter-group">
-                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    <select id="promo-tienda" onchange="cargarPromocionesTabla()"></select>
-                </div>
-                <div class="promo-filter-group">
-                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    <input type="date" id="promo-fecha" onchange="cargarPromocionesTabla()">
-                </div>
-                <div class="promo-filter-group">
-                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                    </svg>
-                    <select id="promo-promotor" onchange="cargarPromocionesTabla()"></select>
-                </div>
-            </div>
-
-            <div class="promo-registro-wrap">
-                <table class="promo-registro-table" id="tabla-registro-promociones">
-                    <thead>
-                        <tr>
-                            <th class="promo-th-nombre">Promoci&oacute;n</th>
-                            <th class="promo-th-cant">Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-registro-promociones"></tbody>
-                </table>
-            </div>
-
-            <div class="promo-registro-total" id="promo-registro-total">0 registros</div>
-
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="cerrarModalPromociones()">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Cancelar
-                </button>
-                <button type="button" class="btn btn-primary" id="btn-guardar-promociones"
-                    onclick="guardarRegistroPromociones()">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Guardar Promociones
-                </button>
-            </div>
-        </div>
     </div>
 
     <!-- Modal Gestión de Promociones (Supervisor) -->
@@ -1765,7 +2004,8 @@
     <script src="js/tiendas.js?v=1"></script>
     <script src="js/ejecutivo.js?v=2"></script>
     <script src="js/mobile.js?v=1"></script>
-    <script src="js/app.js?v=3"></script>
+    <script src="js/theme.js?v=1"></script>
+    <script src="js/app.js?v=6"></script>
     <script src="js/respaldo.js?v=1"></script>
 </body>
 

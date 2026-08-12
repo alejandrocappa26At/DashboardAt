@@ -44,6 +44,7 @@ function reRenderCurrentPage() {
     else if (id === 'page-ranking') renderizarRanking();
     else if (id === 'page-avance') renderizarAvancePDV();
     else if (id === 'page-informe-promotor') recargarInformeSiAplica();
+    else if (id === 'page-informe-individual') renderizarInformeIndividual();
     else if (id === 'page-vista-ejecutiva') renderizarVistaEjecutiva();
 }
 
@@ -303,7 +304,16 @@ function renderPromocionesAvancePDV(pdvSeleccionado) {
     renderPeriodoAnalizado('periodo-analizado-avance');
     const select = document.getElementById('pdv-select');
     if (!select) return;
-    if (!pdvSeleccionado) pdvSeleccionado = select.value || 'todos';
+    const pdvs = DataStore.getPDVs ? DataStore.getPDVs() : [];
+    const tiendaPromotor = _tiendaPromotorSesion();
+    if (!pdvSeleccionado) {
+        if (tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) {
+            pdvSeleccionado = tiendaPromotor;
+            select.value = tiendaPromotor;
+        } else {
+            pdvSeleccionado = select.value || 'todos';
+        }
+    }
     select.value = pdvSeleccionado;
 
     const periodoHeader = DataStore.getInfoPeriodo();
@@ -527,7 +537,7 @@ function renderEncabezadoPromocionesPromotor(promotor, registros, fechaDesde, fe
     if (heroKpis) {
         heroKpis.innerHTML = '' +
             '<div class="inf-promotor-hero-kpi" style="min-width:120px;text-align:left;">' +
-                '<div style="font-size:13px;font-weight:700;color:#ffffff;line-height:1.4;">' + escHtml(promotor.nombre) + '</div>' +
+                '<div style="font-size:13px;font-weight:700;color:var(--t-text);line-height:1.4;">' + escHtml(promotor.nombre) + '</div>' +
                 '<div style="font-size:11px;color:#727272;margin-top:2px;">' + escHtml(promotor.email || 'Sin correo') + '</div>' +
                 '<div style="font-size:11px;color:#1DB954;margin-top:1px;">' + escHtml(tiendaNombre) + '</div>' +
             '</div>' +
@@ -546,21 +556,81 @@ function renderEncabezadoPromocionesPromotor(promotor, registros, fechaDesde, fe
     }
 }
 
-/* ===== MODAL: REGISTRO DE PROMOCIONES ===== */
-function abrirModalPromociones() {
+/* ===== PANEL EXPANDIBLE: REGISTRO DE VENTAS ===== */
+function navegarRegistrarVentas() {
     initPromotorSession();
     if (!estaSupervisorDesbloqueado() && !promotorSession) {
         mostrarModalLogin();
         return;
     }
-    abrirModalPromocionesConSesion();
+    cambiarPagina('avance');
+    abrirPanelVentas();
 }
 
-function abrirModalPromocionesConSesion() {
+function abrirPanelVentas() {
+    initPromotorSession();
+    if (!estaSupervisorDesbloqueado() && !promotorSession) {
+        mostrarModalLogin();
+        return;
+    }
+    if (document.getElementById('page-avance')) {
+        document.getElementById('page-avance').classList.add('active');
+        document.getElementById('page-title').textContent = 'Avance por Punto de Venta';
+    }
+    const promoPanel = document.getElementById('avance-panel-promociones');
+    if (promoPanel) promoPanel.style.display = 'none';
+    const panel = document.getElementById('avance-panel-ventas');
+    if (!panel) return;
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    abrirPanelVentasConSesion();
+}
+
+function cerrarPanelVentas() {
+    const panel = document.getElementById('avance-panel-ventas');
+    if (panel) panel.style.display = 'none';
+}
+
+function cerrarPanelPromociones() {
+    const panel = document.getElementById('avance-panel-promociones');
+    if (panel) panel.style.display = 'none';
+}
+
+/* ===== PANEL EXPANDIBLE: REGISTRO DE PROMOCIONES ===== */
+function navegarRegistrarPromociones() {
+    initPromotorSession();
+    if (!estaSupervisorDesbloqueado() && !promotorSession) {
+        mostrarModalLogin();
+        return;
+    }
+    cambiarPagina('avance');
+    abrirPanelPromociones();
+}
+
+function abrirPanelPromociones() {
+    initPromotorSession();
+    if (!estaSupervisorDesbloqueado() && !promotorSession) {
+        mostrarModalLogin();
+        return;
+    }
     if (typeof PromocionesStore === 'undefined' || !PromocionesStore._firestoreLoaded) {
         mostrarNotificacion('Las promociones a\u00fan se est\u00e1n cargando. Intenta en unos segundos.', 'warning');
         return;
     }
+    if (document.getElementById('page-avance')) {
+        document.getElementById('page-avance').classList.add('active');
+        document.getElementById('page-title').textContent = 'Avance por Punto de Venta';
+    }
+    const ventasPanel = document.getElementById('avance-panel-ventas');
+    if (ventasPanel) ventasPanel.style.display = 'none';
+    const panel = document.getElementById('avance-panel-promociones');
+    if (!panel) return;
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    abrirPanelPromocionesConSesion();
+}
+
+function abrirPanelPromocionesConSesion() {
     const supervisor = estaSupervisorDesbloqueado();
     const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
     const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
@@ -573,9 +643,10 @@ function abrirModalPromocionesConSesion() {
 
     if (!supervisor && promotorSession) {
         const zona = zonas.find(z => z.id === promotorSession.zona_principal_id);
+        const tiendaNombre = (zona && zona.nombre) || (promotorSession.zona_principal_id || null);
         tiendaSel.innerHTML = '<option value="">Seleccionar tienda...</option>' +
-            (zona ? '<option value="' + escHtml(zona.nombre) + '">' + escHtml(zona.nombre) + '</option>' : '');
-        if (zona) tiendaSel.value = zona.nombre;
+            (tiendaNombre ? '<option value="' + escHtml(tiendaNombre) + '">' + escHtml(tiendaNombre) + '</option>' : '');
+        if (tiendaNombre) tiendaSel.value = tiendaNombre;
         tiendaSel.disabled = true;
         const promo = activos.find(p => p.id === promotorSession.id);
         promotorSel.innerHTML = '<option value="' + escHtml(promotorSession.id) + '">' + escHtml(promo ? promo.nombre : promotorSession.nombre) + '</option>';
@@ -583,7 +654,7 @@ function abrirModalPromocionesConSesion() {
         if (sessionBar) {
             sessionBar.style.display = 'flex';
             sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promotorSession.nombre) + '</div>' +
-                '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotorDesdePromo()">Cerrar sesi\u00f3n</button>';
+                '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesi\u00f3n</button>';
         }
     } else {
         tiendaSel.disabled = false;
@@ -596,7 +667,7 @@ function abrirModalPromocionesConSesion() {
             if (promotorSession) {
                 sessionBar.style.display = 'flex';
                 sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promotorSession.nombre) + '</div>' +
-                    '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotorDesdePromo()">Cerrar sesi\u00f3n</button>';
+                    '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesi\u00f3n</button>';
             } else {
                 sessionBar.style.display = 'none';
                 sessionBar.innerHTML = '';
@@ -604,18 +675,10 @@ function abrirModalPromocionesConSesion() {
         }
     }
 
+    logValidacionPromotor();
+
     fechaInput.value = formatearFechaLocal(new Date());
-    document.getElementById('modal-promociones').classList.add('open');
     cargarPromocionesTabla();
-}
-
-function cerrarSesionPromotorDesdePromo() {
-    cerrarModalPromociones();
-    cerrarSesionPromotor();
-}
-
-function cerrarModalPromociones() {
-    document.getElementById('modal-promociones').classList.remove('open');
 }
 
 function cargarPromocionesTabla() {
@@ -704,7 +767,7 @@ function guardarRegistroPromociones() {
     } else {
         mostrarNotificacion('Promociones registradas correctamente.', 'success');
     }
-    cerrarModalPromociones();
+    cerrarPanelPromociones();
     reRenderCurrentPage();
 }
 
@@ -913,6 +976,14 @@ function pdvSumItem(label, value, cls, tip) {
         '</div>';
 }
 
+function _tiendaPromotorSesion() {
+    if (estaSupervisorDesbloqueado()) return null;
+    if (!promotorSession || !promotorSession.zona_principal_id) return null;
+    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const zona = zonas.find(z => z.id === promotorSession.zona_principal_id);
+    return (zona && zona.nombre) || promotorSession.zona_principal_id;
+}
+
 function renderizarAvancePDV(pdvSeleccionado) {
     if ((filtroTipoInformacion || 'productos') === 'promociones') {
         renderPromocionesAvancePDV(pdvSeleccionado);
@@ -924,8 +995,14 @@ function renderizarAvancePDV(pdvSeleccionado) {
     const select = document.getElementById('pdv-select');
     if (!select) return;
 
+    const tiendaPromotor = _tiendaPromotorSesion();
     if (!pdvSeleccionado) {
-        pdvSeleccionado = select.value || 'todos';
+        if (tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) {
+            pdvSeleccionado = tiendaPromotor;
+            select.value = tiendaPromotor;
+        } else {
+            pdvSeleccionado = select.value || 'todos';
+        }
     }
     select.value = pdvSeleccionado;
 
@@ -1235,6 +1312,12 @@ function poblarFiltros() {
     if (pdvSelect) {
         pdvSelect.innerHTML = '<option value="todos">Todos los PDV</option>' +
             pdvs.map(p => `<option value="${p}">${p}</option>`).join('');
+        const tiendaPromotor = _tiendaPromotorSesion();
+        if (tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) {
+            pdvSelect.value = tiendaPromotor;
+            const wrapper = pdvSelect.closest('.pdv-selector-wrapper');
+            if (wrapper) wrapper.classList.add('has-value');
+        }
         console.log('[AUDITORIA] pdv-select options después de poblar:', pdvSelect.options.length);
     }
 }
@@ -1294,14 +1377,15 @@ function poblarSelectMes(modulo) {
     if (!sel) return;
     if (sel.options.length > 1) return;
     const meses = DataStore.getMesesDisponibles();
+    const custom = document.getElementById('custom-' + modulo);
     sel.innerHTML = '<option value="">Seleccionar periodo...</option>' +
-        '<option value="custom">Personalizado</option>' +
+        (custom ? '<option value="custom">Personalizado</option>' : '') +
         meses.map(mm => `<option value="${mm.anio}-${pad2(mm.mes)}">${mm.nombre} ${mm.anio}</option>`).join('');
 }
 
 function sincronizarInputsFecha() {
     const filtros = DataStore.getFiltrosFecha();
-    ['resumen', 'avance', 'ranking', 'informe', 'vista-ejecutiva'].forEach(modulo => {
+['resumen', 'avance', 'ranking', 'informe', 'vista-ejecutiva', 'individual'].forEach(modulo => {
         const desde = document.getElementById('filtro-' + modulo + '-desde');
         const hasta = document.getElementById('filtro-' + modulo + '-hasta');
         const mesSel = document.getElementById('filtro-' + modulo + '-mes');
@@ -1338,6 +1422,7 @@ function actualizarDatosPorSeccion(seccion) {
     else if (seccion === 'avance') renderizarAvancePDV();
     else if (seccion === 'ranking') renderizarRanking();
     else if (seccion === 'informe') recargarInformeSiAplica();
+    else if (seccion === 'individual') renderizarInformeIndividual();
     else if (seccion === 'vista-ejecutiva') renderizarVistaEjecutiva();
     else recargarModulosConFiltro();
 }
@@ -1352,7 +1437,8 @@ const RANGOS_ETIQUETA = {
 };
 
 function _convContainerRango(modulo) {
-    const pageId = modulo === 'informe' ? 'page-informe-promotor' : 'page-' + modulo;
+    const mapa = { informe: 'page-informe-promotor', individual: 'page-informe-individual' };
+    const pageId = mapa[modulo] || 'page-' + modulo;
     const page = document.getElementById(pageId);
     return page ? page.querySelector('.date-filter-fastrow') : null;
 }
@@ -1436,7 +1522,7 @@ function aplicarRangoRapido(modulo, tipo) {
 
 function recargarModulosConFiltro() {
     sincronizarInputsFecha();
-    ['resumen', 'avance', 'ranking', 'informe', 'vista-ejecutiva'].forEach(seccion => actualizarDatosPorSeccion(seccion));
+    ['resumen', 'avance', 'ranking', 'informe', 'individual', 'vista-ejecutiva'].forEach(seccion => actualizarDatosPorSeccion(seccion));
 }
 
 function recargarInformeSiAplica() {
@@ -1685,6 +1771,7 @@ document.getElementById('page-title').textContent =
                 pagina === 'avance' ? 'Avance por Punto de Venta' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                     pagina === 'informe-promotor' ? 'Informe por Promotor' :
+                    pagina === 'informe-individual' ? 'Informe Individual' :
                         pagina === 'horarios' ? 'Gestión de Promotores' :
                     pagina === 'tiendas' ? 'Gestión de Tiendas' : 'Dashboard';
 
@@ -1698,6 +1785,8 @@ document.getElementById('page-title').textContent =
         renderizarRanking();
 } else if (pagina === 'informe-promotor') {
         renderizarInformePromotor();
+    } else if (pagina === 'informe-individual') {
+        renderizarInformeIndividual();
     } else if (pagina === 'horarios') {
         if (!HorariosDataStore.initialized) {
             initHorarios('supervisor');
@@ -1917,10 +2006,12 @@ let modoVista = 'mes';
 let diaSeleccionado = new Date().getDate();
 
 function cerrarModalVenta() {
-    document.getElementById('modal-venta').classList.remove('open');
-    document.getElementById('modal-venta').classList.remove('ventas-fullscreen');
+    cerrarPanelVentas();
     const sessionBar = document.getElementById('ventas-session-bar');
-    if (sessionBar) sessionBar.remove();
+    if (sessionBar) {
+        sessionBar.style.display = 'none';
+        sessionBar.innerHTML = '';
+    }
     const pdvSel = document.getElementById('modal-pdv');
     if (pdvSel) pdvSel.disabled = false;
     ventasFullscreen = false;
@@ -1928,7 +2019,8 @@ function cerrarModalVenta() {
 
 function toggleVentasFullscreen() {
     ventasFullscreen = !ventasFullscreen;
-    document.getElementById('modal-venta').classList.toggle('ventas-fullscreen', ventasFullscreen);
+    const panelEl = document.getElementById('avance-panel-ventas');
+    if (panelEl) panelEl.classList.toggle('ventas-fullscreen', ventasFullscreen);
     const btn = document.getElementById('ventas-expand-btn');
     if (ventasFullscreen) {
         btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 4 20 10 20"></polyline><polyline points="20 10 20 4 14 4"></polyline><line x1="14" y1="10" x2="20" y2="4"></line><line x1="4" y1="20" x2="10" y2="14"></line></svg>`;
@@ -2043,7 +2135,7 @@ const productos = DataStore.getProductos();
     document.addEventListener('input', function(e) {
         const inp = e.target.closest('.calendario-input');
         if (!inp) return;
-        if (!inp.closest('#modal-venta.open')) return;
+        if (!inp.closest('#avance-panel-ventas')) return;
         if (inp.readOnly) return;
 
         ventasModificadas = true;
@@ -2070,8 +2162,8 @@ function cambiarModoVista(modo) {
     if (toggleDia) toggleDia.classList.toggle('active', modo === 'dia');
     const diaSelect = document.getElementById('ventas-dia-select');
     if (diaSelect) diaSelect.style.display = modo === 'dia' ? '' : 'none';
-    const modalEl = document.getElementById('modal-venta');
-    modalEl.classList.toggle('vista-dia', modo === 'dia');
+    const panelEl = document.getElementById('avance-panel-ventas');
+    if (panelEl) panelEl.classList.toggle('vista-dia', modo === 'dia');
     aplicarFiltroVistaVentas();
 }
 
@@ -2246,6 +2338,21 @@ function initPromotorSession() {
     }
 }
 
+function logValidacionPromotor() {
+    const p = promotorSession;
+    if (!p) return;
+    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const zona = zonas.find(z => z.id === p.zona_principal_id);
+    const tienda = (zona && zona.nombre) || p.zona_principal_id || 'Sin tienda asignada';
+    const ventasCargadas = (typeof DataStore !== 'undefined' && DataStore.ventas) ? DataStore.ventas.length : 0;
+    const promosCargadas = (typeof PromocionesStore !== 'undefined' && PromocionesStore.promociones) ? PromocionesStore.promociones.length : 0;
+    console.log('[VALIDACION] Promotor autenticado:', p.nombre || '');
+    console.log('[VALIDACION] Correo:', p.email || '');
+    console.log('[VALIDACION] Tienda encontrada:', tienda);
+    console.log('[VALIDACION] Promociones cargadas:', promosCargadas);
+    console.log('[VALIDACION] Ventas cargadas:', ventasCargadas);
+}
+
 function mostrarModalLogin() {
     document.getElementById('login-error').style.display = 'none';
     document.getElementById('login-error').textContent = '';
@@ -2376,7 +2483,7 @@ async function confirmarLogin() {
 
         btn.classList.remove('loading');
         cerrarModalLogin();
-        abrirModalVentaConSesion();
+        abrirModalVenta();
         console.log('[LOGIN] 8. Fin de carga. Sesión iniciada para:', promotor.nombre);
     } catch (err) {
         console.error('[LOGIN][ERROR] Excepción completa en confirmarLogin:', err);
@@ -2407,9 +2514,12 @@ function cerrarSesionPromotor() {
     promotorSession = null;
     localStorage.removeItem('promotor_session');
     sessionStorage.removeItem('promotor_session');
-    document.getElementById('modal-venta').classList.remove('open');
+    cerrarPanelVentas();
+    cerrarPanelPromociones();
     const sessionBar = document.getElementById('ventas-session-bar');
-    if (sessionBar) sessionBar.remove();
+    if (sessionBar) sessionBar.style.display = 'none';
+    const promoBar = document.getElementById('promo-session-bar');
+    if (promoBar) promoBar.style.display = 'none';
     mostrarModalLogin();
     mostrarNotificacion('Sesi\u00f3n cerrada correctamente', 'success');
 }
@@ -2435,41 +2545,49 @@ function abrirModalVenta() {
         mostrarModalLogin();
         return;
     }
-    abrirModalVentaConSesion();
+    cambiarPagina('avance');
+    abrirPanelVentas();
 }
 
-function abrirModalVentaConSesion() {
-    const zonaId = promotorSession.zona_principal_id;
-    const zona = HorariosDataStore.zonas.find(z => z.id === zonaId);
-
+function abrirPanelVentasConSesion() {
     const pdvSel = document.getElementById('modal-pdv');
+    const pdvs = DataStore.getPDVs();
 
-    if (zona) {
-        pdvSel.innerHTML = '<option value="' + escHtml(zona.nombre) + '">' + escHtml(zona.nombre) + '</option>';
-        pdvSel.disabled = true;
+    if (!estaSupervisorDesbloqueado() && promotorSession) {
+        const zonaId = promotorSession.zona_principal_id;
+        const zona = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas.find(z => z.id === zonaId) : null;
+        const tiendaNombre = (zona && zona.nombre) || (zonaId || null);
+        if (tiendaNombre) {
+            pdvSel.innerHTML = '<option value="' + escHtml(tiendaNombre) + '">' + escHtml(tiendaNombre) + '</option>';
+            pdvSel.disabled = true;
+        } else {
+            pdvSel.innerHTML = '<option value="">Sin tienda asignada</option>';
+            pdvSel.disabled = true;
+        }
+        logValidacionPromotor();
     } else {
-        pdvSel.innerHTML = '<option value="">Sin tienda asignada</option>';
-        pdvSel.disabled = true;
+        pdvSel.disabled = false;
+        pdvSel.innerHTML = '<option value="">Seleccionar punto de venta...</option>' +
+            pdvs.map(p => '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>').join('');
+        const tiendaPromotor = _tiendaPromotorSesion();
+        if (!estaSupervisorDesbloqueado() && tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) pdvSel.value = tiendaPromotor;
     }
 
     const sessionBar = document.getElementById('ventas-session-bar');
-    if (sessionBar) {
-        const userDiv = sessionBar.querySelector('.ventas-session-user');
-        if (userDiv) userDiv.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Bienvenido, ' + escHtml(promotorSession.nombre);
-    } else {
-        const header = document.querySelector('.modal-ventas .modal-header');
-        if (header) {
-            const bar = document.createElement('div');
-            bar.id = 'ventas-session-bar';
-            bar.className = 'ventas-session-bar';
-            bar.innerHTML = '<div class="ventas-session-user"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Bienvenido, ' + escHtml(promotorSession.nombre) + '</div><button class="ventas-session-logout" onclick="cerrarSesionPromotor()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar Sesi\u00f3n</button></div>';
-            header.parentNode.insertBefore(bar, header.nextSibling);
+    if (!estaSupervisorDesbloqueado() && promotorSession) {
+        if (sessionBar) {
+            sessionBar.style.display = 'flex';
+            sessionBar.innerHTML = '<div class="ventas-session-user"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>Bienvenido, ' + escHtml(promotorSession.nombre) + '</div>' +
+                '<button class="ventas-session-logout" onclick="cerrarSesionPromotor()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar Sesi\u00f3n</button>';
         }
+    } else if (sessionBar) {
+        sessionBar.style.display = 'none';
+        sessionBar.innerHTML = '';
     }
 
-    document.getElementById('modal-venta').classList.add('open');
     ventasModificadas = false;
-    document.getElementById('ventas-unsaved-bar').classList.remove('visible');
+    const unsaved = document.getElementById('ventas-unsaved-bar');
+    if (unsaved) unsaved.classList.remove('visible');
     modoVista = 'mes';
     diaSeleccionado = new Date().getDate();
     const toggleMes = document.querySelector('[data-view="mes"]');
@@ -2478,7 +2596,8 @@ function abrirModalVentaConSesion() {
     if (toggleDia) toggleDia.classList.remove('active');
     const diaSelect = document.getElementById('ventas-dia-select');
     if (diaSelect) diaSelect.style.display = 'none';
-    document.getElementById('modal-venta').classList.remove('vista-dia');
+    const panelEl = document.getElementById('avance-panel-ventas');
+    if (panelEl) panelEl.classList.remove('vista-dia');
     sincronizarSelectsPeriodo();
     cargarVentasCalendario();
 }
@@ -2741,7 +2860,7 @@ function renderEncabezadoPromotor(promotor, ventas, fechaDesde, fechaHasta) {
     if (heroKpis) {
         heroKpis.innerHTML = `
             <div class="inf-promotor-hero-kpi" style="min-width:120px;text-align:left;">
-                <div style="font-size:13px;font-weight:700;color:#ffffff;line-height:1.4;">${escHtml(promotor.nombre)}</div>
+                <div style="font-size:13px;font-weight:700;color:var(--t-text);line-height:1.4;">${escHtml(promotor.nombre)}</div>
                 <div style="font-size:11px;color:#727272;margin-top:2px;">${escHtml(promotor.email || 'Sin correo')}</div>
                 <div style="font-size:11px;color:#1DB954;margin-top:1px;">${escHtml(tiendaNombre)}</div>
             </div>
@@ -3049,14 +3168,14 @@ function renderInfPromCharts(trendLabels, trendValues) {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: { legend: { display: false } },
-                scales: {
+scales: {
                     x: {
-                        ticks: { color: '#727272', font: { size: 9 }, maxRotation: 45 },
-                        grid: { color: 'rgba(255,255,255,0.03)' }
+                        ticks: { color: () => temaCss('--chart-tick'), font: { size: 9 }, maxRotation: 45 },
+                        grid: { color: () => temaCss('--chart-grid3') }
                     },
                     y: {
-                        ticks: { color: '#727272', font: { size: 9 } },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                        ticks: { color: () => temaCss('--chart-tick'), font: { size: 9 } },
+                        grid: { color: () => temaCss('--chart-grid2') }
                     }
                 }
             }
@@ -3393,17 +3512,20 @@ function aplicarSesionInicial() {
         cambiarPagina('vista-ejecutiva');
     } else if (session.rol === 'promotor') {
         const p = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores.find(x => x.id === session.id) : null;
+        let almacenada = null;
+        try {
+            const raw = localStorage.getItem('promotor_session') || sessionStorage.getItem('promotor_session');
+            if (raw) almacenada = JSON.parse(raw);
+        } catch (e) { almacenada = null; }
         document.body.classList.remove('rol-supervisor');
         document.body.classList.add('rol-promotor');
-        if (p) {
-            promotorSession = p;
-        } else {
-            promotorSession = {
-                id: session.id,
-                nombre: session.nombre,
-                email: session.email
-            };
-        }
+        promotorSession = {
+            id: session.id,
+            nombre: (p && p.nombre) || (almacenada && almacenada.nombre) || session.nombre || 'Promotor',
+            dni: (p && p.dni) || (almacenada && almacenada.dni) || null,
+            email: (p && p.email) || (almacenada && almacenada.email) || session.email || null,
+            zona_principal_id: (p && p.zona_principal_id) || (almacenada && almacenada.zona_principal_id) || null
+        };
         renderPromotorHeader(session);
         mostrarCerrarSesion();
         cambiarPagina('avance');
@@ -3476,4 +3598,579 @@ function cambiarPaginaConSesion(pagina) {
         return;
     }
     cambiarPagina(pagina);
+}
+
+/* ===== INFORME INDIVIDUAL (PROMOTOR) ===== */
+let infIndTab = 'desempeno';
+let infIndFechas = { desde: null, hasta: null };
+let infIndChartInstances = {};
+
+function infIndEsc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function infIndMoneda(n) {
+    return 'S/ ' + Number(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function infIndPctStr(n) {
+    return Number(n || 0).toFixed(1) + '%';
+}
+
+function obtenerPromotorSesionInforme() {
+    initPromotorSession();
+    const sesion = leerSesion();
+    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+    let candidato = promotorSession || null;
+    if (!candidato && sesion && sesion.rol === 'promotor') {
+        candidato = { id: sesion.id, nombre: sesion.nombre, email: sesion.email };
+    }
+    if (!candidato) return null;
+
+    const id = candidato.id || null;
+    const correo = String(candidato.email || '').trim().toLowerCase();
+
+    let promotor = null;
+    if (id) promotor = promotores.find(p => p.id === id);
+    if (!promotor && correo) {
+        promotor = promotores.find(p => p.email && String(p.email).trim().toLowerCase() === correo);
+    }
+    if (promotor) return promotor;
+
+    if (id) {
+        return {
+            id: id,
+            nombre: candidato.nombre || '',
+            dni: candidato.dni || null,
+            email: candidato.email || null,
+            zona_principal_id: candidato.zona_principal_id || null
+        };
+    }
+    return null;
+}
+
+function _ventasDelPromotor(promotor, ventas) {
+    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const tienda = promotor.zona_principal_id ? zonas.find(z => z.id === promotor.zona_principal_id) : null;
+    const tiendaNombre = tienda ? tienda.nombre : null;
+    const correo = String(promotor.email || '').trim().toLowerCase();
+    const nombre = String(promotor.nombre || '').trim().toLowerCase();
+
+    return ventas.filter(v => {
+        if (v.promotor_id && promotor.id) return v.promotor_id === promotor.id;
+        if (v.promotor_correo && correo) return String(v.promotor_correo).trim().toLowerCase() === correo;
+        if (v.promotor_nombre && nombre) return String(v.promotor_nombre).trim().toLowerCase() === nombre;
+        return tiendaNombre ? v.punto_venta === tiendaNombre : false;
+    });
+}
+
+function _calcularCumplimientoPromotor(promotor, ventas, fechaDesde) {
+    const totalVenta = ventas.reduce((s, v) => s + (v.venta || 0), 0);
+    const fechaIni = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date();
+    const mes = fechaIni.getMonth() + 1;
+    const anio = fechaIni.getFullYear();
+
+    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const tienda = promotor.zona_principal_id ? zonas.find(z => z.id === promotor.zona_principal_id) : null;
+    const tiendaNombre = tienda ? tienda.nombre : null;
+
+    const productos = DataStore.getProductos();
+    const cuotas = DataStore.getCuotasActivas();
+    let cuotaTotal = 0;
+    if (tiendaNombre) {
+        for (let prod of productos) {
+            const c = cuotas.find(x => x.punto_venta === tiendaNombre && x.producto === prod && x.mes === mes && x.anio === anio);
+            if (c) cuotaTotal += (c.cuota || 0);
+        }
+    }
+    const cumplimiento = cuotaTotal > 0 ? Math.min((totalVenta / cuotaTotal) * 100, 999) : 0;
+    const faltante = Math.max(cuotaTotal - totalVenta, 0);
+    return { totalVenta, cuotaTotal, cumplimiento, faltante };
+}
+
+function _calcularRankingPromotores(ventas, fechaDesde, fechaHasta) {
+    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
+    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const activos = promotores.filter(p =>
+        p.estado === 'Activo' &&
+        p.zona_principal_id &&
+        zonas.some(z => z.id === p.zona_principal_id)
+    );
+    const fd = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : null;
+    const fh = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : null;
+
+    const filas = activos.map(p => {
+        let filtradas = _ventasDelPromotor(p, ventas);
+        if (fd) filtradas = filtradas.filter(v => new Date(v.fecha) >= fd);
+        if (fh) filtradas = filtradas.filter(v => new Date(v.fecha) <= fh);
+        const venta = filtradas.reduce((s, v) => s + (v.venta || 0), 0);
+        const cumpl = _calcularCumplimientoPromotor(p, filtradas, fechaDesde).cumplimiento;
+        return { promotorId: p.id, venta, cumplimiento: cumpl };
+    });
+    filas.sort((a, b) => b.venta - a.venta);
+    return filas;
+}
+
+function infIndDestroyCharts() {
+    Object.keys(infIndChartInstances).forEach(k => {
+        if (infIndChartInstances[k]) { infIndChartInstances[k].destroy(); delete infIndChartInstances[k]; }
+    });
+}
+
+function renderVelocimetroIndividual(pct, cumplimiento) {
+    const svg = document.getElementById('inf-ind-gauge');
+    if (!svg) return;
+
+    const C = 110, R = 92;
+    const MAXV = 150;
+    const VALOR = Math.max(0, Math.min(pct, MAXV));
+    const LONG = Math.PI * R;
+
+    const color = VALOR >= 100 ? '#1DB954' : VALOR >= 70 ? '#F59E0B' : '#EF4444';
+
+    const PACO = (frac) => {
+        const fi = Math.PI - Math.PI * frac;
+        return (C + R * Math.cos(fi)).toFixed(1) + ' ' + (C - R * Math.sin(fi)).toFixed(1);
+    };
+
+    const arco = 'M ' + PACO(0) + ' A ' + R + ' ' + R + ' 0 0 1 ' + PACO(1);
+
+    const zonas = [
+        { a: 0, b: 0.46, color: '#EF4444' },
+        { a: 0.46, b: 0.66, color: '#F59E0B' },
+        { a: 0.66, b: 1, color: '#1DB954' }
+    ];
+    const zonasHtml = zonas.map(z => {
+        const seg = (z.b - z.a) * LONG;
+        const off = LONG - z.a * LONG;
+        return '<path d="' + arco + '" fill="none" stroke="' + z.color + '" stroke-opacity="0.14" stroke-width="16" stroke-linecap="butt" stroke-dasharray="' + seg.toFixed(2) + ' ' + (LONG - seg).toFixed(2) + '" stroke-dashoffset="' + off.toFixed(2) + '"></path>';
+    }).join('');
+
+    const ticks = [0, 0.333, 0.667, 1].map(f => {
+        const t = (MAXV * f);
+        const label = Math.round(t) + '%';
+        const p = PACO(f);
+        return '<text x="' + p.split(' ')[0] + '" y="' + (parseFloat(p.split(' ')[1]) + 20) + '" text-anchor="middle" class="inf-ind-tick">' + label + '</text>';
+    }).join('');
+
+    const fValue = VALOR / MAXV;
+    const faltanteDash = LONG - fValue * LONG;
+    const tip = PACO(fValue);
+
+    svg.innerHTML = '' +
+        zonasHtml +
+        '<path d="' + arco + '" fill="none" stroke="' + color + '" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" class="inf-ind-gauge-value" stroke-dasharray="' + LONG.toFixed(2) + ' ' + LONG.toFixed(2) + '" stroke-dashoffset="' + LONG.toFixed(2) + '"></path>' +
+        '<circle class="inf-ind-gauge-knob" cx="' + tip.split(' ')[0] + '" cy="' + tip.split(' ')[1] + '" r="7" fill="' + color + '"></circle>' +
+        '<circle class="inf-ind-gauge-knob-inner" cx="' + tip.split(' ')[0] + '" cy="' + tip.split(' ')[1] + '" r="3" fill="#0f0f0f"></circle>' +
+        '<text x="110" y="95" text-anchor="middle" class="inf-ind-gauge-pct" id="inf-ind-gauge-pct">0%</text>' +
+        '<text x="110" y="116" text-anchor="middle" class="inf-ind-gauge-label">Cumplimiento Mensual</text>' +
+        ticks;
+
+    const valuePath = svg.querySelector('.inf-ind-gauge-value');
+    if (valuePath) {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                valuePath.style.strokeDashoffset = faltanteDash.toFixed(2);
+            });
+        });
+    }
+
+    const pctEl = document.getElementById('inf-ind-gauge-pct');
+    const objetivo = Number(pct || 0).toFixed(1);
+    const inicio = performance.now();
+    const duracion = 900;
+
+    function animar(t) {
+        const p = Math.min((t - inicio) / duracion, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const val = (objetivo * eased);
+        pctEl.textContent = val.toFixed(1) + '%';
+        pctEl.style.fill = color;
+        if (p < 1) requestAnimationFrame(animar);
+    }
+    requestAnimationFrame(animar);
+}
+
+function renderizarInformeIndividual() {
+    const page = document.getElementById('page-informe-individual');
+    if (!page) return;
+
+    if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized && typeof initHorarios === 'function') {
+        initHorarios('supervisor');
+        HorariosDataStore.onUpdate = function () { renderHorarios(); };
+    }
+
+    poblarSelectMes('individual');
+    sincronizarInputsFecha();
+    renderPeriodoAnalizado('periodo-analizado-individual');
+
+    const warning = document.getElementById('inf-ind-session-warning');
+    const dashboard = document.getElementById('inf-ind-dashboard');
+    const heroUser = document.getElementById('inf-ind-hero-user');
+
+    const promotor = obtenerPromotorSesionInforme();
+    if (!promotor) {
+        infIndDestroyCharts();
+        if (warning) {
+            warning.style.display = 'flex';
+            warning.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> <div><strong>Inicia sesi&oacute;n como promotor</strong><span>Este informe es exclusivo para el promotor autenticado con su propia sesi&oacute;n.</span></div>';
+        }
+        if (dashboard) dashboard.style.display = 'none';
+        if (heroUser) heroUser.innerHTML = '';
+        return;
+    }
+
+    if (warning) warning.style.display = 'none';
+    if (dashboard) dashboard.style.display = '';
+    if (heroUser) heroUser.innerHTML = renderHeroUsuarioInforme(promotor);
+
+    const fechas = fechasEfectivasInforme();
+    infIndFechas = { desde: fechas.desde, hasta: fechas.hasta };
+
+    const ventas = DataStore.getVentasActivas();
+    let ventasProm = _ventasDelPromotor(promotor, ventas);
+    if (fechas.desde) ventasProm = ventasProm.filter(v => new Date(v.fecha) >= new Date(fechas.desde + 'T00:00:00'));
+    if (fechas.hasta) ventasProm = ventasProm.filter(v => new Date(v.fecha) <= new Date(fechas.hasta + 'T23:59:59'));
+
+    const datos = _calcularCumplimientoPromotor(promotor, ventasProm, fechas.desde);
+    const ranking = _calcularRankingPromotores(ventas, fechas.desde, fechas.hasta);
+    const idxProm = ranking.findIndex(r => r.promotorId === promotor.id);
+    const puesto = idxProm >= 0 ? idxProm + 1 : '—';
+    const totalProm = ranking.length;
+
+    document.getElementById('inf-ind-venta').textContent = infIndMoneda(datos.totalVenta);
+    document.getElementById('inf-ind-meta').textContent = infIndMoneda(datos.cuotaTotal);
+    document.getElementById('inf-ind-faltante').textContent = infIndMoneda(datos.faltante);
+    document.getElementById('inf-ind-faltante').style.color = datos.faltante > 0 ? '#EF4444' : '#1DB954';
+
+    document.getElementById('inf-ind-posicion').textContent = puesto;
+    document.getElementById('inf-ind-pos-total').textContent = totalProm;
+    document.getElementById('inf-ind-pos-venta').textContent = infIndMoneda(datos.totalVenta);
+    document.getElementById('inf-ind-pos-cump').textContent = infIndPctStr(datos.cumplimiento);
+    document.getElementById('inf-ind-pos-cump').style.color = colorEstadoCumplimiento(datos.cumplimiento);
+
+    renderVelocimetroIndividual(datos.cumplimiento, datos.cumplimiento);
+    renderMensajeMotivacional(datos);
+
+    const trend = _evolucionDiariaVentas(ventasProm, fechas.desde, fechas.hasta);
+    const productoRows = _desempenoPorProducto(promotor, ventasProm, fechas.desde);
+    renderTablaProductosInforme(productoRows);
+    renderTopBottomProductos(productoRows);
+    renderInfIndCharts(trend, productoRows);
+
+    if (infIndTab === 'promociones') {
+        renderPromocionesInformeIndividual();
+    }
+}
+
+function renderHeroUsuarioInforme(promotor) {
+    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const zona = promotor.zona_principal_id ? zonas.find(z => z.id === promotor.zona_principal_id) : null;
+    const tienda = zona ? zona.nombre : 'Sin tienda asignada';
+    return '' +
+        '<div class="inf-ind-user-avatar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>' +
+        '<div class="inf-ind-user-data">' +
+            '<div class="inf-ind-user-name">' + infIndEsc(promotor.nombre) + '</div>' +
+            '<div class="inf-ind-user-mail">' + infIndEsc(promotor.email || 'Sin correo') + '</div>' +
+            '<div class="inf-ind-user-tienda">' + infIndEsc(tienda) + '</div>' +
+        '</div>';
+}
+
+function colorEstadoCumplimiento(c) {
+    return c >= 100 ? '#1DB954' : c >= 70 ? '#F59E0B' : '#EF4444';
+}
+
+function renderMensajeMotivacional(datos) {
+    const cont = document.getElementById('inf-ind-motiv');
+    if (!cont) return;
+    const c = datos.cumplimiento;
+    let tipo, icono, titulo, texto;
+    if (c >= 100) {
+        tipo = 'exito';
+        icono = '&#127942;';
+        titulo = '\u00a1Felicitaciones!';
+        texto = 'Has superado tu meta mensual. \u00a1Sigue as\u00ed!';
+    } else if (c >= 70) {
+        tipo = 'avance';
+        icono = '&#128640;';
+        titulo = '\u00a1Muy cerca!';
+        texto = 'Est\u00e1s muy cerca de cumplir tu meta.';
+    } else {
+        tipo = 'alerta';
+        icono = '&#9888;&#65039;';
+        titulo = '\u00a1Vamos!';
+        if (datos.cuotaTotal > 0) {
+            texto = 'A\u00fan faltan ' + infIndMoneda(datos.faltante) + ' para alcanzar tu objetivo.';
+        } else {
+            texto = 'A\u00fan no se ha asignado una cuota de ventas para tu meta mensual.';
+        }
+    }
+    cont.className = 'inf-ind-motiv inf-ind-motiv-' + tipo;
+    cont.innerHTML = '<span class="inf-ind-motiv-icon">' + icono + '</span>' +
+        '<div>' +
+            '<div class="inf-ind-motiv-titulo">' + titulo + '</div>' +
+            '<div class="inf-ind-motiv-texto">' + texto + '</div>' +
+        '</div>' +
+        '<div class="inf-ind-motiv-pct" style="color:' + colorEstadoCumplimiento(c) + ';">' + infIndPctStr(c) + '</div>';
+}
+
+function _evolucionDiariaVentas(ventas, fechaDesde, fechaHasta) {
+    const fechaIni = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const fechaFin = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : new Date();
+    const diffTime = Math.abs(fechaFin - fechaIni);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const map = {};
+    const labels = [];
+    for (let d = 1; d <= diffDays; d++) {
+        const date = new Date(fechaIni);
+        date.setDate(date.getDate() + d - 1);
+        const key = date.getDate() + '/' + (date.getMonth() + 1);
+        map[key] = 0;
+        labels.push(key);
+    }
+    ventas.forEach(v => {
+        if (!v.fecha) return;
+        const f = new Date(v.fecha);
+        const key = f.getDate() + '/' + (f.getMonth() + 1);
+        if (map[key] !== undefined) map[key] += (v.venta || 0);
+    });
+    const valores = labels.map(l => map[l]);
+    return { labels, valores };
+}
+
+function _desempenoPorProducto(promotor, ventas, fechaDesde) {
+    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
+    const tienda = promotor.zona_principal_id ? zonas.find(z => z.id === promotor.zona_principal_id) : null;
+    const tiendaNombre = tienda ? tienda.nombre : null;
+    const fechaIni = fechaDesde ? new Date(fechaDesde + 'T00:00:00') : new Date();
+    const mes = fechaIni.getMonth() + 1;
+    const anio = fechaIni.getFullYear();
+    const cuotas = DataStore.getCuotasActivas();
+    const productos = DataStore.getProductos();
+
+    const filas = productos.map(prod => {
+        const venta = ventas.filter(v => v.producto === prod).reduce((s, x) => s + (x.venta || 0), 0);
+        const cuotaRec = tiendaNombre ? cuotas.find(c => c.punto_venta === tiendaNombre && c.producto === prod && c.mes === mes && c.anio === anio) : null;
+        const cuota = cuotaRec ? cuotaRec.cuota : 0;
+        const cumplimiento = cuota > 0 ? (venta / cuota) * 100 : (venta > 0 ? 100 : 0);
+        const faltante = Math.max(cuota - venta, 0);
+        return { producto: prod, venta, cuota, cumplimiento, faltante };
+    });
+    filas.sort((a, b) => b.venta - a.venta);
+    const totalVenta = filas.reduce((s, r) => s + r.venta, 0);
+    filas.forEach(r => { r.participacion = totalVenta > 0 ? (r.venta / totalVenta) * 100 : 0; });
+    return filas;
+}
+
+function renderTablaProductosInforme(rows) {
+    const tbody = document.getElementById('inf-ind-tabla-productos');
+    if (!tbody) return;
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#727272;padding:24px;">Sin datos de productos para el periodo.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = rows.map(r => {
+        const color = colorEstadoCumplimiento(r.cumplimiento);
+        const barClass = r.cumplimiento >= 100 ? 'cumple' : r.cumplimiento >= 70 ? 'alerta' : 'riesgo';
+        return '' +
+            '<tr>' +
+                '<td class="inf-ind-th-left">' + infIndEsc(r.producto) + '</td>' +
+                '<td class="inf-ind-num ' + (r.venta > 0 ? '' : 'inf-ind-vacio') + '">' + (r.venta > 0 ? infIndMoneda(r.venta) : '\u2014') + '</td>' +
+                '<td class="inf-ind-num">' + (r.cuota > 0 ? infIndMoneda(r.cuota) : '\u2014') + '</td>' +
+                '<td class="inf-ind-num" style="color:' + (r.faltante > 0 ? '#EF4444' : '#1DB954') + ';">' + (r.faltante > 0 ? infIndMoneda(r.faltante) : 'S/ 0') + '</td>' +
+                '<td>' +
+                    '<div class="inf-ind-bar-track"><div class="inf-ind-bar-fill ' + barClass + '" style="width:' + Math.min(r.cumplimiento, 100) + '%;"></div></div>' +
+                    '<span class="inf-ind-bar-pct ' + barClass + '">' + infIndPctStr(r.cumplimiento) + '</span>' +
+                '</td>' +
+                '<td style="color:' + color + ';font-weight:700;">' + infIndPctStr(r.participacion) + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+function renderTopBottomProductos(rows) {
+    const mejor = rows[0];
+    const peor = rows[rows.length - 1];
+    const totalVenta = rows.reduce((s, r) => s + r.venta, 0);
+
+    const setCard = (idName, idValor, idPct) => (r) => {
+        document.getElementById(idName).textContent = r ? r.producto : '\u2014';
+        document.getElementById(idValor).textContent = r && r.venta > 0 ? infIndMoneda(r.venta) : 'Sin ventas';
+        document.getElementById(idPct).textContent = totalVenta > 0 && r ? infIndPctStr((r.venta / totalVenta) * 100) + ' de participaci\u00f3n' : '\u2014';
+    };
+    const rellenarMejor = setCard('inf-ind-mejor', 'inf-ind-mejor-valor', 'inf-ind-mejor-pct');
+    const rellenarPeor = setCard('inf-ind-peor', 'inf-ind-peor-valor', 'inf-ind-peor-pct');
+    if (mejor) rellenarMejor(mejor);
+    if (peor) rellenarPeor(peor);
+    else {
+        document.getElementById('inf-ind-mejor').textContent = '\u2014';
+        document.getElementById('inf-ind-mejor-valor').textContent = 'Sin ventas';
+        document.getElementById('inf-ind-mejor-pct').textContent = '\u2014';
+        document.getElementById('inf-ind-peor').textContent = '\u2014';
+        document.getElementById('inf-ind-peor-valor').textContent = 'Sin ventas';
+        document.getElementById('inf-ind-peor-pct').textContent = '\u2014';
+    }
+}
+
+function renderInfIndCharts(trend, productoRows) {
+    infIndDestroyCharts();
+
+    const canvasEvo = document.getElementById('infIndChartEvolucion');
+    if (canvasEvo && trend.labels.length > 0) {
+        const ctx = canvasEvo.getContext('2d');
+        const grad = ctx.createLinearGradient(0, 0, 0, 260);
+        grad.addColorStop(0, 'rgba(29,185,84,0.30)');
+        grad.addColorStop(1, 'rgba(29,185,84,0)');
+        infIndChartInstances['evolucion'] = new Chart(canvasEvo, {
+            type: 'line',
+            data: {
+                labels: trend.labels,
+                datasets: [{
+                    label: 'Venta del d\u00eda',
+                    data: trend.valores,
+                    borderColor: '#1DB954',
+                    backgroundColor: grad,
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    pointHoverRadius: 4,
+                    pointBackgroundColor: '#1DB954'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: () => temaCss('--chart-tooltip2'),
+                        titleColor: () => temaCss('--t-text'),
+                        bodyColor: () => temaCss('--chart-tick'),
+                        borderColor: () => temaCss('--chart-tooltip-border'),
+                        borderWidth: 1,
+                        callbacks: {
+                            label: c => infIndMoneda(c.parsed.y)
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: () => temaCss('--chart-tick'), font: { size: 9 }, maxRotation: 45 }, grid: { color: () => temaCss('--chart-grid3') } },
+                    y: { beginAtZero: true, ticks: { color: () => temaCss('--chart-tick'), font: { size: 9 }, callback: v => 'S/ ' + v }, grid: { color: () => temaCss('--chart-grid2') } }
+                }
+            }
+        });
+    }
+
+    const canvasProd = document.getElementById('infIndChartProductos');
+    if (canvasProd && productoRows.length > 0) {
+        const labels = productoRows.map(r => r.producto);
+        const valores = productoRows.map(r => r.venta);
+        const colores = productoRows.map(r => r.cumplimiento >= 100 ? '#1DB954' : r.cumplimiento >= 70 ? '#F59E0B' : '#EF4444');
+        infIndChartInstances['productos'] = new Chart(canvasProd, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Venta',
+                    data: valores,
+                    backgroundColor: colores.map(c => c + 'CC'),
+                    borderColor: colores,
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: () => temaCss('--chart-tooltip2'),
+                        titleColor: () => temaCss('--t-text'),
+                        bodyColor: () => temaCss('--chart-tick'),
+                        borderColor: () => temaCss('--chart-tooltip-border'),
+                        borderWidth: 1,
+                        callbacks: { label: c => infIndMoneda(c.parsed.x) }
+                    }
+                },
+                scales: {
+                    x: { beginAtZero: true, ticks: { color: () => temaCss('--chart-tick'), font: { size: 9 }, callback: v => 'S/ ' + v }, grid: { color: () => temaCss('--chart-grid2') } },
+                    y: { ticks: { color: () => temaCss('--chart-tick2'), font: { size: 10 } }, grid: { display: false } }
+                }
+            }
+        });
+    }
+}
+
+function cambiarTabInformeIndividual(tab) {
+    infIndTab = tab === 'promociones' ? 'promociones' : 'desempeno';
+    const tabs = document.getElementById('inf-ind-tabs');
+    if (tabs) tabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.indtab === infIndTab));
+    const d = document.getElementById('inf-ind-tab-desempeno');
+    const p = document.getElementById('inf-ind-tab-promociones');
+    if (d) d.style.display = infIndTab === 'desempeno' ? '' : 'none';
+    if (p) p.style.display = infIndTab === 'promociones' ? '' : 'none';
+    if (infIndTab === 'promociones') renderPromocionesInformeIndividual();
+    else if (d && p) {
+        p.innerHTML = '';
+    }
+}
+
+function renderPromocionesInformeIndividual() {
+    const cont = document.getElementById('inf-ind-tab-promociones');
+    if (!cont) return;
+
+    const promotor = obtenerPromotorSesionInforme();
+    if (!promotor) {
+        cont.innerHTML = '<div class="inf-ind-card"><div class="empty-state"><p>Inicia sesi\u00f3n como promotor.</p></div></div>';
+        return;
+    }
+
+    if (typeof PromocionesStore === 'undefined' || !PromocionesStore._firestoreLoaded) {
+        cont.innerHTML = '<div class="inf-ind-card"><div class="empty-state"><p>Cargando promociones...</p></div></div>';
+        return;
+    }
+
+    let registros = PromocionesStore.getRegistrosEnRango(infIndFechas.desde, infIndFechas.hasta);
+    registros = registros.filter(r => r && r.promotor_id === promotor.id);
+
+    const total = registros.reduce((s, r) => s + (r.cantidad || 0), 0);
+
+    if (registros.length === 0) {
+        cont.innerHTML = '<div class="inf-ind-card"><div class="empty-state"><p>No existen registros de promociones para el periodo seleccionado.</p></div></div>';
+        return;
+    }
+
+    const porPromo = {};
+    registros.forEach(r => {
+        porPromo[r.promocion] = (porPromo[r.promocion] || 0) + (r.cantidad || 0);
+    });
+    const ranking = Object.entries(porPromo)
+        .map(([promocion, cantidad]) => ({ promocion, cantidad }))
+        .sort((a, b) => b.cantidad - a.cantidad);
+    const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
+
+    const rows = ranking.map((r, i) => {
+        const pct = _promoPct(r.cantidad, total);
+        const medalla = i < 3 ? ' ' + medals[i] : '';
+        return '<tr>' +
+            '<td class="ctl-td-pos">' + (i + 1) + medalla + '</td>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(r.promocion) + '</td>' +
+            '<td>' + r.cantidad + '</td>' +
+            '<td>' + ctlBarCell(pct) + '</td>' +
+            '<td>' + formatPercent(pct) + '</td>' +
+            '</tr>';
+    }).join('');
+
+    cont.innerHTML = '' +
+        '<div class="inf-ind-card">' +
+            '<div class="inf-ind-card-title">&#127873; Mis Promociones</div>' +
+            '<div class="inf-ind-promo-total">' + total + ' cantidades registradas \u00b7 ' + ranking.length + ' promociones</div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table">' +
+                '<thead><tr><th class="ctl-th-left">#</th><th class="ctl-th-left">Promoci\u00f3n</th><th>Cantidad</th><th>Participaci\u00f3n</th><th>%</th></tr></thead>' +
+                '<tbody>' + rows + '</tbody>' +
+            '</table></div>' +
+        '</div>';
 }

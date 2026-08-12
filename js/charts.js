@@ -15,6 +15,24 @@ function destroyChart(id) {
     }
 }
 
+function temaCss(varName) {
+    const valor = getComputedStyle(document.documentElement).getPropertyValue(varName);
+    return valor ? valor.trim() : '';
+}
+
+function repintarTodosLosGraficos() {
+    function actualizarRegistro(lista) {
+        if (!lista) return;
+        Object.keys(lista).forEach(function (k) {
+            const ch = lista[k];
+            if (ch && typeof ch.update === 'function') ch.update();
+        });
+    }
+    actualizarRegistro(chartInstances);
+    if (typeof infPromChartInstances !== 'undefined') actualizarRegistro(infPromChartInstances);
+    if (typeof infIndChartInstances !== 'undefined') actualizarRegistro(infIndChartInstances);
+}
+
 function createEvolucionDiaria() {
     const id = 'chartEvolucion';
     destroyChart(id);
@@ -85,9 +103,9 @@ function createEvolucionDiaria() {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 15, 18, 0.95)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#b3b3b3',
+                    backgroundColor: () => temaCss('--chart-tooltip'),
+                    titleColor: () => temaCss('--t-text'),
+                    bodyColor: () => temaCss('--chart-tick2'),
                     borderColor: 'rgba(29, 185, 84, 0.35)',
                     borderWidth: 1,
                     padding: 14,
@@ -112,9 +130,9 @@ function createEvolucionDiaria() {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false, borderDash: [3, 3] },
+                    grid: { color: () => temaCss('--chart-grid'), drawBorder: false, borderDash: [3, 3] },
                     ticks: {
-                        color: '#727272',
+                        color: () => temaCss('--chart-tick'),
                         font: { size: 10, family: 'Inter' },
                         callback: v => {
                             if (Math.abs(v) >= 1000) return 'S/ ' + (v / 1000) + 'k';
@@ -125,7 +143,7 @@ function createEvolucionDiaria() {
                 x: {
                     grid: { display: false },
                     ticks: {
-                        color: '#727272',
+                        color: () => temaCss('--chart-tick'),
                         font: { size: 10, family: 'Inter' },
                         maxTicksLimit: 15,
                         maxRotation: 0
@@ -199,9 +217,9 @@ function createParticipacionProducto() {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 15, 18, 0.95)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#b3b3b3',
+                    backgroundColor: () => temaCss('--chart-tooltip'),
+                    titleColor: () => temaCss('--t-text'),
+                    bodyColor: () => temaCss('--chart-tick2'),
                     borderColor: 'rgba(29, 185, 84, 0.35)',
                     borderWidth: 1,
                     padding: 14,
@@ -220,9 +238,9 @@ function createParticipacionProducto() {
             scales: {
                 x: {
                     beginAtZero: true,
-                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false, borderDash: [3, 3] },
+                    grid: { color: () => temaCss('--chart-grid'), drawBorder: false, borderDash: [3, 3] },
                     ticks: {
-                        color: '#727272',
+                        color: () => temaCss('--chart-tick'),
                         font: { size: 10, family: 'Inter' },
                         callback: v => {
                             if (Math.abs(v) >= 1000) return (v / 1000) + 'k';
@@ -233,7 +251,7 @@ function createParticipacionProducto() {
                 y: {
                     grid: { display: false, drawBorder: false },
                     ticks: {
-                        color: '#b3b3b3',
+                        color: () => temaCss('--chart-tick2'),
                         font: { size: 11.5, family: 'Inter', weight: '500' },
                         autoSkip: false
                     }
@@ -339,10 +357,10 @@ function createRankingChart() {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#282828',
-                    titleColor: '#ffffff',
-                    bodyColor: '#b3b3b3',
-                    borderColor: '#333333',
+                    backgroundColor: () => temaCss('--chart-tooltip'),
+                    titleColor: () => temaCss('--t-text'),
+                    bodyColor: () => temaCss('--chart-tick2'),
+                    borderColor: () => temaCss('--chart-tooltip-border'),
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 6,
@@ -355,9 +373,9 @@ function createRankingChart() {
                 x: {
                     beginAtZero: true,
                     max: 100,
-                    grid: { color: '#2a2a2a', drawBorder: false },
+                    grid: { color: () => temaCss('--t-bd'), drawBorder: false },
                     ticks: {
-                        color: '#727272',
+                        color: () => temaCss('--chart-tick'),
                         font: { size: 10 },
                         callback: v => v + '%'
                     }
@@ -365,7 +383,7 @@ function createRankingChart() {
                 y: {
                     grid: { display: false },
                     ticks: {
-                        color: '#b3b3b3',
+                        color: () => temaCss('--chart-tick2'),
                         font: { size: 11 }
                     }
                 }
@@ -405,10 +423,10 @@ function createPromosChart(ranking) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#282828',
-                    titleColor: '#ffffff',
-                    bodyColor: '#b3b3b3',
-                    borderColor: '#333333',
+                    backgroundColor: () => temaCss('--chart-tooltip'),
+                    titleColor: () => temaCss('--t-text'),
+                    bodyColor: () => temaCss('--chart-tick2'),
+                    borderColor: () => temaCss('--chart-tooltip-border'),
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 6,
@@ -420,12 +438,12 @@ function createPromosChart(ranking) {
             scales: {
                 x: {
                     beginAtZero: true,
-                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false, borderDash: [3, 3] },
-                    ticks: { color: '#727272', font: { size: 10 }, precision: 0 }
+                    grid: { color: () => temaCss('--chart-grid'), drawBorder: false, borderDash: [3, 3] },
+                    ticks: { color: () => temaCss('--chart-tick'), font: { size: 10 }, precision: 0 }
                 },
                 y: {
                     grid: { display: false },
-                    ticks: { color: '#b3b3b3', font: { size: 11 } }
+                    ticks: { color: () => temaCss('--chart-tick2'), font: { size: 11 } }
                 }
             }
         }

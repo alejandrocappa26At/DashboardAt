@@ -12,8 +12,8 @@
 }
 
 .ctl-kpi {
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w05);
     border-radius: 10px;
     padding: 10px 12px;
     display: flex;
@@ -24,7 +24,7 @@
 }
 
 .ctl-kpi:hover {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--t-w12);
 }
 
 .ctl-kpi-label {
@@ -32,7 +32,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    color: #727272;
+    color: var(--t-textSub);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -48,7 +48,7 @@
 .ctl-kpi-value {
     font-size: 19px;
     font-weight: 800;
-    color: #ffffff;
+    color: var(--t-text);
     letter-spacing: -0.4px;
     line-height: 1.15;
     white-space: nowrap;
@@ -59,7 +59,7 @@
 .ctl-kpi-sub {
     font-size: 10px;
     font-weight: 500;
-    color: #727272;
+    color: var(--t-textSub);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -73,8 +73,8 @@
 
 /* ---------- Contenedor de tabla ---------- */
 .ctl-card {
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w06);
     border-radius: 12px;
     margin-bottom: 16px;
     overflow: hidden;
@@ -86,7 +86,7 @@
     justify-content: space-between;
     gap: 10px;
     padding: 10px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--t-w06);
 }
 
 .ctl-card-title {
@@ -95,7 +95,7 @@
     gap: 8px;
     font-size: 12px;
     font-weight: 700;
-    color: #e6e6e6;
+    color: var(--t-soft2);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -108,7 +108,7 @@
 .ctl-card-count {
     font-size: 11px;
     font-weight: 600;
-    color: #727272;
+    color: var(--t-textSub);
     white-space: nowrap;
 }
 
@@ -126,8 +126,8 @@ table.ctl-table {
 }
 
 .ctl-table thead th {
-    background: #181818;
-    color: #8a8a8a;
+    background: var(--t-bg3);
+    color: var(--t-dim2);
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
@@ -135,7 +135,7 @@ table.ctl-table {
     padding: 8px 12px;
     text-align: right;
     white-space: nowrap;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--t-w08);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -145,10 +145,10 @@ table.ctl-table {
 
 .ctl-table tbody td {
     padding: 7px 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--t-w04);
     text-align: right;
     white-space: nowrap;
-    color: #d4d4d4;
+    color: var(--t-soft);
     font-variant-numeric: tabular-nums;
 }
 
@@ -157,7 +157,7 @@ table.ctl-table {
 }
 
 .ctl-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--t-w03);
 }
 
 .ctl-table tbody td.ctl-td-left {
@@ -166,18 +166,18 @@ table.ctl-table {
 
 .ctl-td-strong {
     font-weight: 700;
-    color: #ffffff;
+    color: var(--t-text);
 }
 
 .ctl-td-dim {
-    color: #8a8a8a;
+    color: var(--t-dim2);
     font-weight: 500;
 }
 
 .ctl-td-pos {
     width: 34px;
     font-weight: 800;
-    color: #727272;
+    color: var(--t-textSub);
 }
 
 .ctl-td-good { color: #1DB954; font-weight: 700; }
@@ -215,12 +215,12 @@ table.ctl-table {
     text-align: left;
     background: rgba(29, 185, 84, 0.05);
     font-weight: 700;
-    color: #ffffff;
+    color: var(--t-text);
     letter-spacing: 0.3px;
     font-size: 12px;
     padding: 7px 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--t-w06);
+    border-bottom: 1px solid var(--t-w06);
 }
 
 .ctl-table tbody tr.ctl-group-row:first-child td { border-top: none; }
@@ -297,8 +297,8 @@ table.ctl-table {
 .ve-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 .ctl-panel {
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w06);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -308,10 +308,10 @@ table.ctl-table {
     align-items: center;
     gap: 8px;
     padding: 10px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--t-w06);
     font-size: 11px;
     font-weight: 700;
-    color: #e6e6e6;
+    color: var(--t-soft2);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -326,11 +326,11 @@ table.ctl-table {
     gap: 10px;
     padding: 7px 10px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--t-w02);
     transition: background 0.2s ease;
 }
 
-.ctl-rank-item:hover { background: rgba(255, 255, 255, 0.05); }
+.ctl-rank-item:hover { background: var(--t-w05); }
 
 .ctl-rank-pos {
     width: 26px;
@@ -342,8 +342,8 @@ table.ctl-table {
     font-size: 12px;
     font-weight: 800;
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.06);
-    color: #b3b3b3;
+    background: var(--t-w06);
+    color: var(--t-textSec);
 }
 
 .ctl-rank-pos.top-1 { background: rgba(255, 215, 0, 0.16); color: #FFD700; }
@@ -358,7 +358,7 @@ table.ctl-table {
 .ctl-rank-name {
     font-size: 12.5px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--t-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -380,14 +380,14 @@ table.ctl-table {
 .ctl-rank-value {
     font-size: 13px;
     font-weight: 800;
-    color: #ffffff;
+    color: var(--t-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 
 .ctl-rank-sub {
     font-size: 9.5px;
-    color: #727272;
+    color: var(--t-textSub);
     font-weight: 600;
     text-align: right;
 }
@@ -401,7 +401,7 @@ table.ctl-table {
     gap: 10px;
     padding: 8px 10px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--t-w02);
     border-left: 3px solid #EF4444;
 }
 
@@ -426,7 +426,7 @@ table.ctl-table {
 .ctl-alert-name {
     font-size: 12.5px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--t-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -434,7 +434,7 @@ table.ctl-table {
 
 .ctl-alert-sub {
     font-size: 10.5px;
-    color: #727272;
+    color: var(--t-textSub);
     margin-top: 1px;
     white-space: nowrap;
     overflow: hidden;
@@ -458,8 +458,8 @@ table.ctl-table {
     gap: 14px;
     padding: 10px 16px;
     margin-bottom: 16px;
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w05);
     border-radius: 10px;
 }
 
@@ -520,13 +520,13 @@ table.ctl-table {
 .ctl-promoter-name {
     font-size: 12.5px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--t-text);
     white-space: nowrap;
 }
 
 .ctl-promoter-meta {
     font-size: 10px;
-    color: #727272;
+    color: var(--t-textSub);
     white-space: nowrap;
 }
 
@@ -585,15 +585,15 @@ table.ctl-table {
     gap: 3px;
     min-width: 0;
     padding: 7px 12px;
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w05);
     border-radius: 8px;
     transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
 .pdv-sum-item:hover {
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.16);
+    border-color: var(--t-w16);
 }
 
 .pdv-sum-label {
@@ -601,14 +601,14 @@ table.ctl-table {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #727272;
+    color: var(--t-textSub);
     white-space: nowrap;
 }
 
 .pdv-sum-value {
     font-size: 14px;
     font-weight: 800;
-    color: #ffffff;
+    color: var(--t-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -629,10 +629,10 @@ table.ctl-table {
     transform: translateX(-50%);
     z-index: 60;
     padding: 5px 9px;
-    background: #0d0d0d;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--t-bgT);
+    border: 1px solid var(--t-w12);
     border-radius: 6px;
-    color: #e6e6e6;
+    color: var(--t-soft2);
     font-size: 10.5px;
     font-weight: 600;
     white-space: nowrap;
