@@ -182,18 +182,25 @@ const TiendasStore = {
         }
         try {
             this._ref().get().then(snap => {
+                // AUDITORÍA: Firestore es la fuente de verdad. Si el documento existe
+                // y trae un listado de tiendas (aunque sea vacío), se respeta tal cual.
+                // La migración desde DataStore solo aplica la primera vez (doc inexistente),
+                // para no reintroducir tiendas que el supervisor eliminó (hard delete).
+                let migrar = true;
                 if (snap.exists) {
                     const data = snap.data() || {};
-                    if (data.tiendas && Array.isArray(data.tiendas) && data.tiendas.length > 0) {
+                    if (Array.isArray(data.tiendas)) {
                         this.tiendas = data.tiendas.map(t => ({ ...t, estado: t.estado || 'Activa' }));
+                        migrar = false;
                     }
                 }
                 this._firestoreLoaded = true;
-                this._migrarDesdeDataStore();
+                if (migrar) this._migrarDesdeDataStore();
                 this._notify();
             }).catch(() => {
+                // Fallback offline: se conserva el sembrado en memoria (PDVS_FIJOS).
+                // No se migra para no reintroducir tiendas eliminadas.
                 this._firestoreLoaded = true;
-                this._migrarDesdeDataStore();
                 this._notify();
             });
         } catch (e) {

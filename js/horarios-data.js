@@ -622,7 +622,23 @@ const HorariosDataStore = {
                 if (snap.exists) {
                     const data = snap.data();
                     if (data.promotores && data.promotores.length > 0) {
-                        cargados = data.promotores;
+                        // AUDITORÍA: normalizar en memoria la lista de promotores
+                        // para garantizar el campo zona_principal_id. Si Firestore
+                        // guardó la tienda como "tienda_asignada"/"tienda", se mapea
+                        // sin modificar la base de datos.
+                        cargados = data.promotores.map(p => {
+                            if (!p) return null;
+                            const base = Object.assign({}, p);
+                            if (!base.zona_principal_id && (p.tienda_asignada || p.tienda)) {
+                                base.zona_principal_id = p.tienda_asignada || p.tienda;
+                            }
+                            if (!base.email && base.correo) base.email = base.correo;
+                            if (!base.nombre && (base.nombre_completo || base.usuario)) {
+                                base.nombre = base.nombre_completo || base.usuario;
+                            }
+                            if (!base.estado) base.estado = 'Activo';
+                            return base;
+                        }).filter(Boolean);
                     }
                 }
 
@@ -642,6 +658,11 @@ const HorariosDataStore = {
 
                 this._limpiarPromotoresFicticios(true);
                 this._sincronizarZonasConDataStore();
+
+                // AUDITORÍA: si el promotor ya inició sesión (o hay una sesión
+                // almacenada) y los promotores recién terminaron de cargar, se
+                // rehidrata la tienda asignada para nunca perderla por carrera.
+                if (typeof _rehidratarSesionPromotor === 'function') _rehidratarSesionPromotor();
 
                 console.log('[VALIDACION] Promotores encontrados:', this.promotores.length);
                 console.log('[VALIDACION] Fuente:', this._fuentePromotores);
@@ -693,7 +714,7 @@ const HorariosDataStore = {
                     password: d.password || '',
                     password_hash: d.password_hash || '',
                     tipo: d.tipo || 'fijo',
-                    zona_principal_id: d.zona_principal_id || d.tienda || null,
+                    zona_principal_id: d.zona_principal_id || d.tienda_asignada || d.tienda || null,
                     estado: d.estado || 'Activo',
                     fecha_creacion: d.fecha_creacion || d.createdAt || new Date().toISOString(),
                     fecha_actualizacion: d.fecha_actualizacion || d.updatedAt || new Date().toISOString()

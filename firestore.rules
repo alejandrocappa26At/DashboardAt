@@ -48,6 +48,21 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Supervisores (gestionados por el Jefe Comercial)
+    match /supervisores/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Zonas comerciales (AREQUIPA SUR, CUSCO, etc.)
+    match /zonas_comerciales/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Credenciales del Jefe Comercial
+    match /config_jefe/{document=**} {
+      allow read, write: if true;
+    }
+
     // Todo lo demas queda denegado por defecto.
   }
 }

@@ -1,0 +1,508 @@
+/* =============================================
+   CORTE COMERCIAL — Tablero gerencial de seguimiento diario
+   Cortes acumulativos 06:00 → 11:30 / 3:30 / 6:30 PM
+   Tabla pivote PDV × Producto (Venta · Meta · Alcance)
+   ============================================= */
+
+/* ---------- Hero / encabezado ---------- */
+.cc-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    background:
+        linear-gradient(135deg, rgba(29, 185, 84, 0.10), rgba(29, 185, 84, 0.02) 55%),
+        var(--t-bg3);
+    border: 1px solid var(--t-w06);
+    border-radius: 12px;
+}
+
+.cc-hero-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: rgba(29, 185, 84, 0.14);
+    border: 1px solid rgba(29, 185, 84, 0.28);
+    flex-shrink: 0;
+    box-shadow: 0 0 22px rgba(29, 185, 84, 0.18);
+}
+
+.cc-hero-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--t-text);
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+}
+
+.cc-hero-sub {
+    font-size: 11.5px;
+    color: var(--t-textSub);
+    margin-top: 2px;
+}
+
+/* ---------- Barra de controles (fecha + cortes) ---------- */
+.cc-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w06);
+    border-radius: 12px;
+}
+
+.cc-control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cc-control-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--t-textSub);
+    white-space: nowrap;
+}
+
+.cc-control-group input[type="date"] {
+    background: var(--t-bg2);
+    border: 1px solid var(--t-w12);
+    border-radius: 8px;
+    color: var(--t-text);
+    font-size: 12.5px;
+    font-family: inherit;
+    font-weight: 600;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cc-control-group input[type="date"]:focus {
+    border-color: #1DB954;
+    box-shadow: 0 0 0 4px rgba(29, 185, 84, 0.12);
+}
+
+.cc-control-group input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+}
+
+/* Chips de cortes */
+.cc-chips {
+    display: inline-flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.cc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: var(--t-bg2);
+    border: 1px solid var(--t-w12);
+    color: var(--t-textSec);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.cc-chip:hover {
+    border-color: rgba(29, 185, 84, 0.5);
+    color: var(--t-text);
+}
+
+.cc-chip.active {
+    background: linear-gradient(135deg, #1DB954, #169c47);
+    border-color: #1DB954;
+    color: #ffffff;
+    box-shadow: 0 3px 12px rgba(29, 185, 84, 0.35);
+}
+
+/* Estado / rango */
+.cc-control-info {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cc-rango {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--t-soft2);
+    white-space: nowrap;
+}
+
+.cc-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+.cc-estado.live {
+    background: rgba(29, 185, 84, 0.14);
+    color: #1DB954;
+    border: 1px solid rgba(29, 185, 84, 0.35);
+}
+
+.cc-estado.pend {
+    background: rgba(245, 158, 11, 0.12);
+    color: #F59E0B;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.cc-estado.hist {
+    background: var(--t-w06);
+    color: var(--t-textSub);
+    border: 1px solid var(--t-w12);
+}
+
+/* ---------- Comparación entre cortes ---------- */
+.cc-compare-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+    gap: 16px;
+    align-items: start;
+    margin-bottom: 16px;
+}
+
+.cc-compare-chart {
+    margin-bottom: 0;
+}
+
+.cc-chart-body {
+    position: relative;
+    height: 300px;
+    padding: 14px;
+}
+
+.cc-side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.cc-corte-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.cc-corte-card {
+    background: var(--t-bg2);
+    border: 1px solid var(--t-w08);
+    border-radius: 12px;
+    padding: 12px 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.cc-corte-card:hover {
+    transform: translateY(-2px);
+}
+
+.cc-corte-card.activo {
+    border-color: rgba(29, 185, 84, 0.6);
+    box-shadow: 0 4px 18px rgba(29, 185, 84, 0.18);
+}
+
+.cc-corte-icon {
+    font-size: 18px;
+}
+
+.cc-corte-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--t-textSub);
+    white-space: nowrap;
+}
+
+.cc-corte-value {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--t-text);
+    letter-spacing: -0.3px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.cc-corte-meta {
+    font-size: 11px;
+    color: var(--t-textSub);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.cc-corte-alcance {
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.cc-corte-alcance.green { color: #1DB954; }
+.cc-corte-alcance.yellow { color: #F59E0B; }
+.cc-corte-alcance.red { color: #EF4444; }
+
+.cc-delta {
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #1DB954;
+    white-space: nowrap;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(29, 185, 84, 0.12);
+    align-self: flex-start;
+}
+
+/* Panel PDV en riesgo */
+.cc-riesgo-panel {
+    margin-top: 4px;
+}
+
+.cc-riesgo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+}
+
+.cc-riesgo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--t-w02);
+}
+
+.cc-riesgo-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--t-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cc-riesgo-pct {
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.cc-riesgo-pct.red { color: #EF4444; }
+
+/* ---------- Tabla pivote (PDV × Producto) ---------- */
+.cc-table-wrap {
+    max-height: 72vh;
+}
+
+table.cc-table {
+    min-width: 1400px;
+    font-size: 12px;
+}
+
+.cc-table thead th {
+    background: var(--t-bg3);
+    padding: 7px 10px;
+}
+
+.cc-table thead tr:first-child th {
+    background: rgba(29, 185, 84, 0.07);
+    font-size: 10.5px;
+    border-bottom: 1px solid var(--t-w10);
+}
+
+.cc-table thead tr:last-child th {
+    background: var(--t-bg3);
+    font-size: 9.5px;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--t-w08);
+}
+
+.cc-table thead th.cc-th-pdv {
+    text-align: left;
+    min-width: 210px;
+    position: sticky;
+    left: 0;
+    z-index: 12;
+    background: #101410;
+}
+
+.cc-table thead th.cc-th-total {
+    background: rgba(59, 130, 246, 0.08) !important;
+    color: #3B82F6;
+}
+
+.cc-table tbody td.cc-pdv-cell {
+    position: sticky;
+    left: 0;
+    z-index: 8;
+    background: var(--t-bg3);
+    min-width: 210px;
+    border-right: 1px solid var(--t-w08);
+}
+
+.cc-table tbody tr:hover td.cc-pdv-cell {
+    background: var(--t-w04);
+}
+
+.cc-table td.cc-cell-total {
+    background: rgba(59, 130, 246, 0.05);
+    font-weight: 700;
+}
+
+.cc-table thead th.cc-th-total,
+.cc-table td.cc-cell-total {
+    border-left: 1px solid var(--t-w08);
+}
+
+.cc-table tfoot tr.cc-row-total td {
+    background: rgba(29, 185, 84, 0.08);
+    border-top: 2px solid rgba(29, 185, 84, 0.4);
+    font-weight: 800;
+    color: var(--t-text);
+    padding: 9px 10px;
+}
+
+.cc-table tfoot .cc-foot-label {
+    position: sticky;
+    left: 0;
+    z-index: 8;
+    background: #0f1a13;
+    border-right: 1px solid rgba(29, 185, 84, 0.3);
+}
+
+.cc-table tfoot .cc-foot-total {
+    background: rgba(29, 185, 84, 0.14);
+    color: #1DB954;
+}
+
+/* ---------- KPI strip de corte ---------- */
+#cc-kpis {
+    grid-template-columns: repeat(5, 1fr);
+    margin-bottom: 16px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1200px) {
+    .cc-compare-grid { grid-template-columns: 1fr; }
+    .cc-corte-grid { grid-template-columns: repeat(3, 1fr); }
+    #cc-kpis { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .cc-controls { flex-direction: column; align-items: stretch; }
+    .cc-control-group { flex-wrap: wrap; }
+    .cc-control-info { margin-left: 0; }
+    .cc-corte-grid { grid-template-columns: 1fr; }
+    .cc-chart-body { height: 260px; }
+    .cc-table thead th.cc-th-pdv,
+    .cc-table tbody td.cc-pdv-cell,
+    .cc-table tfoot .cc-foot-label { position: static; }
+    #cc-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- Tema claro ---------- */
+html[data-theme="light"] .cc-hero,
+html[data-theme="light"] .cc-controls {
+    background: #FFFFFF;
+    border: 1px solid #D9DEE7;
+}
+
+html[data-theme="light"] .cc-control-group input[type="date"] {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #111827;
+}
+
+html[data-theme="light"] .cc-chip {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #374151;
+}
+
+html[data-theme="light"] .cc-chip.active {
+    background: linear-gradient(135deg, #10B981, #059669);
+    border-color: #059669;
+    color: #FFFFFF;
+}
+
+html[data-theme="light"] .cc-corte-card {
+    background: #F8FAFC;
+    border: 1px solid #D8DEE8;
+}
+
+html[data-theme="light"] .cc-corte-value,
+html[data-theme="light"] .cc-riesgo-name { color: #111827; }
+
+html[data-theme="light"] .cc-table thead tr:first-child th {
+    background: #E6F4EB;
+}
+
+html[data-theme="light"] .cc-table thead th.cc-th-pdv {
+    background: #EEF2F7;
+}
+
+html[data-theme="light"] .cc-table tbody td.cc-pdv-cell {
+    background: #FFFFFF;
+}
+
+html[data-theme="light"] .cc-table tbody tr:hover td.cc-pdv-cell {
+    background: #EAF2EB;
+}
+
+html[data-theme="light"] .cc-table td.cc-cell-total {
+    background: #F2F6FC;
+}
+
+html[data-theme="light"] .cc-table tfoot tr.cc-row-total td {
+    background: #DCF5E4;
+}
+
+html[data-theme="light"] .cc-table tfoot .cc-foot-label {
+    background: #E6F4EB;
+}
+
+html[data-theme="light"] .cc-table tfoot .cc-foot-total {
+    background: #C9EFD8;
+    color: #047857;
+}
+
+html[data-theme="light"] .cc-riesgo-item {
+    background: #F8FAFC;
+}

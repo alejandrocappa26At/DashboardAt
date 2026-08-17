@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive AT Sur - Dashboard de Ventas</title>
-    <link rel="stylesheet" href="css/styles.css?v=103">
+    <link rel="stylesheet" href="css/styles.css?v=104">
     <link rel="stylesheet" href="css/horarios.css">
     <link rel="stylesheet" href="css/tiendas.css?v=1">
     <link rel="stylesheet" href="css/ejecutivo.css?v=2">
-    <link rel="stylesheet" href="css/mobile.css?v=1">
+    <link rel="stylesheet" href="css/corte-comercial.css?v=1">
+    <link rel="stylesheet" href="css/mobile.css?v=2">
     <link rel="stylesheet" href="css/themes.css?v=1">
     <script>
         (function () {
@@ -85,6 +86,19 @@
                         <span class="login-role-name">Supervisor</span>
                         <span class="login-role-hint">Análisis, indicadores y gestión comercial.</span>
                         <span class="login-role-action">Ingresar como <strong>Supervisor</strong>
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </span>
+                    </button>
+                    <button type="button" class="login-role-box login-role-box-jefe login-role-full" data-role="jefe"
+                        onclick="mostrarFormularioLogin('jefe')">
+                        <span class="login-role-emoji" aria-hidden="true">🏢</span>
+                        <span class="login-role-name">Jefe Comercial</span>
+                        <span class="login-role-hint">Administra supervisores, zonas e indicadores consolidados.</span>
+                        <span class="login-role-action">Ingresar como <strong>Jefe Comercial</strong>
                             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -201,6 +215,70 @@
                 <div class="login-error-text" id="login-supervisor-error"></div>
                 <button type="button" class="login-submit login-submit-supervisor" onclick="ingresarSupervisor()"
                     id="login-supervisor-submit">
+                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" class="login-submit-icon">
+                        <path d="M22 2 11 13" />
+                        <path d="M22 2 15 22l-4-9-9-4z" />
+                    </svg>
+                    <span class="login-submit-label">Ingresar</span>
+                    <span class="login-submit-spinner"></span>
+                </button>
+            </div>
+
+            <!-- Formulario jefe comercial -->
+            <div class="login-step login-form" id="login-step-jefe" style="display:none;">
+                <div class="login-form-header">
+                    <button type="button" class="login-back" onclick="mostrarFormularioLogin('roles')"
+                        aria-label="Volver">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12" />
+                            <polyline points="12 19 5 12 12 5" />
+                        </svg>
+                    </button>
+                    <div class="login-form-badge login-form-badge-jefe" aria-hidden="true">🏢</div>
+                    <div>
+                        <h2 class="login-form-title">Acceso Jefe Comercial</h2>
+                        <p class="login-form-subtitle">Ingresa tu usuario y contraseña de acceso independiente.</p>
+                    </div>
+                </div>
+                <div class="login-field-group">
+                    <label class="login-label" for="login-jefe-usuario">👤 Usuario</label>
+                    <div class="login-field">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        <input type="text" id="login-jefe-usuario" placeholder="Usuario" autocomplete="username"
+                            onkeydown="if(event.key==='Enter')document.getElementById('login-jefe-password').focus()">
+                    </div>
+                </div>
+                <div class="login-field-group">
+                    <label class="login-label" for="login-jefe-password">🔒 Contrase&ntilde;a</label>
+                    <div class="login-field">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        <input type="password" id="login-jefe-password" placeholder="Contrase&ntilde;a"
+                            autocomplete="current-password" class="has-toggle"
+                            onkeydown="if(event.key==='Enter')ingresarJefeComercial()">
+                        <button type="button" class="login-toggle-btn" id="login-jefe-toggle"
+                            onclick="toggleLoginField('login-jefe-password','login-jefe-toggle')"
+                            aria-label="Mostrar contraseña">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="login-error-text" id="login-jefe-error"></div>
+                <button type="button" class="login-submit login-submit-jefe" onclick="ingresarJefeComercial()"
+                    id="login-jefe-submit">
                     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" class="login-submit-icon">
                         <path d="M22 2 11 13" />
@@ -350,6 +428,13 @@
                 <div class="nav-equalizer" id="eq-vista-ejecutiva"><span></span><span></span><span></span></div>
             </div>
 
+            <div class="nav-item supervisor-only" data-page="corte-comercial">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">⏱️</span>
+                <span class="nav-label">Corte Comercial</span>
+                <div class="nav-equalizer" id="eq-corte-comercial"><span></span><span></span><span></span></div>
+            </div>
+
             <div class="nav-item supervisor-only" data-page="resumen">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
@@ -457,6 +542,59 @@
                 <div class="nav-equalizer" id="eq-tiendas"><span></span><span></span><span></span></div>
             </div>
 
+            <!-- ─── JEFE COMERCIAL ─── (visible solo con sesión de Jefe Comercial) -->
+            <div class="nav-section-divider jefe-divider"><span>JEFE COMERCIAL</span></div>
+
+            <div class="nav-item jefe-only" data-page="jefe-dashboard">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                </span>
+                <span class="nav-label">Dashboard General</span>
+                <div class="nav-equalizer" id="eq-jefe-dashboard"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item jefe-only" data-page="jefe-ranking">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Ranking de Supervisores</span>
+                <div class="nav-equalizer" id="eq-jefe-ranking"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item jefe-only" data-page="jefe-supervisores">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                </span>
+                <span class="nav-label">Gesti&oacute;n de Supervisores</span>
+                <div class="nav-equalizer" id="eq-jefe-supervisores"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item jefe-only" data-page="jefe-zonas">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </span>
+                <span class="nav-label">Gesti&oacute;n de Zonas</span>
+                <div class="nav-equalizer" id="eq-jefe-zonas"><span></span><span></span><span></span></div>
+            </div>
+
         </nav>
 
         <div class="sidebar-footer">
@@ -520,6 +658,14 @@
                         <line x1="8" y1="2" x2="8" y2="6" />
                     </svg>
                     D&iacute;a: <strong id="dia-actual"></strong> / <span id="dia-actual-total">-</span>
+                </span>
+                <span class="top-bar-badge top-bar-clock">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15.5 14" />
+                    </svg>
+                    <strong id="hora-actual">--:--:--</strong>
                 </span>
             </div>
         </header>
@@ -1475,38 +1621,10 @@
             <div class="inf-ind-dashboard" id="inf-ind-dashboard" style="display:none;">
 
                 <div class="inf-ind-top-grid">
-                    <div class="inf-ind-card inf-ind-gauge-card">
-                        <div class="inf-ind-card-title">&#128202; Cumplimiento de Meta</div>
-                        <div class="inf-ind-gauge-wrap">
-                            <svg id="inf-ind-gauge" viewBox="0 0 220 128"></svg>
-                        </div>
-                    </div>
-
-                    <div class="inf-ind-card inf-ind-meta-card">
-                        <div class="inf-ind-card-title">Detalle de Meta</div>
-                        <div class="inf-ind-meta">
-                            <div class="inf-ind-meta-item">
-                                <span class="inf-ind-meta-icon">&#128176;</span>
-                                <div>
-                                    <div class="inf-ind-meta-value" id="inf-ind-venta">S/ 0</div>
-                                    <div class="inf-ind-meta-label">Venta Acumulada</div>
-                                </div>
-                            </div>
-                            <div class="inf-ind-meta-item">
-                                <span class="inf-ind-meta-icon">&#127919;</span>
-                                <div>
-                                    <div class="inf-ind-meta-value" id="inf-ind-meta">S/ 0</div>
-                                    <div class="inf-ind-meta-label">Cuota Total</div>
-                                </div>
-                            </div>
-                            <div class="inf-ind-meta-item">
-                                <span class="inf-ind-meta-icon">&#128201;</span>
-                                <div>
-                                    <div class="inf-ind-meta-value" id="inf-ind-faltante">S/ 0</div>
-                                    <div class="inf-ind-meta-label">Faltante</div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="inf-ind-card inf-ind-venta-card">
+                        <div class="inf-ind-card-title">&#128176; Venta Acumulada</div>
+                        <div class="inf-ind-venta-big" id="inf-ind-venta">S/ 0</div>
+                        <div class="inf-ind-venta-sub">Ventas reales del periodo</div>
                     </div>
 
                     <div class="inf-ind-card inf-ind-pos-card">
@@ -1519,14 +1637,20 @@
                             <span>Venta Acumulada</span>
                             <strong id="inf-ind-pos-venta">S/ 0</strong>
                         </div>
-                        <div class="inf-ind-pos-item">
-                            <span>Cumplimiento</span>
-                            <strong id="inf-ind-pos-cump">0%</strong>
-                        </div>
+                    </div>
+
+                    <div class="inf-ind-card inf-ind-promedio-card">
+                        <div class="inf-ind-card-title">&#128200; Promedio Diario</div>
+                        <div class="inf-ind-venta-big" id="inf-ind-promedio">S/ 0</div>
+                        <div class="inf-ind-venta-sub" id="inf-ind-promedio-sub">0 d&iacute;as con ventas</div>
+                    </div>
+
+                    <div class="inf-ind-card inf-ind-aporte-card">
+                        <div class="inf-ind-card-title">&#127978; Aporte a la Tienda</div>
+                        <div class="inf-ind-aporte-big" id="inf-ind-aporte-pct">0%</div>
+                        <div class="inf-ind-venta-sub inf-ind-aporte-nombre" id="inf-ind-aporte-tienda">del total de la tienda</div>
                     </div>
                 </div>
-
-                <div class="inf-ind-motiv" id="inf-ind-motiv"></div>
 
                 <div class="inf-ind-tabs" id="inf-ind-tabs">
                     <button type="button" class="active" data-indtab="desempeno"
@@ -1564,7 +1688,7 @@
                             <div class="inf-ind-card-title">
                                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"
                                     stroke="none"><path d="M5 3v18H3V3h2zm16 0v18h-2V3h2zm-3 2v14h-2V5h2zM8 5v14H6V5h2zm5 0v14h-2V5h2z" /></svg>
-                                Desempe&ntilde;o por Producto
+                                Ventas por Producto
                             </div>
                             <div class="inf-ind-chart-body"><canvas id="infIndChartProductos"></canvas></div>
                         </div>
@@ -1572,15 +1696,15 @@
 
                     <div class="inf-ind-topbottom-grid">
                         <div class="inf-ind-card inf-ind-topbottom">
-                            <div class="inf-ind-tb-icon best">&#127942;</div>
-                            <div class="inf-ind-tb-label">Producto con Mejor Desempe&ntilde;o</div>
+                            <div class="inf-ind-tb-icon best">&#128293;</div>
+                            <div class="inf-ind-tb-label">Producto M&aacute;s Vendido</div>
                             <div class="inf-ind-tb-name" id="inf-ind-mejor">&mdash;</div>
                             <div class="inf-ind-tb-value" id="inf-ind-mejor-valor">S/ 0</div>
                             <div class="inf-ind-tb-pct" id="inf-ind-mejor-pct">&mdash;</div>
                         </div>
                         <div class="inf-ind-card inf-ind-topbottom">
                             <div class="inf-ind-tb-icon worst">&#9888;&#65039;</div>
-                            <div class="inf-ind-tb-label">Producto con Menor Desempe&ntilde;o</div>
+                            <div class="inf-ind-tb-label">Producto con Menor Venta</div>
                             <div class="inf-ind-tb-name" id="inf-ind-peor">&mdash;</div>
                             <div class="inf-ind-tb-value" id="inf-ind-peor-valor">S/ 0</div>
                             <div class="inf-ind-tb-pct" id="inf-ind-peor-pct">&mdash;</div>
@@ -1595,9 +1719,6 @@
                                     <tr>
                                         <th class="inf-ind-th-left">Producto</th>
                                         <th>Venta</th>
-                                        <th>Cuota</th>
-                                        <th>Faltante</th>
-                                        <th>Cumplimiento</th>
                                         <th>Participaci&oacute;n</th>
                                     </tr>
                                 </thead>
@@ -1711,6 +1832,309 @@
             <div class="ve-layout">
                 <div class="ve-main" id="ve-main"></div>
                 <div class="ve-side" id="ve-side"></div>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA: CORTE COMERCIAL (SEGUIMIENTO DIARIO) ===== -->
+        <section class="page" id="page-corte-comercial">
+            <div class="cc-hero">
+                <div class="cc-hero-icon" aria-hidden="true">⏱️</div>
+                <div>
+                    <div class="cc-hero-title">Corte Comercial</div>
+                    <div class="cc-hero-sub">Seguimiento diario por punto de venta y producto &middot; cortes acumulativos de 06:00 AM</div>
+                </div>
+            </div>
+
+            <div class="cc-controls">
+                <div class="cc-control-group">
+                    <span class="cc-control-label">Fecha</span>
+                    <input type="date" id="cc-fecha" onchange="corteCambiarFecha(this.value)">
+                </div>
+                <div class="cc-control-group">
+                    <span class="cc-control-label">Corte</span>
+                    <div class="cc-chips" id="cc-chips">
+                        <button type="button" class="cc-chip" data-corte="1130" onclick="corteSeleccionar('1130')">🌅 11:30 AM</button>
+                        <button type="button" class="cc-chip" data-corte="1530" onclick="corteSeleccionar('1530')">☀️ 3:30 PM</button>
+                        <button type="button" class="cc-chip" data-corte="1830" onclick="corteSeleccionar('1830')">🌆 6:30 PM</button>
+                    </div>
+                </div>
+                <div class="cc-control-info">
+                    <span class="cc-rango" id="cc-rango"></span>
+                    <span class="cc-estado" id="cc-estado"></span>
+                </div>
+            </div>
+
+            <div class="ctl-kpis" id="cc-kpis"></div>
+
+            <div class="cc-compare-grid" id="cc-comparacion"></div>
+
+            <div id="cc-tabla"></div>
+        </section>
+
+        <!-- ===== PAGINA: DASHBOARD GENERAL (JEFE COMERCIAL) ===== -->
+        <section class="page" id="page-jefe-dashboard">
+            <div class="ranking-hero">
+                <div class="ranking-hero-icon">🏢</div>
+                <div>
+                    <div class="ranking-hero-title">Dashboard General &middot; Jefe Comercial</div>
+                    <div class="ranking-hero-sub">Indicadores consolidados de toda la operaci&oacute;n comercial</div>
+                </div>
+            </div>
+
+            <div class="date-filters">
+                <div class="date-filter-bar">
+                    <span class="date-filters-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Periodo
+                    </span>
+                    <div class="date-filter-main">
+                        <svg class="date-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <select id="filtro-jefe-mes" onchange="cambiarMesFecha('jefe')">
+                            <option value="">Seleccionar periodo...</option>
+                        </select>
+                    </div>
+                    <div class="date-filter-custom" id="custom-jefe">
+                        <div class="date-filter-field">
+                            <label for="filtro-jefe-desde">Desde</label>
+                            <input type="date" id="filtro-jefe-desde" onchange="aplicarFiltrosFecha('jefe',true)">
+                        </div>
+                        <div class="date-filter-field">
+                            <label for="filtro-jefe-hasta">Hasta</label>
+                            <input type="date" id="filtro-jefe-hasta" onchange="aplicarFiltrosFecha('jefe',true)">
+                        </div>
+                    </div>
+                    <button class="date-btn-limpiar" onclick="limpiarFiltrosFecha('jefe')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        Limpiar
+                    </button>
+                </div>
+                <div class="date-filter-fastrow">
+                    <button type="button" class="date-btn-quick" onclick="aplicarRangoRapido('jefe','hoy')">Hoy</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe','esta-semana')">Semana</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe','mes-actual')">Mes</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe','mes-anterior')">Mes Anterior</button>
+                    <button type="button" class="date-btn-quick" onclick="aplicarRangoRapido('jefe','ultimos-3')">3
+                        Meses</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe','anio-actual')">A&ntilde;o</button>
+                </div>
+            </div>
+            <div class="periodo-analizado" id="periodo-analizado-jefe"></div>
+
+            <div class="ctl-kpis" id="jefe-kpis"></div>
+
+            <div class="jefe-layout">
+                <div class="ctl-card jefe-chart-card">
+                    <div class="ctl-card-title">&#128200; Venta por Zona</div>
+                    <div class="jefe-chart-body">
+                        <canvas id="jefeChartZonas"></canvas>
+                    </div>
+                </div>
+                <div id="jefe-ranking-zonas"></div>
+                <div id="jefe-ranking-supervisores"></div>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA: RANKING DE SUPERVISORES (JEFE COMERCIAL) ===== -->
+        <section class="page" id="page-jefe-ranking">
+            <div class="ranking-hero">
+                <div class="ranking-hero-icon">🏆</div>
+                <div>
+                    <div class="ranking-hero-title">Ranking de Supervisores</div>
+                    <div class="ranking-hero-sub">Venta, meta y cumplimiento por supervisor</div>
+                </div>
+                <div class="ranking-hero-stats" id="jefe-ranking-hero-stats"></div>
+            </div>
+
+            <div class="date-filters">
+                <div class="date-filter-bar">
+                    <span class="date-filters-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Periodo
+                    </span>
+                    <div class="date-filter-main">
+                        <svg class="date-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <select id="filtro-jefe-ranking-mes" onchange="cambiarMesFecha('jefe-ranking')">
+                            <option value="">Seleccionar periodo...</option>
+                        </select>
+                    </div>
+                    <div class="date-filter-custom" id="custom-jefe-ranking">
+                        <div class="date-filter-field">
+                            <label for="filtro-jefe-ranking-desde">Desde</label>
+                            <input type="date" id="filtro-jefe-ranking-desde"
+                                onchange="aplicarFiltrosFecha('jefe-ranking',true)">
+                        </div>
+                        <div class="date-filter-field">
+                            <label for="filtro-jefe-ranking-hasta">Hasta</label>
+                            <input type="date" id="filtro-jefe-ranking-hasta"
+                                onchange="aplicarFiltrosFecha('jefe-ranking',true)">
+                        </div>
+                    </div>
+                    <button class="date-btn-limpiar" onclick="limpiarFiltrosFecha('jefe-ranking')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        Limpiar
+                    </button>
+                </div>
+                <div class="date-filter-fastrow">
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-ranking','hoy')">Hoy</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-ranking','esta-semana')">Semana</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-ranking','mes-actual')">Mes</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-ranking','mes-anterior')">Mes Anterior</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-ranking','ultimos-3')">3 Meses</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-ranking','anio-actual')">A&ntilde;o</button>
+                </div>
+            </div>
+            <div class="periodo-analizado" id="periodo-analizado-jefe-ranking"></div>
+
+            <div class="ctl-card">
+                <div class="ctl-card-title">&#127942; Ranking por Venta</div>
+                <div class="ctl-table-wrap">
+                    <table class="ctl-table">
+                        <thead>
+                            <tr>
+                                <th class="ctl-th-left">Pos.</th>
+                                <th class="ctl-th-left">Supervisor</th>
+                                <th class="ctl-th-left">Zona</th>
+                                <th>Venta</th>
+                                <th>Meta</th>
+                                <th>Cumplimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jefe-ranking-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA: GESTION DE SUPERVISORES (JEFE COMERCIAL) ===== -->
+        <section class="page" id="page-jefe-supervisores">
+            <div class="ranking-hero">
+                <div class="ranking-hero-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="ranking-hero-title">Gesti&oacute;n de Supervisores</div>
+                    <div class="ranking-hero-sub">Crear, editar, cambiar contrase&ntilde;a, activar, desactivar y eliminar supervisores</div>
+                </div>
+                <div class="jefe-actions-row">
+                    <button type="button" class="btn btn-primary" onclick="jefeAbrirModalSupervisor(null)">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Nuevo Supervisor
+                    </button>
+                </div>
+            </div>
+
+            <div class="ctl-card">
+                <div class="ctl-table-wrap">
+                    <table class="ctl-table">
+                        <thead>
+                            <tr>
+                                <th class="ctl-th-left">Nombre</th>
+                                <th class="ctl-th-left">Correo</th>
+                                <th class="ctl-th-left">Tel&eacute;fono</th>
+                                <th class="ctl-th-left">Zona(s)</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jefe-tabla-supervisores"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA: GESTION DE ZONAS (JEFE COMERCIAL) ===== -->
+        <section class="page" id="page-jefe-zonas">
+            <div class="ranking-hero">
+                <div class="ranking-hero-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="ranking-hero-title">Gesti&oacute;n de Zonas</div>
+                    <div class="ranking-hero-sub">Crear, editar, activar, desactivar y eliminar zonas comerciales</div>
+                </div>
+                <div class="jefe-actions-row">
+                    <button type="button" class="btn btn-primary" onclick="jefeAbrirModalZona(null)">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Nueva Zona
+                    </button>
+                </div>
+            </div>
+
+            <div class="ctl-card">
+                <div class="ctl-table-wrap">
+                    <table class="ctl-table">
+                        <thead>
+                            <tr>
+                                <th class="ctl-th-left">Zona</th>
+                                <th>PDVs</th>
+                                <th class="ctl-th-left">Puntos de Venta</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jefe-tabla-zonas"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
     </div>
@@ -1999,13 +2423,15 @@
     <script src="js/data.js?v=2"></script>
     <script src="js/charts.js?v=2"></script>
     <script src="js/promociones.js?v=1"></script>
-    <script src="js/horarios-data.js?v=2"></script>
+    <script src="js/horarios-data.js?v=3"></script>
     <script src="js/horarios.js?v=3"></script>
-    <script src="js/tiendas.js?v=1"></script>
-    <script src="js/ejecutivo.js?v=2"></script>
-    <script src="js/mobile.js?v=1"></script>
+    <script src="js/tiendas.js?v=2"></script>
+<script src="js/ejecutivo.js?v=2"></script>
+<script src="js/corte-comercial.js?v=1"></script>
+<script src="js/jefe-comercial.js?v=1"></script>
+<script src="js/mobile.js?v=1"></script>
     <script src="js/theme.js?v=1"></script>
-    <script src="js/app.js?v=6"></script>
+    <script src="js/app.js?v=10"></script>
     <script src="js/respaldo.js?v=1"></script>
 </body>
 

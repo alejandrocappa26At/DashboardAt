@@ -22,6 +22,7 @@
     .top-bar-info { gap: 6px; }
     .top-bar-info .top-bar-badge { font-size: 9.5px; padding: 3px 7px; }
     .top-bar-info .top-bar-badge:nth-child(2) { display: none; }
+    .top-bar-info .top-bar-clock { display: none; }
     .periodo-analizado { font-size: 10px; margin-bottom: 8px; }
     .periodo-analizado-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 

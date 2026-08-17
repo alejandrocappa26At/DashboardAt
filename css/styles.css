@@ -364,6 +364,29 @@ body.rol-supervisor .promo-divider {
     display: none !important;
 }
 
+/* ─── Jefe Comercial visibility (hidden by default) ─── */
+.jefe-only,
+.jefe-divider {
+    display: none !important;
+}
+body.rol-jefe .jefe-only,
+body.rol-jefe .jefe-divider {
+    display: flex !important;
+}
+/* Jefe Comercial also sees supervisor + gestion items */
+body.rol-jefe .supervisor-only,
+body.rol-jefe .supervisor-divider,
+body.rol-jefe .gestion-only,
+body.rol-jefe .gestion-divider {
+    display: flex !important;
+}
+/* Jefe Comercial does not see promo-only items */
+body.rol-jefe .promo-only,
+body.rol-jefe .promo-divider,
+body.rol-jefe .nav-supervisor-toggle {
+    display: none !important;
+}
+
 /* Supervisor toggle item (always visible in PROMOTOR section) */
 .nav-supervisor-toggle {
     margin-top: 6px;
@@ -6743,6 +6766,10 @@ select option {
     background: rgba(59,130,246,0.12);
     border-color: rgba(59,130,246,0.24);
 }
+.login-form-badge-jefe {
+    background: rgba(251,146,60,0.12);
+    border-color: rgba(251,146,60,0.24);
+}
 .login-form-title {
     font-size: 20px;
     font-weight: 700;
@@ -6866,6 +6893,14 @@ select option {
 }
 .login-submit-supervisor:hover {
     box-shadow: 0 14px 34px rgba(59,130,246,0.38);
+}
+.login-submit-jefe {
+    background: linear-gradient(180deg, #f59e0b, #ea7a10);
+    color: #fff7ed;
+    box-shadow: 0 10px 26px rgba(251,146,60,0.28);
+}
+.login-submit-jefe:hover {
+    box-shadow: 0 14px 34px rgba(251,146,60,0.40);
 }
 .login-submit.loading {
     opacity: 0.7;
@@ -7190,6 +7225,16 @@ select option {
 .login-role-box-supervisor:hover {
     border-color: rgba(99,102,241,0.5);
     box-shadow: 0 16px 40px rgba(0,0,0,0.42), 0 0 30px rgba(99,102,241,0.18);
+}
+.login-role-box-jefe::before {
+    background: radial-gradient(closest-side, rgba(251,146,60,0.22), transparent 70%);
+}
+.login-role-box-jefe:hover {
+    border-color: rgba(251,146,60,0.5);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.42), 0 0 30px rgba(251,146,60,0.20);
+}
+.login-role-full {
+    grid-column: 1 / -1;
 }
 .login-role-box:active {
     transform: scale(0.98);
@@ -7534,7 +7579,7 @@ body[data-sb] {
 
 .inf-ind-top-grid {
     display: grid;
-    grid-template-columns: 1.15fr 1fr 1fr;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr;
     gap: 16px;
     margin-bottom: 16px;
 }
@@ -7580,91 +7625,49 @@ body[data-sb] {
     color: #1DB954;
 }
 
-/* Gauge */
-.inf-ind-gauge-wrap {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#inf-ind-gauge {
-    width: 100%;
-    max-width: 320px;
-    height: auto;
-    overflow: visible;
-}
-
-.inf-ind-gauge-pct {
-    font-size: 30px;
-    font-weight: 800;
-    fill: var(--t-text);
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    letter-spacing: -0.5px;
-}
-
-.inf-ind-gauge-label {
-    font-size: 10px;
-    fill: var(--t-dim2);
-    font-weight: 600;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-}
-
-.inf-ind-tick {
-    font-size: 9px;
-    fill: #5a5a5a;
-    font-weight: 600;
-}
-
-.inf-ind-gauge-value {
-    transition: stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.inf-ind-gauge-knob,
-.inf-ind-gauge-knob-inner {
-    transition: cx 1.1s cubic-bezier(0.22, 1, 0.36, 1), cy 1.1s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Meta detalle */
-.inf-ind-meta {
+/* Venta Acumulada / Promedio Diario / Aporte a la Tienda */
+.inf-ind-venta-card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-}
-
-.inf-ind-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.inf-ind-meta-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: var(--t-w05);
-    display: flex;
-    align-items: center;
     justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(29, 185, 84, 0.14), var(--t-w035));
+    border-color: rgba(29, 185, 84, 0.3);
 }
 
-.inf-ind-meta-value {
-    font-size: 17px;
+.inf-ind-venta-big {
+    font-size: 30px;
     font-weight: 800;
-    color: var(--t-text);
+    color: #1DB954;
     font-family: 'Inter', 'Segoe UI', monospace;
-    letter-spacing: -0.3px;
+    letter-spacing: -1px;
+    line-height: 1.15;
 }
 
-.inf-ind-meta-label {
-    font-size: 10.5px;
+.inf-ind-venta-sub {
+    font-size: 11.5px;
     color: var(--t-dim2);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin-top: 1px;
+    margin-top: 4px;
+}
+
+.inf-ind-promedio-card .inf-ind-venta-big {
+    color: #3ECF8E;
+    font-size: 28px;
+}
+
+.inf-ind-aporte-card .inf-ind-aporte-big {
+    font-size: 32px;
+    font-weight: 800;
+    color: #FBBF24;
+    font-family: 'Inter', 'Segoe UI', monospace;
+    letter-spacing: -1px;
+    line-height: 1.15;
+}
+
+.inf-ind-aporte-nombre {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Posición */
@@ -7724,62 +7727,6 @@ body[data-sb] {
     color: var(--t-text);
     font-family: 'Inter', 'Segoe UI', monospace;
 }
-
-/* Mensaje motivacional */
-.inf-ind-motiv {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    border-radius: 14px;
-    margin-bottom: 16px;
-    border: 1px solid;
-    animation: infIndAparecer 0.5s ease;
-}
-
-.inf-ind-motiv-icon {
-    font-size: 22px;
-    flex-shrink: 0;
-}
-
-.inf-ind-motiv-titulo {
-    font-size: 14px;
-    font-weight: 800;
-    color: var(--t-text);
-}
-
-.inf-ind-motiv-texto {
-    font-size: 12.5px;
-    margin-top: 2px;
-}
-
-.inf-ind-motiv-pct {
-    margin-left: auto;
-    font-size: 24px;
-    font-weight: 800;
-    font-family: 'Inter', 'Segoe UI', monospace;
-}
-
-.inf-ind-motiv-exito {
-    background: linear-gradient(90deg, rgba(29, 185, 84, 0.16), rgba(29, 185, 84, 0.04));
-    border-color: rgba(29, 185, 84, 0.4);
-}
-
-.inf-ind-motiv-exito .inf-ind-motiv-texto { color: #a7f3c0; }
-
-.inf-ind-motiv-avance {
-    background: linear-gradient(90deg, rgba(245, 158, 11, 0.14), rgba(245, 158, 11, 0.03));
-    border-color: rgba(245, 158, 11, 0.4);
-}
-
-.inf-ind-motiv-avance .inf-ind-motiv-texto { color: #fde68a; }
-
-.inf-ind-motiv-alerta {
-    background: linear-gradient(90deg, rgba(239, 68, 68, 0.14), rgba(239, 68, 68, 0.03));
-    border-color: rgba(239, 68, 68, 0.4);
-}
-
-.inf-ind-motiv-alerta .inf-ind-motiv-texto { color: #fecaca; }
 
 /* Tabs */
 .inf-ind-tabs {
@@ -8006,9 +7953,6 @@ body[data-sb] {
     .inf-ind-top-grid {
         grid-template-columns: 1fr 1fr;
     }
-    .inf-ind-gauge-card {
-        grid-column: 1 / -1;
-    }
 }
 
 @media (max-width: 768px) {
@@ -8022,17 +7966,11 @@ body[data-sb] {
     .inf-ind-top-grid {
         grid-template-columns: 1fr;
     }
-    .inf-ind-gauge-card {
-        grid-column: auto;
-    }
     .inf-ind-charts-grid {
         grid-template-columns: 1fr;
     }
     .inf-ind-topbottom-grid {
         grid-template-columns: 1fr;
-    }
-    .inf-ind-cumplimiento-chart {
-        margin-bottom: 0;
     }
 }
 
@@ -8040,14 +7978,254 @@ body[data-sb] {
     .inf-ind-pos-big > span:first-child {
         font-size: 42px;
     }
-    .inf-ind-motiv-pct {
-        font-size: 18px;
-    }
     .inf-ind-tabs {
         width: 100%;
     }
     .inf-ind-tabs button {
         flex: 1;
         justify-content: center;
+    }
+}
+
+/* =============================================
+   JEFE COMERCIAL
+   Dashboard General · Ranking · Gestión de
+   Supervisores · Gestión de Zonas
+   ============================================= */
+
+.jefe-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.jefe-chart-card .ctl-card-title {
+    margin-bottom: 12px;
+}
+
+.jefe-chart-body {
+    height: 320px;
+    position: relative;
+}
+
+/* Acciones (cabecera de gestión) */
+.jefe-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.jefe-actions-cell {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.jefe-actions-cell .jefe-btn-action {
+    margin-right: 4px;
+}
+
+/* Botones de acción en tablas */
+.jefe-btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--t-w10);
+    background: var(--t-w04);
+    color: var(--t-textSec);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    vertical-align: middle;
+}
+
+.jefe-btn-action:hover {
+    border-color: rgba(59,130,246,0.5);
+    color: #3B82F6;
+    background: rgba(59,130,246,0.10);
+}
+
+.jefe-btn-pause:hover {
+    border-color: rgba(245,158,11,0.5);
+    color: #F59E0B;
+    background: rgba(245,158,11,0.10);
+}
+
+.jefe-btn-react:hover {
+    border-color: rgba(29,185,84,0.5);
+    color: #1DB954;
+    background: rgba(29,185,84,0.10);
+}
+
+.jefe-btn-delete:hover {
+    border-color: rgba(239,68,68,0.5);
+    color: #EF4444;
+    background: rgba(239,68,68,0.10);
+}
+
+/* Formularios en modal */
+.jefe-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 14px;
+}
+
+.jefe-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.jefe-form-full {
+    grid-column: 1 / -1;
+}
+
+.jefe-form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--t-textSec);
+}
+
+.jefe-form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 9px;
+    border: 1px solid var(--t-w12);
+    background: var(--t-w04);
+    color: var(--t-text);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.jefe-form-input:focus {
+    border-color: rgba(251,146,60,0.6);
+    box-shadow: 0 0 0 3px rgba(251,146,60,0.15);
+}
+
+.jefe-form-input[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+select.jefe-form-input {
+    appearance: auto;
+}
+
+.jefe-form-aviso {
+    font-size: 12.5px;
+    color: var(--t-dim2);
+    padding: 8px 0;
+}
+
+/* Checks de zonas / PDVs */
+.jefe-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 170px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid var(--t-w08);
+    border-radius: 10px;
+    background: var(--t-w02);
+}
+
+.jefe-checks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.jefe-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--t-textSec);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+}
+
+.jefe-check:hover {
+    background: var(--t-w04);
+}
+
+.jefe-check input {
+    margin-top: 2px;
+    accent-color: #F59E0B;
+}
+
+/* Modal del Jefe Comercial */
+#jefe-modal-overlay .modal {
+    background: var(--t-surface);
+    border: 1px solid var(--t-w10);
+    border-radius: 16px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+    width: min(620px, 96vw);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalFadeIn 0.25s ease;
+}
+
+#jefe-modal-overlay .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px 0;
+}
+
+#jefe-modal-overlay .modal-header-left h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+}
+
+#jefe-modal-overlay .modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: var(--t-w06);
+    color: var(--t-textSec);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+#jefe-modal-overlay .modal-close:hover {
+    background: rgba(239,68,68,0.15);
+    color: #EF4444;
+}
+
+.jefe-modal-body {
+    padding: 16px 20px 22px;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .jefe-layout {
+        grid-template-columns: 1fr;
+    }
+    .jefe-chart-body {
+        height: 240px;
+    }
+    .jefe-actions-row {
+        margin-left: 0;
+        width: 100%;
+    }
+    .jefe-form-grid {
+        grid-template-columns: 1fr;
     }
 }
