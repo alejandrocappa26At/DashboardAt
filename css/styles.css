@@ -3520,6 +3520,37 @@ select option {
     border-color: var(--accent);
 }
 
+.cuotas-info-zona {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background: var(--t-bg4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+}
+
+.cuotas-info-zona .cuotas-info-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.cuotas-info-zona .cuotas-info-item strong {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.cuotas-info-zona .cuotas-info-divider {
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
 /* ============================================
    MODAL PASSWORD — Security/Auth Modal
    ============================================ */

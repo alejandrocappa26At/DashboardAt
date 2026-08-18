@@ -1375,6 +1375,42 @@
     font-weight: 500;
 }
 
+.promotores-zona-activa {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    margin: 0 0 14px;
+    background: var(--t-bg2);
+    border: 1px solid var(--t-w04);
+    border-radius: 12px;
+    font-size: 13px;
+}
+
+.promotores-zona-activa .pza-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-subdued);
+    font-weight: 500;
+}
+
+.promotores-zona-activa .pza-item svg {
+    color: var(--accent, #1DB954);
+    flex-shrink: 0;
+}
+
+.promotores-zona-activa .pza-item strong {
+    color: var(--text-primary, var(--t-text));
+    font-weight: 700;
+}
+
+.promotores-zona-activa .pza-divider {
+    color: var(--text-subdued);
+    opacity: 0.5;
+}
+
 .promotores-table-scroll-area {
     border: 1px solid var(--t-w04);
     border-radius: 12px;

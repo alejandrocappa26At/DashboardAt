@@ -210,15 +210,30 @@ const DataStore = {
     },
 
     getVentas() { return this.ventas; },
+    _zonaSesionSupervisor() {
+        try {
+            const raw = sessionStorage.getItem('auth_session');
+            if (!raw) return null;
+            const s = JSON.parse(raw);
+            return (s && s.rol === 'supervisor' && s.zona) ? String(s.zona) : null;
+        } catch (e) { return null; }
+    },
+    _normalizarZona(str) {
+        return String(str || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    },
+    _pdvEnZonaSesion(pdv) {
+        const zona = this._zonaSesionSupervisor();
+        if (!zona) return true;
+        return this._normalizarZona(this.getTiendaCadena(pdv)) === this._normalizarZona(zona);
+    },
     esPDVActivo(pdv) {
         if (typeof pdv !== 'string') return false;
         if ((PDVS_ELIMINADOS || []).includes(pdv)) return false;
         if (typeof TiendasStore !== 'undefined' && TiendasStore.tiendas && TiendasStore.tiendas.length > 0) {
             const t = TiendasStore.getTienda(pdv);
-            if (t) return t.estado === 'Activa';
-            return true;
+            if (t && t.estado !== 'Activa') return false;
         }
-        return true;
+        return this._pdvEnZonaSesion(pdv);
     },
     getPDVsEliminados() { return [...PDVS_ELIMINADOS]; },
     getVentasActivas() {
@@ -372,13 +387,21 @@ const DataStore = {
     },
 
     getPDVs() {
+        let activos;
         if (typeof TiendasStore !== 'undefined' && TiendasStore.tiendas && TiendasStore.tiendas.length > 0) {
-            const activos = TiendasStore.getTiendasActivas().map(t => t.nombre);
-            return activos;
+            activos = TiendasStore.getTiendasActivas().map(t => t.nombre);
+        } else {
+            activos = [...PDVS_FIJOS];
         }
-        const result = [...PDVS_FIJOS];
-        console.log('[AUDITORIA] PDVs obtenidos desde configuración:', result.length, result);
-        return result;
+        const zona = this._zonaSesionSupervisor();
+        if (zona) {
+            const z = this._normalizarZona(zona);
+            return activos.filter(p => this._normalizarZona(this.getTiendaCadena(p)) === z);
+        }
+        if (typeof TiendasStore === 'undefined' || !TiendasStore.tiendas || TiendasStore.tiendas.length === 0) {
+            console.log('[AUDITORIA] PDVs obtenidos desde configuración:', activos.length, activos);
+        }
+        return activos;
     },
 
     getTiendaCadena(nombre) {

@@ -13,6 +13,48 @@ function _nombreTiendaPromotor(zonaId, zonas) {
     return zona && zona.nombre ? zona.nombre : zonaId;
 }
 
+function _zonaGestionSesion() {
+    try {
+        const raw = sessionStorage.getItem('auth_session');
+        if (!raw) return null;
+        const s = JSON.parse(raw);
+        return (s && s.rol === 'supervisor' && s.zona) ? String(s.zona) : null;
+    } catch (e) { return null; }
+}
+
+function _esJefeGestion() {
+    try {
+        const raw = sessionStorage.getItem('auth_session');
+        if (!raw) return false;
+        const s = JSON.parse(raw);
+        return !!(s && s.rol === 'jefe');
+    } catch (e) { return false; }
+}
+
+function _normalizarZonaGestion(str) {
+    return String(str || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+function _cadenaTiendaGestion(tiendaId, zonas) {
+    const zona = (zonas || []).find(z => z.id === tiendaId);
+    return zona && zona.cadena ? String(zona.cadena) : '';
+}
+
+function _tiendasZonaGestion(zonas) {
+    const zona = _zonaGestionSesion();
+    if (!zona) return zonas || [];
+    const z = _normalizarZonaGestion(zona);
+    return (zonas || []).filter(t => _normalizarZonaGestion(t.cadena) === z);
+}
+
+function _promotorEnZonaGestion(p) {
+    const zona = _zonaGestionSesion();
+    if (!zona) return true;
+    if (!p || !p.zona_principal_id) return false;
+    const cadena = _cadenaTiendaGestion(p.zona_principal_id, HorariosDataStore.zonas);
+    return _normalizarZonaGestion(cadena) === _normalizarZonaGestion(zona);
+}
+
 function ordenarPromotoresPorTienda(promotores, zonas) {
     return [...promotores].sort((a, b) => {
         const ta = a.zona_principal_id ? _nombreTiendaPromotor(a.zona_principal_id, zonas).toUpperCase() : null;
@@ -27,8 +69,10 @@ function ordenarPromotoresPorTienda(promotores, zonas) {
     });
 }
 
-function _promotorOpcionesZonaHtml(p, zonas) {
-    const sinAsignar = '<option value="" ' + (!p.zona_principal_id ? 'selected' : '') + '>&mdash; Sin asignar &mdash;</option>';
+function _promotorOpcionesZonaHtml(p, zonas, restringido) {
+    const sinAsignar = !restringido
+        ? '<option value="" ' + (!p.zona_principal_id ? 'selected' : '') + '>&mdash; Sin asignar &mdash;</option>'
+        : '';
     const opciones = (zonas || []).map(z =>
         '<option value="' + escHtml(z.id) + '" ' + (p.zona_principal_id === z.id ? 'selected' : '') + '>' +
         escHtml(z.nombre) + (z.cadena ? ' &middot; ' + escHtml(z.cadena) : '') + '</option>'
@@ -36,8 +80,8 @@ function _promotorOpcionesZonaHtml(p, zonas) {
     return sinAsignar + opciones;
 }
 
-function _promoFilaHtml(p, numero, zonas) {
-    const zonaOptions = _promotorOpcionesZonaHtml(p, zonas);
+function _promoFilaHtml(p, numero, zonas, restringido) {
+    const zonaOptions = _promotorOpcionesZonaHtml(p, zonas, restringido);
     const estadoActual = p.estado || 'Activo';
     const estadoOptionsHtml = ESTADO_PROMOTOR_OPCIONES.map(eo =>
         '<option value="' + eo.value + '" ' + (estadoActual === eo.value ? 'selected' : '') + '>' + eo.label + '</option>'
@@ -123,7 +167,7 @@ function _promoFilaHtml(p, numero, zonas) {
         `;
 }
 
-function _promoRowsHtml(promotores, zonas) {
+function _promoRowsHtml(promotores, zonas, restringido) {
     if (!promotores || promotores.length === 0) return '';
     const ordenados = ordenarPromotoresPorTienda(promotores, zonas);
     let html = '';
@@ -146,7 +190,7 @@ function _promoRowsHtml(promotores, zonas) {
             tiendaActual = grupo;
         }
         numero += 1;
-        html += _promoFilaHtml(p, numero, zonas);
+        html += _promoFilaHtml(p, numero, zonas, restringido);
     }
     return html;
 }
@@ -195,13 +239,35 @@ function renderGestionPromotores() {
     const zonas = HorariosDataStore.zonas;
     const promotores = HorariosDataStore.promotores;
 
-    console.log('[AUDITORIA][PROMOTORES] Promotores visibles:', promotores.length);
-    console.log('[AUDITORIA][PROMOTORES] IDs visibles:', promotores.map(p => p.id));
-    console.log('[AUDITORIA][PROMOTORES] Correos visibles:', promotores.map(p => p.email || '').filter(Boolean));
+    const zonaActiva = _zonaGestionSesion();
+    const esJefe = _esJefeGestion();
+    const restringido = !!zonaActiva;
+    const zonasVisibles = zonaActiva ? _tiendasZonaGestion(zonas) : zonas;
+    const promotoresVisibles = zonaActiva
+        ? promotores.filter(p => _promotorEnZonaGestion(p))
+        : promotores;
+
+    console.log('[AUDITORIA][PROMOTORES] Promotores visibles:', promotoresVisibles.length);
+    console.log('[AUDITORIA][PROMOTORES] IDs visibles:', promotoresVisibles.map(p => p.id));
+    console.log('[AUDITORIA][PROMOTORES] Correos visibles:', promotoresVisibles.map(p => p.email || '').filter(Boolean));
     console.log('[AUDITORIA][PROMOTORES] Fuente utilizada:', HorariosDataStore._fuentePromotores || 'HorariosDataStore.promotores (memoria)');
     console.log('[AUDITORIA][PROMOTORES] Coincide con login (Registro de Ventas): ' + (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores === promotores));
+    if (zonaActiva) {
+        console.log('[AUDITORIA][PROMOTORES] Zona activa del supervisor:', zonaActiva, '| Tiendas visibles:', zonasVisibles.length, '| Promotores visibles:', promotoresVisibles.length);
+    }
 
-    const rowsHtml = _promoRowsHtml(promotores, zonas);
+    const rowsHtml = _promoRowsHtml(promotoresVisibles, zonasVisibles, restringido);
+
+    const zonaBar = zonaActiva && !esJefe
+        ? `
+        <div class="promotores-zona-activa">
+            <span class="pza-item"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Zona Activa: <strong>${escHtml(zonaActiva)}</strong></span>
+            <span class="pza-divider">&middot;</span>
+            <span class="pza-item"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Promotores: <strong>${promotoresVisibles.length}</strong></span>
+            <span class="pza-divider">&middot;</span>
+            <span class="pza-item"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Tiendas: <strong>${zonasVisibles.length}</strong></span>
+        </div>`
+        : '';
 
     container.innerHTML = `
         <div class="horarios-header">
@@ -222,10 +288,12 @@ function renderGestionPromotores() {
             </div>
         </div>
 
+        ${zonaBar}
+
         <div class="gestion-promotores-body">
             <div class="promotores-summary">
-                <span>${promotores.length} promotor${promotores.length !== 1 ? 'es' : ''} registrados</span>
-                <span>· ${HorariosDataStore.zonas.length} tiendas disponibles</span>
+                <span>${promotoresVisibles.length} promotor${promotoresVisibles.length !== 1 ? 'es' : ''} registrados</span>
+                <span>· ${zonasVisibles.length} tiendas disponibles</span>
             </div>
             <div class="promotores-table-scroll-area">
                 <div class="promotores-scroll-top" id="promotores-scroll-top">
@@ -371,6 +439,19 @@ function aplicarCambiosPromotor(promotorId) {
     const zonaId = zonaSelect ? zonaSelect.value || null : null;
     const estado = estadoSelect ? estadoSelect.value : 'Activo';
 
+    const zonaActiva = _zonaGestionSesion();
+    if (zonaActiva && zonaId) {
+        const tienda = (HorariosDataStore.zonas || []).find(z => z.id === zonaId);
+        const cadena = tienda ? String(tienda.cadena || '') : '';
+        if (_normalizarZonaGestion(cadena) !== _normalizarZonaGestion(zonaActiva)) {
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('No puedes asignar una tienda fuera de tu zona.', 'error');
+            }
+            refrescarVistaPromotores();
+            return;
+        }
+    }
+
     if (!nombre) {
         nombreInput.focus();
         nombreInput.style.borderColor = '#EF4444';
@@ -484,7 +565,9 @@ function verificarAccesoPromotor(promotorId) {
 
 function agregarNuevoPromotor() {
     const zonas = HorariosDataStore.zonas;
-    const nuevaZonaId = zonas.length > 0 ? zonas[0].id : null;
+    const zonaActiva = _zonaGestionSesion();
+    const zonasVisibles = zonaActiva ? _tiendasZonaGestion(zonas) : zonas;
+    const nuevaZonaId = zonasVisibles.length > 0 ? zonasVisibles[0].id : (zonas.length > 0 ? zonas[0].id : null);
     HorariosDataStore.agregarPromotor('Nuevo promotor', 'fijo', nuevaZonaId);
     refrescarVistaPromotores();
 

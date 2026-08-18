@@ -310,6 +310,29 @@ const PromocionesStore = {
         return { desde, hasta };
     },
 
+    _zonaSesionSupervisor() {
+        try {
+            const raw = sessionStorage.getItem('auth_session');
+            if (!raw) return null;
+            const s = JSON.parse(raw);
+            return (s && s.rol === 'supervisor' && s.zona) ? String(s.zona) : null;
+        } catch (e) { return null; }
+    },
+
+    _normalizarZona(str) {
+        return String(str || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    },
+
+    _tiendaEnZonaSesion(tienda) {
+        const zona = this._zonaSesionSupervisor();
+        if (!zona) return true;
+        let cadena = '';
+        if (typeof DataStore !== 'undefined' && typeof DataStore.getTiendaCadena === 'function') {
+            cadena = DataStore.getTiendaCadena(tienda) || '';
+        }
+        return this._normalizarZona(cadena) === this._normalizarZona(zona);
+    },
+
     getRegistrosEnRango(desde, hasta) {
         const fd = this._parseFechaLocal(desde);
         const fh = this._parseFechaLocal(hasta);
@@ -318,6 +341,7 @@ const PromocionesStore = {
             if (!f) return false;
             if (fd && f < fd) return false;
             if (fh && f > fh) return false;
+            if (!this._tiendaEnZonaSesion(r.tienda)) return false;
             return true;
         });
     },

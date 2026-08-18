@@ -1606,23 +1606,40 @@ function limpiarFiltrosFecha(modulo) {
 }
 
 /* ===== SUPERVISOR SESSION STATE ===== */
-const SUPERVISOR_PASSWORD = 'Adecco2019@';
-
 function esJefeComercial() {
     const session = leerSesion();
     return !!(session && session.rol === 'jefe');
 }
 
+function _supervisorZonaSesion() {
+    const s = leerSesion();
+    return (s && s.rol === 'supervisor' && s.zona) ? String(s.zona) : null;
+}
+
+function _pdvEnZonaSesion(pdv) {
+    const zona = _supervisorZonaSesion();
+    if (!zona) return true;
+    let cadena = '';
+    if (typeof DataStore !== 'undefined' && typeof DataStore.getTiendaCadena === 'function') {
+        cadena = DataStore.getTiendaCadena(pdv) || '';
+    }
+    return _normalizarZonaCuotas(cadena) === _normalizarZonaCuotas(zona);
+}
+
+function _promotorEnZonaSesion(promotor) {
+    const zona = _supervisorZonaSesion();
+    if (!zona) return true;
+    if (!promotor || !promotor.zona_principal_id) return false;
+    const tienda = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas)
+        ? HorariosDataStore.zonas.find(z => z.id === promotor.zona_principal_id)
+        : null;
+    const tiendaNombre = (tienda && tienda.nombre) || promotor.zona_principal_id;
+    return _pdvEnZonaSesion(tiendaNombre);
+}
+
 function estaSupervisorDesbloqueado() {
     if (esJefeComercial()) return true;
     return sessionStorage.getItem('supervisor_unlocked') === 'true';
-}
-
-function desbloquearSupervisor() {
-    sessionStorage.setItem('supervisor_unlocked', 'true');
-    actualizarSidebarSupervisor();
-    cerrarModalPassword();
-    mostrarNotificacion('Modo supervisor activado', 'success');
 }
 
 function bloquearSupervisor() {
@@ -1908,6 +1925,8 @@ function abrirModalPassword() {
     intentosPassword = 0;
     document.getElementById('password-error').textContent = '';
     document.getElementById('password-error').style.display = 'none';
+    const emailInput = document.getElementById('password-email');
+    if (emailInput) emailInput.value = '';
     document.getElementById('password-input').value = '';
     document.getElementById('password-field-wrapper').classList.remove('shake');
     document.getElementById('password-input').type = 'password';
@@ -1917,7 +1936,10 @@ function abrirModalPassword() {
             <circle cx="12" cy="12" r="3"/>
         </svg>`;
     document.getElementById('modal-password').classList.add('open');
-    setTimeout(() => document.getElementById('password-input').focus(), 300);
+    setTimeout(() => {
+        const f = emailInput || document.getElementById('password-input');
+        if (f) f.focus();
+    }, 300);
 }
 
 function cerrarModalPassword() {
@@ -1945,34 +1967,43 @@ function togglePasswordVisibility() {
     }
 }
 
-function confirmarPassword() {
+async function confirmarPassword() {
+    const emailInput = document.getElementById('password-email');
+    const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
     const input = document.getElementById('password-input');
     const password = input.value;
     const btn = document.getElementById('btn-confirmar-password');
     btn.classList.add('loading');
 
-    setTimeout(() => {
-        if (password === SUPERVISOR_PASSWORD) {
-            btn.classList.remove('loading');
-            desbloquearSupervisor();
-        } else {
-            intentosPassword++;
-            btn.classList.remove('loading');
-            document.getElementById('password-field-wrapper').classList.add('shake');
-            input.focus();
-            const errorEl = document.getElementById('password-error');
-            errorEl.style.display = 'flex';
-            if (intentosPassword >= 3) {
-                errorEl.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Contrase\u00f1a incorrecta. Acceso bloqueado.';
-                errorEl.style.color = '#EF4444';
-                setTimeout(() => cerrarModalPassword(), 1500);
-            } else {
-                errorEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Contrase\u00f1a incorrecta. Intento ${intentosPassword} de 3.`;
-                errorEl.style.color = '#EF4444';
-            }
-            setTimeout(() => document.getElementById('password-field-wrapper').classList.remove('shake'), 600);
+    try {
+        const res = await autenticarSupervisor(email, password);
+        btn.classList.remove('loading');
+        if (res.ok) {
+            finishSupervisorLogin(res.sup);
+            return;
         }
-    }, 600);
+        intentosPassword++;
+        document.getElementById('password-field-wrapper').classList.add('shake');
+        input.focus();
+        const errorEl = document.getElementById('password-error');
+        errorEl.style.display = 'flex';
+        if (intentosPassword >= 3) {
+            errorEl.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' + (res.error || 'Acceso denegado') + '. Acceso bloqueado.';
+            errorEl.style.color = '#EF4444';
+            setTimeout(() => cerrarModalPassword(), 1800);
+        } else {
+            errorEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> ${res.error || 'Acceso denegado'}. Intento ${intentosPassword} de 3.`;
+            errorEl.style.color = '#EF4444';
+        }
+        setTimeout(() => document.getElementById('password-field-wrapper').classList.remove('shake'), 600);
+    } catch (err) {
+        console.error('Error en confirmarPassword:', err);
+        btn.classList.remove('loading');
+        const errorEl = document.getElementById('password-error');
+        errorEl.style.display = 'flex';
+        errorEl.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Error inesperado. Intenta nuevamente.';
+        errorEl.style.color = '#EF4444';
+    }
 }
 
 function abrirModalCuotas() {
@@ -1991,6 +2022,18 @@ function renderTablaCuotas(mes, anio) {
     const productos = DataStore.getProductos();
     const cuotas = DataStore.getCuotas(mes, anio);
 
+    const zonaSel = document.getElementById('cuotas-zona');
+    const zona = zonaSel ? zonaSel.value : '';
+    const zonaNorm = _normalizarZonaCuotas(zona);
+    const pdvsVisibles = zonaNorm
+        ? pdvs.filter(pdv => _normalizarZonaCuotas(_getZonaPDVCuotas(pdv)) === zonaNorm)
+        : pdvs;
+
+    const infoNombre = document.getElementById('cuotas-zona-nombre');
+    if (infoNombre) infoNombre.textContent = zona || 'Todas las Zonas';
+    const infoTiendas = document.getElementById('cuotas-zona-tiendas');
+    if (infoTiendas) infoTiendas.textContent = String(pdvsVisibles.length);
+
     let headHtml = '<th class="cuotas-th-pdv">Punto de Venta</th>';
     for (let prod of productos) {
         headHtml += `<th class="cuotas-th-prod">${prod}</th>`;
@@ -1998,7 +2041,7 @@ function renderTablaCuotas(mes, anio) {
     thead.innerHTML = headHtml;
 
     tbody.innerHTML = '';
-    for (let pdv of pdvs) {
+    for (let pdv of pdvsVisibles) {
         let tr = document.createElement('tr');
         let rowHtml = `<td>${pdv}</td>`;
         for (let prod of productos) {
@@ -2011,8 +2054,38 @@ function renderTablaCuotas(mes, anio) {
     }
 }
 
+function _normalizarZonaCuotas(str) {
+    return String(str || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+function _getZonaPDVCuotas(pdv) {
+    if (typeof TiendasStore !== 'undefined' && TiendasStore.getTienda) {
+        const t = TiendasStore.getTienda(pdv);
+        if (t && t.cadena) return t.cadena;
+    }
+    if (typeof DataStore !== 'undefined' && typeof DataStore.getTiendaCadena === 'function') {
+        const cadena = DataStore.getTiendaCadena(pdv);
+        if (cadena) return cadena;
+    }
+    return '';
+}
+
+function cambiarZonaCuotas() {
+    if (!document.getElementById('modal-cuotas').classList.contains('open')) return;
+
+    const mes = parseInt(document.getElementById('cuotas-mes').value);
+    const anio = parseInt(document.getElementById('cuotas-anio').value);
+
+    renderTablaCuotas(mes, anio);
+}
+
 function abrirModalCuotasSinPassword() {
     sincronizarSelectsPeriodo();
+    const zonaSup = _supervisorZonaSesion();
+    if (zonaSup) {
+        const zonaSel = document.getElementById('cuotas-zona');
+        if (zonaSel) zonaSel.value = zonaSup;
+    }
     const mesActual = parseInt(document.getElementById('cuotas-mes').value);
     const anioActual = parseInt(document.getElementById('cuotas-anio').value);
 
@@ -2736,7 +2809,8 @@ function poblarFiltrosInformePromotor() {
     const activos = promotores.filter(p =>
         p.estado === 'Activo' &&
         p.zona_principal_id &&
-        zonasActivas.some(z => z.id === p.zona_principal_id)
+        zonasActivas.some(z => z.id === p.zona_principal_id) &&
+        _promotorEnZonaSesion(p)
     );
     promotorSelect.innerHTML = '<option value="">Seleccionar promotor...</option>' +
         activos.map(p => '<option value="' + p.id + '">' + escHtml(p.nombre) + (p.dni ? ' · ' + escHtml(p.dni) : '') + '</option>').join('');
@@ -2807,7 +2881,8 @@ function renderizarTablaPromotores() {
     const activos = promotores.filter(p =>
         p.estado === 'Activo' &&
         p.zona_principal_id &&
-        zonasActivas.some(z => z.id === p.zona_principal_id)
+        zonasActivas.some(z => z.id === p.zona_principal_id) &&
+        _promotorEnZonaSesion(p)
     );
 
     const cuotas = DataStore.getCuotasActivas();
@@ -3461,7 +3536,7 @@ function mostrarFormularioLogin(step) {
         }, 140);
     } else if (step === 'supervisor') {
         setTimeout(() => {
-            const inp = document.getElementById('login-supervisor-password');
+            const inp = document.getElementById('login-supervisor-email');
             if (inp) inp.focus();
         }, 140);
     } else if (step === 'jefe') {
@@ -3591,23 +3666,69 @@ async function ingresarPromotor() {
     }
 }
 
-function ingresarSupervisor() {
+async function ingresarSupervisor() {
+    const email = document.getElementById('login-supervisor-email').value.trim().toLowerCase();
     const password = document.getElementById('login-supervisor-password').value;
     const btn = document.getElementById('login-supervisor-submit');
 
-    if (!password) { setErrorLogin('login-supervisor-error', 'Ingresa la contraseña de supervisor.'); return; }
+    if (!email) { setErrorLogin('login-supervisor-error', 'Ingresa tu correo electrónico.'); return; }
+    if (!password) { setErrorLogin('login-supervisor-error', 'Ingresa tu contraseña.'); return; }
 
     btn.classList.add('loading');
 
-    setTimeout(() => {
-        if (password === SUPERVISOR_PASSWORD) {
-            btn.classList.remove('loading');
-            finishSupervisorLogin();
-        } else {
-            btn.classList.remove('loading');
-            setErrorLogin('login-supervisor-error', 'Contraseña de supervisor incorrecta.');
+    try {
+        const res = await autenticarSupervisor(email, password);
+        btn.classList.remove('loading');
+        if (!res.ok) {
+            setErrorLogin('login-supervisor-error', res.error);
+            return;
         }
-    }, 500);
+        finishSupervisorLogin(res.sup);
+    } catch (err) {
+        console.error('[LOGIN][ERROR] Error en ingresarSupervisor:', err);
+        btn.classList.remove('loading');
+        setErrorLogin('login-supervisor-error', 'Error inesperado al iniciar sesión. Intenta nuevamente.');
+    }
+}
+
+async function autenticarSupervisor(email, password) {
+    const emailNorm = String(email || '').trim().toLowerCase();
+    if (!emailNorm) return { ok: false, error: 'Ingresa tu correo electrónico.' };
+    if (!password) return { ok: false, error: 'Ingresa tu contraseña.' };
+
+    let lista = [];
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const qs = await db.collection(SUPERVISORES_COLLECTION).get();
+            lista = qs.docs.map(d => Object.assign({ id: d.id }, d.data()));
+        } catch (e) {
+            lista = (typeof JefeComercialStore !== 'undefined') ? JefeComercialStore.supervisores : [];
+        }
+    } else {
+        lista = (typeof JefeComercialStore !== 'undefined') ? JefeComercialStore.supervisores : [];
+    }
+
+    const sup = lista.find(s => s && s.email && String(s.email).trim().toLowerCase() === emailNorm) || null;
+    if (!sup) return { ok: false, error: 'El correo ingresado no se encuentra registrado.' };
+
+    let valida = false;
+    if (sup.password_hash) {
+        const hash = await hashPassword(password);
+        valida = hash ? sup.password_hash === hash : false;
+    }
+    if (!valida && sup.password) valida = password === sup.password;
+    if (!valida) return { ok: false, error: 'Contraseña incorrecta.' };
+
+    if (String(sup.estado || 'Activo').toLowerCase() !== 'activo') {
+        return { ok: false, error: 'Su cuenta se encuentra inhabilitada. Comuníquese con el Jefe Comercial.' };
+    }
+
+    const zona = String(sup.zona || (sup.zonas && sup.zonas[0]) || '').trim();
+    if (!zona) {
+        return { ok: false, error: 'Su cuenta no tiene una zona asignada. Comuníquese con el Jefe Comercial.' };
+    }
+
+    return { ok: true, sup: { id: sup.id, nombre: sup.nombre || sup.id, email: sup.email || '', zona } };
 }
 
 function finishLogin(data) {
@@ -3615,9 +3736,9 @@ function finishLogin(data) {
     aplicarSesionInicial();
 }
 
-function finishSupervisorLogin() {
+function finishSupervisorLogin(sup) {
     sessionStorage.setItem('supervisor_unlocked', 'true');
-    guardarSesion({ rol: 'supervisor', nombre: 'Supervisor Activo' });
+    guardarSesion({ rol: 'supervisor', id: sup.id, nombre: sup.nombre || 'Supervisor', email: sup.email || '', zona: sup.zona || '' });
     aplicarSesionInicial();
 }
 
@@ -3687,8 +3808,11 @@ function aplicarSesionInicial() {
 function renderSupervisorHeader() {
     const title = document.getElementById('page-title');
     const welcome = document.getElementById('top-bar-welcome');
+    const s = leerSesion();
+    const nombre = (s && s.nombre) || 'Supervisor';
+    const zona = (s && s.zona) || '';
     if (welcome) {
-        welcome.innerHTML = '👨‍💼 Supervisor Activo';
+        welcome.innerHTML = '👨‍💼 ' + escHtmlGlobal(nombre) + (zona ? ' · ' + escHtmlGlobal(zona) : '');
         welcome.style.display = '';
     }
     if (title && title.textContent === 'Bienvenido:') title.textContent = 'Vista Ejecutiva';
@@ -3735,14 +3859,18 @@ function cerrarSesionGlobal() {
 function limpiarCamposLogin() {
     const email = document.getElementById('login-promotor-email');
     const pw = document.getElementById('login-promotor-password');
+    const supE = document.getElementById('login-supervisor-email');
     const sup = document.getElementById('login-supervisor-password');
     const jefeU = document.getElementById('login-jefe-usuario');
     const jefeP = document.getElementById('login-jefe-password');
     if (email) email.value = '';
     if (pw) pw.value = '';
+    if (supE) supE.value = '';
     if (sup) sup.value = '';
     if (jefeU) jefeU.value = '';
     if (jefeP) jefeP.value = '';
+    const pwdEmail = document.getElementById('password-email');
+    if (pwdEmail) pwdEmail.value = '';
     const suBtn = document.querySelector('.sidebar .btn-sidebar-logout');
     if (suBtn) suBtn.remove();
 }

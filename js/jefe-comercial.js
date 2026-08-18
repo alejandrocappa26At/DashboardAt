@@ -11,6 +11,7 @@ const SUPERVISORES_COLLECTION = 'supervisores';
 const ZONAS_COMERCIALES_COLLECTION = 'zonas_comerciales';
 const JEFE_COMERCIAL_USUARIO = 'jefe';
 const JEFE_COMERCIAL_PASSWORD = 'Adecco2019@';
+const ZONAS_OFICIALES = ['AREQUIPA SUR', 'PUNO SUR', 'CUSCO SUR', 'APUR\u00cdMAC SUR', 'TACNA SUR'];
 
 function jefeEsc(str) {
     return String(str == null ? '' : str)
@@ -579,7 +580,7 @@ function renderJefeSupervisores() {
     }
 
     tbody.innerHTML = supervisores.map(s => {
-        const nombresZonas = (s.zonas || [])
+        const nombresZonas = s.zona || (s.zonas || [])
             .map(zid => { const z = zonasById.get(zid); return z ? z.nombre : zid; })
             .filter(Boolean)
             .join(', ');
@@ -615,15 +616,15 @@ function renderJefeSupervisores() {
 
 function jefeAbrirModalSupervisor(id) {
     const sup = id ? JefeComercialStore.supervisores.find(s => s.id === id) : null;
-    const zonas = JefeComercialStore.zonas;
-    const supZonas = new Set((sup && sup.zonas || []).map(String));
+    const zonaSup = sup ? (sup.zona || (sup.zonas && sup.zonas[0]) || '') : '';
 
-    const zonaChecks = zonas.length > 0
-        ? zonas.map(z => {
-            const checked = supZonas.has(z.id) ? ' checked' : '';
-            return '<label class="jefe-check"><input type="checkbox" name="jefe-sup-zonas" value="' + jefeEsc(z.id) + '"' + checked + '>' + jefeEsc(z.nombre) + '</label>';
-        }).join('')
-        : '<p class="jefe-form-aviso">A&uacute;n no existen zonas. Crea una zona antes de asignarla.</p>';
+    const zonaSel = '<select id="jefe-sup-zona" class="jefe-form-input">' +
+        '<option value="">Seleccionar zona...</option>' +
+        ZONAS_OFICIALES.map(z => {
+            const selected = (String(zonaSup).trim().toUpperCase() === String(z).trim().toUpperCase()) ? ' selected' : '';
+            return '<option value="' + jefeEsc(z) + '"' + selected + '>' + jefeEsc(z) + '</option>';
+        }).join('') +
+        '</select>';
 
     const titulo = sup ? 'Editar Supervisor' : 'Nuevo Supervisor';
     jefeAbrirModal(
@@ -650,8 +651,8 @@ function jefeAbrirModalSupervisor(id) {
                     '<option value="Inactivo"' + (sup && sup.estado === 'Inactivo' ? ' selected' : '') + '>Inactivo</option>' +
                 '</select>' +
             '</div>' +
-            '<div class="jefe-form-group jefe-form-full"><label class="jefe-form-label">Zona(s) asignada(s)</label>' +
-                '<div class="jefe-checks">' + zonaChecks + '</div>' +
+            '<div class="jefe-form-group"><label class="jefe-form-label">Zona asignada *</label>' +
+                zonaSel +
             '</div>' +
         '</div>' +
         '<div class="form-actions">' +
@@ -667,14 +668,15 @@ async function jefeGuardarSupervisor(id) {
     const telefono = document.getElementById('jefe-sup-telefono').value.trim();
     const password = document.getElementById('jefe-sup-password').value;
     const estado = document.getElementById('jefe-sup-estado').value;
-    const zonas = Array.from(document.querySelectorAll('input[name="jefe-sup-zonas"]:checked')).map(c => c.value);
+    const zona = document.getElementById('jefe-sup-zona').value;
 
     if (!nombre) { mostrarNotificacion('Ingresa el nombre del supervisor.', 'error'); return; }
     if (!email) { mostrarNotificacion('Ingresa el correo del supervisor.', 'error'); return; }
     if (email.indexOf('@') === -1) { mostrarNotificacion('Correo inv\u00e1lido.', 'error'); return; }
+    if (!zona) { mostrarNotificacion('Selecciona la zona asignada del supervisor.', 'error'); return; }
     if (!id && !password) { mostrarNotificacion('Ingresa una contrase\u00f1a para el nuevo supervisor.', 'error'); return; }
 
-    const cambios = { nombre: nombre, email: email, telefono: telefono, zonas: zonas, estado: estado };
+    const cambios = { nombre: nombre, email: email, telefono: telefono, zona: zona, zonas: [zona], estado: estado };
     if (password) {
         const hash = (typeof hashPassword === 'function') ? await hashPassword(password) : '';
         cambios.password = password;
