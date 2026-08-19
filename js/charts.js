@@ -330,7 +330,7 @@ function createRankingChart() {
     const canvas = document.getElementById(id);
     if (!canvas) return;
 
-    const ranking = DataStore.getRanking().slice(0, 10);
+    const ranking = (typeof _getRankingRestringido === 'function' ? _getRankingRestringido() : DataStore.getRanking()).slice(0, 10);
     const labels = ranking.map(r => r.punto_venta.replace('Red AT ', ''));
     const data = ranking.map(r => r.puntaje);
     const colors = data.map((v, i) =>

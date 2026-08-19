@@ -240,8 +240,14 @@ function renderizarRankingPromociones() {
     renderAvisoOficial();
     renderPeriodoAnalizado('periodo-analizado-ranking');
     const p = PromocionesStore._periodoEfectivo();
-    const ranking = PromocionesStore.getRankingTiendas(p.desde, p.hasta);
-    const total = PromocionesStore.getTotalCantidad(p.desde, p.hasta);
+    let ranking = PromocionesStore.getRankingTiendas(p.desde, p.hasta);
+    const zonaPDVs = _pdvsZonaPromotor();
+    if (zonaPDVs) {
+        ranking = ranking
+            .filter(r => zonaPDVs.indexOf(r.tienda) !== -1)
+            .map((item, i) => ({ ...item, puesto: i + 1 }));
+    }
+    const total = ranking.reduce((s, r) => s + (r.cantidad || 0), 0);
     const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49'];
     const listEl = document.getElementById('ranking-list');
     const countEl = document.getElementById('ranking-list-count');
@@ -288,7 +294,14 @@ function renderizarRankingPromociones() {
 
     if (countEl) countEl.textContent = ranking.length + ' tiendas';
 
-    const promosDistintas = PromocionesStore.getRankingPromociones(p.desde, p.hasta).length;
+    let promosDistintas = PromocionesStore.getRankingPromociones(p.desde, p.hasta).length;
+    if (zonaPDVs) {
+        promosDistintas = new Set(
+            PromocionesStore.getRegistrosEnRango(p.desde, p.hasta)
+                .filter(r => zonaPDVs.indexOf(r.tienda) !== -1)
+                .map(r => r.promocion)
+        ).size;
+    }
     if (statsEl) statsEl.innerHTML = '' +
         '<div class="ranking-hero-stat">' +
             '<span class="ranking-hero-stat-value" style="color:var(--accent)">' + ranking.length + '</span>' +
@@ -311,10 +324,12 @@ function renderPromocionesAvancePDV(pdvSeleccionado) {
     if (!select) return;
     const pdvs = DataStore.getPDVs ? DataStore.getPDVs() : [];
     const tiendaPromotor = _tiendaPromotorSesion();
-    if (!pdvSeleccionado) {
+    const restringidos = _pdvsPermitidosPromotor();
+    if (restringidos) {
+        pdvSeleccionado = restringidos[0];
+    } else if (!pdvSeleccionado) {
         if (tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) {
             pdvSeleccionado = tiendaPromotor;
-            select.value = tiendaPromotor;
         } else {
             pdvSeleccionado = select.value || 'todos';
         }
@@ -1008,6 +1023,41 @@ function _tiendaPromotorSesion() {
     return (zona && zona.nombre) || zonaNueva || null;
 }
 
+function _esPromotorRestringido() {
+    if (estaSupervisorDesbloqueado()) return false;
+    _rehidratarSesionPromotor();
+    return !!promotorSession;
+}
+
+function _pdvsPermitidosPromotor() {
+    if (!_esPromotorRestringido()) return null;
+    const tienda = _tiendaPromotorSesion();
+    if (!tienda) return null;
+    return [tienda];
+}
+
+function _pdvsZonaPromotor() {
+    if (!_esPromotorRestringido()) return null;
+    const tienda = _tiendaPromotorSesion();
+    if (!tienda) return null;
+    if (typeof DataStore === 'undefined' || typeof DataStore.getTiendaCadena !== 'function' || typeof DataStore.getPDVs !== 'function') return null;
+    const norm = DataStore._normalizarZona ? DataStore._normalizarZona(DataStore.getTiendaCadena(tienda)) : '';
+    if (!norm) return null;
+    return DataStore.getPDVs().filter(p =>
+        (DataStore._normalizarZona ? DataStore._normalizarZona(DataStore.getTiendaCadena(p)) : '') === norm
+    );
+}
+
+function _getRankingRestringido() {
+    if (typeof DataStore === 'undefined' || typeof DataStore.getRanking !== 'function') return [];
+    const ranking = DataStore.getRanking();
+    const zonaPDVs = _pdvsZonaPromotor();
+    if (!zonaPDVs) return ranking;
+    return ranking
+        .filter(r => zonaPDVs.indexOf(r.punto_venta) !== -1)
+        .map((item, i) => ({ ...item, puesto: i + 1 }));
+}
+
 function renderizarAvancePDV(pdvSeleccionado) {
     if ((filtroTipoInformacion || 'productos') === 'promociones') {
         renderPromocionesAvancePDV(pdvSeleccionado);
@@ -1019,11 +1069,13 @@ function renderizarAvancePDV(pdvSeleccionado) {
     const select = document.getElementById('pdv-select');
     if (!select) return;
 
+    const restringidos = _pdvsPermitidosPromotor();
     const tiendaPromotor = _tiendaPromotorSesion();
-    if (!pdvSeleccionado) {
+    if (restringidos) {
+        pdvSeleccionado = restringidos[0];
+    } else if (!pdvSeleccionado) {
         if (tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) {
             pdvSeleccionado = tiendaPromotor;
-            select.value = tiendaPromotor;
         } else {
             pdvSeleccionado = select.value || 'todos';
         }
@@ -1060,25 +1112,25 @@ const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSelecci
         const cuotaPDV = d.cuota || 0;
         const faltPDV = d.diferencia || 0;
         const cumPDV = d.cumplimiento || 0;
-        const cumClsPDV = cumPDV >= 100 ? 'green' : cumPDV >= 70 ? 'yellow' : 'red';
-        const dotPDV = cumPDV >= 100 ? '\ud83d\udfe2' : cumPDV >= 70 ? '\ud83d\udfe1' : '\ud83d\udd34';
         let cuotaDiaPDV = '\u2014';
         if (ventaPDV >= cuotaPDV) cuotaDiaPDV = '\u2713 Meta';
         else if (esPeriodoPasado) cuotaDiaPDV = 'Fin mes';
         else if (diasFaltantes > 0) cuotaDiaPDV = formatCurrency(Math.ceil(faltPDV / diasFaltantes));
 
-        rowsHtml += '<tr class="ctl-group-row"><td colspan="7">' +
+        rowsHtml += '<tr class="ctl-group-row"><td colspan="8">' +
             '<span class="ctl-group-name">' + ctlDot(d.cumplimiento) + ' ' + ctlEsc(ctlNombreCorto(pdv)) + '</span>' +
-            '</td><td class="ctl-td-left">' + ctlBadge(d.cumplimiento) + '</td></tr>' +
-            '<tr class="ctl-group-summary"><td colspan="8">' +
-            '<div class="pdv-summary-bar">' +
-            pdvSumItem('\ud83d\udcb0 Venta Total', formatCurrency(ventaPDV), 'green', 'Venta acumulada del periodo') +
-            pdvSumItem('\ud83c\udfaf Cuota Total', formatCurrency(cuotaPDV), 'blue', 'Meta / cuota asignada del periodo') +
-            pdvSumItem('\ud83d\udcc9 Faltante', (faltPDV <= 0 ? '\u2713 ' + formatCurrency(Math.abs(faltPDV)) : formatCurrency(faltPDV)), 'orange', 'Cuota pendiente por vender') +
-            pdvSumItem('\ud83d\udcc5 Cuota x D\u00eda', cuotaDiaPDV, 'purple', 'Cuota diaria requerida para cerrar el faltante') +
-            pdvSumItem('\ud83d\udcca Cumplimiento', dotPDV + ' ' + formatPercent(cumPDV), cumClsPDV, 'Cumplimiento general del punto de venta') +
-            '</div>' +
             '</td></tr>';
+
+        rowsHtml += '<tr class="ctl-total-row">' +
+            '<td class="ctl-total-label">Total</td>' +
+            '<td class="ctl-total-val">' + formatCurrency(ventaPDV) + '</td>' +
+            '<td class="ctl-total-val">' + formatCurrency(cuotaPDV) + '</td>' +
+            '<td class="ctl-total-val ' + (faltPDV <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (faltPDV <= 0 ? '\u2713 ' + formatCurrency(Math.abs(faltPDV)) : formatCurrency(faltPDV)) + '</td>' +
+            '<td class="ctl-total-val ctl-td-dim">' + cuotaDiaPDV + '</td>' +
+            '<td class="ctl-total-val">' + ctlBarCell(cumPDV) + '</td>' +
+            '<td class="ctl-total-val">' + formatCurrency(d.proyeccion || 0) + '</td>' +
+            '<td class="ctl-total-val">' + ctlBadge(cumPDV) + '</td>' +
+            '</tr>';
 
         for (let prod of DataStore.getProductos()) {
             const p = d.productos[prod];
@@ -1094,10 +1146,10 @@ const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSelecci
                 '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(prod) + '</td>' +
                 '<td>' + formatCurrency(p.venta) + '</td>' +
                 '<td>' + formatCurrency(p.cuota) + '</td>' +
-                '<td>' + ctlBarCell(p.cumplimiento) + '</td>' +
                 '<td class="' + (p.venta >= p.cuota ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (p.venta >= p.cuota ? '\u2713 ' + formatCurrency(Math.abs(dif)) : formatCurrency(dif)) + '</td>' +
-                '<td class="' + (proyPDV >= p.cuota ? 'ctl-td-good' : 'ctl-td-dim') + '">' + formatCurrency(proyPDV) + '</td>' +
                 '<td class="ctl-td-dim">' + cuotaDiaStr + '</td>' +
+                '<td>' + ctlBarCell(p.cumplimiento) + '</td>' +
+                '<td class="' + (proyPDV >= p.cuota ? 'ctl-td-good' : 'ctl-td-dim') + '">' + formatCurrency(proyPDV) + '</td>' +
                 '<td>' + ctlBadge(p.cumplimiento) + '</td>' +
                 '</tr>';
         }
@@ -1109,9 +1161,9 @@ const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSelecci
         '<span class="ctl-card-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Avance por Punto de Venta</span>' +
         '<span class="ctl-card-count">' + ((pdvSeleccionado && pdvSeleccionado !== 'todos') ? ctlEsc(pdvSeleccionado) : listaPDVs.length + ' PDVs') + '</span>' +
         '</div>' +
-        '<div class="ctl-table-wrap"><table class="ctl-table">' +
-'<thead><tr>' +
-        '<th class="ctl-th-left">Producto</th><th>Venta</th><th>Cuota</th><th>Alcance</th><th>Faltante</th><th>Proyecci\u00f3n</th><th>Cuota x D\u00eda</th><th>Estado</th>' +
+        '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">Producto</th><th>Venta</th><th>Cuota</th><th>Faltante</th><th>Cuota D\u00eda</th><th>Alcance</th><th>Proyecci\u00f3n</th><th>Estado</th>' +
         '</tr></thead><tbody>' + rowsHtml + '</tbody>' +
         '</table></div></div>';
 }
@@ -1125,7 +1177,8 @@ function exportarAvancePDVExcel() {
 
         const pdvSeleccionado = (document.getElementById('pdv-select') || {}).value || 'todos';
         const pdvs = DataStore.getPDVs();
-        const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSeleccionado] : pdvs;
+        const restringidos = _pdvsPermitidosPromotor();
+        const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSeleccionado] : (restringidos || pdvs);
         const allData = DataStore.getCumplimientoPorPDV();
         const productos = DataStore.getProductos();
         const periodo = DataStore.getInfoPeriodo();
@@ -1267,7 +1320,7 @@ function renderizarRanking() {
     }
     renderAvisoOficial();
     renderPeriodoAnalizado('periodo-analizado-ranking');
-    const ranking = DataStore.getRanking();
+    const ranking = _getRankingRestringido();
     if (!document.getElementById('page-ranking')) return;
 
     const noData = DataStore.getInfoPeriodo().activo && !DataStore.getVentasEnRango().length;
@@ -1331,16 +1384,27 @@ function renderizarRanking() {
 
 function poblarFiltros() {
     const pdvs = DataStore.getPDVs();
-    console.log('[AUDITORIA] poblarFiltros pdvs:', pdvs.length, pdvs);
+    const restringidos = _pdvsPermitidosPromotor();
+    const lista = restringidos || pdvs;
+    console.log('[AUDITORIA] poblarFiltros pdvs:', lista.length, lista);
     const pdvSelect = document.getElementById('pdv-select');
     if (pdvSelect) {
-        pdvSelect.innerHTML = '<option value="todos">Todos los PDV</option>' +
-            pdvs.map(p => `<option value="${p}">${p}</option>`).join('');
-        const tiendaPromotor = _tiendaPromotorSesion();
-        if (tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) {
-            pdvSelect.value = tiendaPromotor;
-            const wrapper = pdvSelect.closest('.pdv-selector-wrapper');
-            if (wrapper) wrapper.classList.add('has-value');
+        const wrapper = pdvSelect.closest('.pdv-selector-wrapper');
+        if (restringidos) {
+            pdvSelect.innerHTML = '<option value="' + escHtml(restringidos[0]) + '">' + escHtml(restringidos[0]) + '</option>';
+            pdvSelect.value = restringidos[0];
+            pdvSelect.disabled = true;
+            if (wrapper) wrapper.classList.add('is-readonly', 'has-value');
+        } else {
+            pdvSelect.innerHTML = '<option value="todos">Todos los PDV</option>' +
+                pdvs.map(p => `<option value="${p}">${p}</option>`).join('');
+            pdvSelect.disabled = false;
+            if (wrapper) wrapper.classList.remove('is-readonly');
+            const tiendaPromotor = _tiendaPromotorSesion();
+            if (tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) {
+                pdvSelect.value = tiendaPromotor;
+                if (wrapper) wrapper.classList.add('has-value');
+            }
         }
         console.log('[AUDITORIA] pdv-select options después de poblar:', pdvSelect.options.length);
     }
@@ -1653,6 +1717,8 @@ function bloquearSupervisor() {
             cambiarPagina('avance');
         }
     }
+    poblarFiltros();
+    renderizarAvancePDV();
     mostrarNotificacion('Modo supervisor bloqueado', 'success');
 }
 
@@ -2743,6 +2809,7 @@ function abrirModalVenta() {
         return;
     }
     cambiarPagina('avance');
+    poblarFiltros();
     abrirPanelVentas();
 }
 
@@ -3740,6 +3807,10 @@ function finishSupervisorLogin(sup) {
     sessionStorage.setItem('supervisor_unlocked', 'true');
     guardarSesion({ rol: 'supervisor', id: sup.id, nombre: sup.nombre || 'Supervisor', email: sup.email || '', zona: sup.zona || '' });
     aplicarSesionInicial();
+    if (typeof poblarFiltros === 'function') {
+        poblarFiltros();
+        renderizarAvancePDV();
+    }
 }
 
 function aplicarSesionInicial() {

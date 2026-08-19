@@ -1198,6 +1198,21 @@ body.rol-jefe .nav-supervisor-toggle {
     transform: rotate(180deg);
 }
 
+.pdv-selector-wrapper.is-readonly {
+    cursor: default;
+    border-style: dashed;
+    border-color: rgba(29,185,84,0.35);
+}
+
+.pdv-selector-wrapper.is-readonly .pdv-selector-arrow {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.pdv-selector-wrapper.is-readonly .pdv-selector-field select {
+    cursor: default;
+}
+
 .pdv-content {
     display: flex;
     flex-direction: column;

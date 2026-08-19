@@ -673,6 +673,30 @@ html[data-theme="light"] .ctl-group-summary td {
     color: #047857;
 }
 
+html[data-theme="light"] .ctl-table-exec thead th {
+    background: #E2E8F0;
+    color: #1F2937;
+    border-top: 1px solid #D8DEE8;
+    border-bottom: 2px solid #CBD5E1;
+    border-right: 1px solid #E4E9F0;
+}
+
+html[data-theme="light"] .ctl-table-exec tbody td {
+    border-bottom: 1px solid #E4E9F0;
+    border-right: 1px solid #E4E9F0;
+}
+
+html[data-theme="light"] .ctl-table-exec tbody tr.ctl-total-row td {
+    background: #F1F5F9;
+    color: #1F2937;
+    border-top: 1px solid #D8DEE8;
+    border-bottom: 2px solid #CBD5E1;
+}
+
+html[data-theme="light"] .ctl-table-exec tbody tr.ctl-total-row td.ctl-total-label {
+    color: #475569;
+}
+
 html[data-theme="light"] .pdv-sum-item {
     background: #F8FAFC;
     border: 1px solid #D8DEE8;

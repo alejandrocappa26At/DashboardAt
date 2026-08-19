@@ -651,4 +651,68 @@ table.ctl-table {
    en tablet y móvil no se muestra. */
 @media (max-width: 1024px) {
     tr.ctl-group-summary { display: none; }
+    tr.ctl-total-row { display: none; }
+}
+
+/* =============================================
+   AVANCE PDV — Tabla estilo Excel Ejecutivo
+   Totales integrados como fila dentro de la tabla,
+   bordes suaves tipo hoja de cálculo.
+   ============================================= */
+
+table.ctl-table.ctl-table-exec {
+    border: 1px solid var(--t-w10);
+    min-width: 860px;
+}
+
+.ctl-table.ctl-table-exec thead th {
+    background: var(--t-bg2);
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.7px;
+    padding: 12px 14px;
+    text-transform: uppercase;
+    border-top: 1px solid var(--t-w10);
+    border-bottom: 2px solid var(--t-w15);
+    border-right: 1px solid var(--t-w06);
+}
+
+.ctl-table.ctl-table-exec thead th:last-child {
+    border-right: none;
+}
+
+.ctl-table.ctl-table-exec tbody td {
+    border-bottom: 1px solid var(--t-w06);
+    border-right: 1px solid var(--t-w06);
+}
+
+.ctl-table.ctl-table-exec tbody td:last-child {
+    border-right: none;
+}
+
+.ctl-table.ctl-table-exec tbody tr:nth-child(even) td {
+    background: var(--t-w025);
+}
+
+.ctl-table.ctl-table-exec tbody tr.ctl-total-row td {
+    background: var(--t-w06);
+    color: var(--t-text);
+    font-weight: 700;
+    font-size: 12.5px;
+    border-top: 1px solid var(--t-w12);
+    border-bottom: 2px solid var(--t-w15);
+}
+
+.ctl-table.ctl-table-exec tbody tr.ctl-total-row td.ctl-total-label {
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--t-dim2);
+}
+
+.ctl-table.ctl-table-exec tbody tr.ctl-total-row td.ctl-total-val {
+    font-size: 13px;
 }
