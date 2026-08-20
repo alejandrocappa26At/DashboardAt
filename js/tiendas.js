@@ -243,6 +243,38 @@ const TiendasStore = {
         return { tienda: t };
     },
 
+    /* Importación masiva desde Excel: recibe una lista ya validada
+       [{ nombre, cadena, estado }] y las registra en una sola operación. */
+    importarTiendas(lista) {
+        if (!Array.isArray(lista) || lista.length === 0) return { creadas: [], errores: [] };
+        const ahora = this._ahoraISO();
+        const creadas = [];
+        const errores = [];
+        const existentes = new Set(this.tiendas.map(t => this._normKey(t.nombre)));
+        for (const item of lista) {
+            const nombre = this._normalizar(item && item.nombre);
+            if (!nombre) { errores.push({ error: 'El nombre de la tienda es obligatorio.' }); continue; }
+            const key = this._normKey(nombre);
+            if (existentes.has(key)) { errores.push({ error: 'La tienda ya existe: ' + nombre }); continue; }
+            const t = {
+                id: this._genId(),
+                nombre,
+                cadena: this._normalizar(item && item.cadena) || 'AREQUIPA SUR',
+                estado: (item && item.estado) === 'Inactiva' ? 'Inactiva' : 'Activa',
+                fecha_creacion: ahora,
+                fecha_actualizacion: ahora
+            };
+            this.tiendas.push(t);
+            existentes.add(key);
+            creadas.push(t);
+        }
+        if (creadas.length > 0) {
+            this._persistir();
+            this._notify();
+        }
+        return { creadas, errores };
+    },
+
     editarTienda(id, cambios) {
         const t = this.tiendas.find(x => x.id === id);
         if (!t) return { error: 'Tienda no encontrada.' };
@@ -367,6 +399,14 @@ function renderGestionTiendas() {
                 <h2>Gestión de Tiendas</h2>
             </div>
             <div class="tiendas-header-right">
+                <button class="tiendas-btn-excel" onclick="descargarPlantillaTiendas()" title="Descargar plantilla Excel para carga masiva">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Descargar Plantilla Excel</span>
+                </button>
+                <button class="tiendas-btn-importar" onclick="abrirModalImportarTiendas()" title="Importar tiendas desde un archivo Excel">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9z"/><path d="M9 21v-6h6v6"/></svg>
+                    <span>Importar Tiendas Excel</span>
+                </button>
                 <button class="tiendas-btn-nueva" onclick="abrirModalTienda()" title="Crear nueva tienda">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span>Nueva Tienda</span>
@@ -585,6 +625,336 @@ function guardarModalTienda() {
     }
 
     cerrarModalTienda();
+    refrescarTiendasGlobal();
+}
+
+/* =============================================
+   CARGA MASIVA DESDE EXCEL
+   Plantilla: NOMBRE_TIENDA | ZONA | ESTADO
+   ============================================= */
+
+function descargarPlantillaTiendas() {
+    try {
+        if (typeof ExcelJS === 'undefined' || typeof saveAs === 'undefined') {
+            console.error('[TIENDAS] ExcelJS o FileSaver no disponibles.');
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('No se pudo generar la plantilla: librerías de Excel no disponibles.', 'error');
+            }
+            return;
+        }
+        const workbook = new ExcelJS.Workbook();
+        const ws = workbook.addWorksheet('Tiendas');
+
+        const columnas = [
+            { header: 'NOMBRE_TIENDA', key: 'nombre', width: 42 },
+            { header: 'ZONA', key: 'zona', width: 26 },
+            { header: 'ESTADO', key: 'estado', width: 14 }
+        ];
+        ws.columns = columnas;
+
+        const headRow = ws.getRow(1);
+        headRow.height = 24;
+        headRow.eachCell(c => {
+            c.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+            c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F6E4D' } };
+            c.alignment = { vertical: 'middle', horizontal: 'center' };
+            c.border = { bottom: { style: 'medium', color: { argb: 'FF1DB954' } } };
+        });
+        ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+        [
+            ['RED AT ALTO SELVA ALEGRE', 'AREQUIPA SUR', 'ACTIVA'],
+            ['RED AT ATLAS', 'AREQUIPA SUR', 'ACTIVA'],
+            ['RED AT BELEN', 'CUSCO SUR', 'ACTIVA'],
+            ['RED AT HUANCARO', 'CUSCO SUR', 'ACTIVA']
+        ].forEach(([nombre, zona, estado]) => {
+            const row = ws.addRow([nombre, zona, estado]);
+            row.getCell(1).alignment = { vertical: 'middle' };
+            row.getCell(2).alignment = { vertical: 'middle' };
+            row.getCell(3).alignment = { vertical: 'middle', horizontal: 'center' };
+        });
+
+        const nota = ws.addRow(['Rellena las filas con el nombre, la zona y el estado (ACTIVA / INACTIVA). No borres los encabezados.']);
+        nota.getCell(1).font = { italic: true, size: 9, color: { argb: 'FF8A8A8A' } };
+        ws.mergeCells(nota.number, 1, nota.number, 3);
+
+        const nombreArchivo = 'Plantilla_Tiendas_DriveATSur.xlsx';
+        workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, nombreArchivo);
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('Plantilla Excel descargada.', 'success');
+            }
+        });
+    } catch (e) {
+        console.error('[TIENDAS] Error al generar la plantilla:', e);
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion('Error al generar la plantilla: ' + e.message, 'error');
+        }
+    }
+}
+
+let tiendaImportacionEnCurso = null;
+
+function abrirModalImportarTiendas() {
+    let overlay = document.getElementById('tienda-import-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'tienda-import-overlay';
+        overlay.className = 'tienda-import-overlay';
+        document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+        <div class="tienda-import-modal">
+            <div class="tienda-modal-header">
+                <div class="tienda-modal-title">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l1.5-5h15L21 9"/><path d="M4 9h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9z"/><path d="M9 21v-6h6v6"/>
+                    </svg>
+                    <h3>Importar Tiendas desde Excel</h3>
+                </div>
+                <button class="tienda-modal-close" onclick="cerrarModalImportarTiendas()" title="Cerrar" aria-label="Cerrar">&#10005;</button>
+            </div>
+            <div class="tienda-import-body">
+                <div class="tienda-import-info">
+                    <p>Sube un archivo Excel con las columnas <strong>NOMBRE_TIENDA</strong>, <strong>ZONA</strong> y <strong>ESTADO</strong>.</p>
+                    <p>Descarga la plantilla modelo con el bot&oacute;n «Descargar Plantilla Excel» para respetar el formato.</p>
+                </div>
+                <div class="tienda-import-dropzone" id="tienda-import-dropzone" onclick="document.getElementById('tienda-import-file').click()">
+                    <input type="file" id="tienda-import-file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
+                    <div class="tienda-import-dropzone-icon">&#128229;</div>
+                    <div class="tienda-import-dropzone-text">Haz clic para seleccionar el archivo Excel</div>
+                    <div class="tienda-import-dropzone-sub">Solo archivos .xlsx &middot; NOMBRE_TIENDA | ZONA | ESTADO</div>
+                </div>
+                <div id="tienda-import-resultado"></div>
+            </div>
+            <div class="tienda-modal-footer">
+                <button class="tienda-btn-cancelar" onclick="cerrarModalImportarTiendas()">Cancelar</button>
+                <button class="tienda-btn-guardar" id="tienda-import-confirmar" onclick="confirmarImportacionTiendas()" style="display:none;">Confirmar importaci&oacute;n</button>
+            </div>
+        </div>
+    `;
+    overlay.classList.add('open');
+    tiendaImportacionEnCurso = null;
+
+    const fileInput = document.getElementById('tienda-import-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            if (file) _manejarArchivoImportacion(file);
+            this.value = '';
+        });
+    }
+
+    const dz = document.getElementById('tienda-import-dropzone');
+    if (dz) {
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+        dz.addEventListener('drop', e => {
+            e.preventDefault();
+            dz.classList.remove('drag');
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (file) _manejarArchivoImportacion(file);
+        });
+    }
+}
+
+function cerrarModalImportarTiendas() {
+    const overlay = document.getElementById('tienda-import-overlay');
+    if (overlay) overlay.classList.remove('open');
+    tiendaImportacionEnCurso = null;
+}
+
+async function _manejarArchivoImportacion(file) {
+    const resultadoEl = document.getElementById('tienda-import-resultado');
+    if (!resultadoEl) return;
+    resultadoEl.innerHTML = '<div class="tienda-import-loading">Procesando archivo <strong>' + _tiendasEsc(file.name) + '</strong>&hellip;</div>';
+    try {
+        const filas = await _procesarArchivoTiendasExcel(file);
+        const resumen = _procesarImportacionTiendas(filas);
+        _renderResumenImportacion(resumen);
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion(
+                'Archivo procesado: ' + resumen.nuevas.length + ' nueva' + (resumen.nuevas.length !== 1 ? 's' : '') + ', ' +
+                resumen.duplicadas.length + ' duplicada' + (resumen.duplicadas.length !== 1 ? 's' : '') + ', ' +
+                resumen.invalidas.length + ' inv\u00e1lida' + (resumen.invalidas.length !== 1 ? 's' : '') + '.',
+                resumen.nuevas.length > 0 ? 'success' : 'warning'
+            );
+        }
+    } catch (e) {
+        console.error('[TIENDAS] Error al importar:', e);
+        resultadoEl.innerHTML = '<div class="tienda-import-error">&#10060; ' + _tiendasEsc(e.message || 'No se pudo leer el archivo. Verifica que sea un Excel .xlsx válido.') + '</div>';
+    }
+}
+
+function _normHeaderTienda(str) {
+    return String(str || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').trim();
+}
+
+async function _procesarArchivoTiendasExcel(file) {
+    if (typeof ExcelJS === 'undefined') {
+        throw new Error('La librería de Excel no está disponible. Recarga la página.');
+    }
+    const buffer = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    const ws = workbook.worksheets[0];
+    if (!ws) throw new Error('El archivo no contiene hojas de cálculo.');
+
+    const filas = [];
+    ws.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        const valores = [];
+        for (let i = 1; i <= 5; i++) {
+            valores.push(String(row.getCell(i).text == null ? '' : row.getCell(i).text).trim());
+        }
+        filas.push({ numero: rowNumber, valores });
+    });
+
+    let headerIndex = -1;
+    let headerMap = { nombre: -1, zona: -1, estado: -1 };
+    for (let i = 0; i < filas.length && i < 10; i++) {
+        const cols = filas[i].valores.map(_normHeaderTienda);
+        const idxNombre = cols.findIndex(c => c.indexOf('NOMBRE') !== -1 && c.indexOf('TIENDA') !== -1);
+        if (idxNombre === -1) continue;
+        const idxZona = cols.findIndex(c => c === 'ZONA' || c.indexOf('ZONA') !== -1);
+        const idxEstado = cols.findIndex(c => c === 'ESTADO' || c.indexOf('ESTADO') !== -1);
+        headerIndex = i;
+        headerMap = { nombre: idxNombre, zona: idxZona, estado: idxEstado };
+        break;
+    }
+
+    if (headerIndex === -1 || headerMap.nombre === -1) {
+        throw new Error('Estructura no válida: se esperaban las columnas NOMBRE_TIENDA, ZONA y ESTADO.');
+    }
+    if (headerMap.zona === -1 || headerMap.estado === -1) {
+        throw new Error('Estructura incompleta: faltan las columnas ZONA o ESTADO.');
+    }
+
+    return filas
+        .slice(headerIndex + 1)
+        .filter(r => r.valores.some(v => v !== ''))
+        .map(r => ({
+            numero: r.numero,
+            nombre: r.valores[headerMap.nombre],
+            zona: r.valores[headerMap.zona],
+            estado: r.valores[headerMap.estado]
+        }));
+}
+
+function _estadoTiendaExcel(valor) {
+    const v = String(valor || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (v === '' || v === 'ACTIVA' || v === 'ACTIVO' || v === '1' || v === 'SI' || v === 'S') return 'Activa';
+    return 'Inactiva';
+}
+
+function _procesarImportacionTiendas(filas) {
+    const nuevas = [];
+    const duplicadas = [];
+    const invalidas = [];
+    const vistos = new Set();
+
+    for (const fila of filas) {
+        const nombreCrudo = String(fila.nombre == null ? '' : fila.nombre);
+        const zonaCruda = String(fila.zona == null ? '' : fila.zona);
+        const razones = [];
+
+        const nombre = TiendasStore._normalizar(nombreCrudo);
+        if (!nombre) razones.push('Nombre vac\u00edo');
+        else if (/\s{2,}/.test(nombreCrudo)) razones.push('Espacios duplicados en el nombre');
+
+        const zona = TiendasStore._normalizar(zonaCruda);
+        if (!zona) razones.push('Zona vac\u00eda');
+
+        if (razones.length > 0) {
+            invalidas.push({ numero: fila.numero, nombre, razon: razones.join(', ') });
+            continue;
+        }
+
+        const key = TiendasStore._normKey(nombre);
+        if (vistos.has(key)) {
+            duplicadas.push({ numero: fila.numero, nombre, razon: 'Repetida en el archivo' });
+            continue;
+        }
+        if (TiendasStore.getTienda(nombre)) {
+            duplicadas.push({ numero: fila.numero, nombre, razon: 'Ya existe en el sistema' });
+            continue;
+        }
+
+        vistos.add(key);
+        nuevas.push({
+            numero: fila.numero,
+            nombre,
+            cadena: zona,
+            estado: _estadoTiendaExcel(fila.estado)
+        });
+    }
+
+    return { nuevas, duplicadas, invalidas, total: filas.length };
+}
+
+function _renderResumenImportacion(resumen) {
+    const resultadoEl = document.getElementById('tienda-import-resultado');
+    const confirmarBtn = document.getElementById('tienda-import-confirmar');
+    if (!resultadoEl) return;
+
+    tiendaImportacionEnCurso = resumen;
+
+    const cards =
+        '<div class="tienda-import-summary">' +
+            '<div class="tienda-import-sum-card nueva"><span class="tienda-import-sum-num">' + resumen.nuevas.length + '</span><span class="tienda-import-sum-label">Tiendas nuevas</span></div>' +
+            '<div class="tienda-import-sum-card duplicada"><span class="tienda-import-sum-num">' + resumen.duplicadas.length + '</span><span class="tienda-import-sum-label">Duplicadas</span></div>' +
+            '<div class="tienda-import-sum-card invalida"><span class="tienda-import-sum-num">' + resumen.invalidas.length + '</span><span class="tienda-import-sum-label">Inv\u00e1lidas</span></div>' +
+        '</div>';
+
+    let detalles = '';
+    if (resumen.duplicadas.length > 0) {
+        detalles += '<div class="tienda-import-detalle"><div class="tienda-import-detalle-title">Duplicadas</div><ul>' +
+            resumen.duplicadas.slice(0, 20).map(d =>
+                '<li>Fila ' + d.numero + ': <strong>' + _tiendasEsc(d.nombre) + '</strong> &mdash; ' + _tiendasEsc(d.razon) + '</li>'
+            ).join('') +
+            (resumen.duplicadas.length > 20 ? '<li class="tienda-import-mas">+ ' + (resumen.duplicadas.length - 20) + ' m&aacute;s...</li>' : '') +
+            '</ul></div>';
+    }
+    if (resumen.invalidas.length > 0) {
+        detalles += '<div class="tienda-import-detalle invalidas"><div class="tienda-import-detalle-title">Inv\u00e1lidas</div><ul>' +
+            resumen.invalidas.slice(0, 20).map(d =>
+                '<li>Fila ' + d.numero + ': <strong>' + _tiendasEsc(d.nombre || '(sin nombre)') + '</strong> &mdash; ' + _tiendasEsc(d.razon) + '</li>'
+            ).join('') +
+            (resumen.invalidas.length > 20 ? '<li class="tienda-import-mas">+ ' + (resumen.invalidas.length - 20) + ' m&aacute;s...</li>' : '') +
+            '</ul></div>';
+    }
+
+    resultadoEl.innerHTML = cards + detalles;
+
+    if (confirmarBtn) {
+        if (resumen.nuevas.length > 0) {
+            confirmarBtn.style.display = 'inline-flex';
+            confirmarBtn.textContent = 'Importar ' + resumen.nuevas.length + ' tienda' + (resumen.nuevas.length !== 1 ? 's' : '');
+        } else {
+            confirmarBtn.style.display = 'none';
+        }
+    }
+}
+
+function confirmarImportacionTiendas() {
+    if (!tiendaImportacionEnCurso) return;
+    const nuevas = tiendaImportacionEnCurso.nuevas;
+    if (!nuevas || nuevas.length === 0) return;
+
+    const resultado = TiendasStore.importarTiendas(nuevas);
+    if (resultado.errores && resultado.errores.length > 0) {
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion('No se pudo importar: ' + resultado.errores[0].error, 'error');
+        }
+        return;
+    }
+
+    const creadas = resultado.creadas.length;
+    tiendaImportacionEnCurso = null;
+    cerrarModalImportarTiendas();
+    if (typeof mostrarNotificacion === 'function') {
+        mostrarNotificacion(creadas + ' tienda' + (creadas !== 1 ? 's importada' : ' importada') + 's correctamente.', 'success');
+    }
     refrescarTiendasGlobal();
 }
 

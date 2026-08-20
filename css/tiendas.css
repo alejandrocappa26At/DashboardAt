@@ -58,6 +58,283 @@
     transform: scale(0.97);
 }
 
+/* ---------- Botones de carga masiva (Excel) ---------- */
+.tiendas-btn-excel,
+.tiendas-btn-importar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tiendas-btn-excel {
+    border: 1px solid rgba(56,189,248,0.35);
+    background: rgba(56,189,248,0.1);
+    color: #38BDF8;
+}
+
+.tiendas-btn-excel:hover {
+    transform: translateY(-1px);
+    border-color: rgba(56,189,248,0.6);
+    background: rgba(56,189,248,0.16);
+    box-shadow: 0 4px 16px rgba(56,189,248,0.22);
+}
+
+.tiendas-btn-importar {
+    border: 1px solid rgba(168,85,247,0.35);
+    background: rgba(168,85,247,0.1);
+    color: #C084FC;
+}
+
+.tiendas-btn-importar:hover {
+    transform: translateY(-1px);
+    border-color: rgba(168,85,247,0.6);
+    background: rgba(168,85,247,0.16);
+    box-shadow: 0 4px 16px rgba(168,85,247,0.22);
+}
+
+.tiendas-btn-excel:active,
+.tiendas-btn-importar:active {
+    transform: scale(0.97);
+}
+
+/* ---------- Modal: importación masiva ---------- */
+.tienda-import-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.62);
+    z-index: 3000;
+    backdrop-filter: blur(4px);
+    animation: tiendasFadeIn 0.2s ease;
+}
+
+.tienda-import-overlay.open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.tienda-import-modal {
+    width: 100%;
+    max-width: 560px;
+    background: var(--t-bgM);
+    border-radius: 18px;
+    border: 1px solid var(--t-w08);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    animation: tiendasScaleIn 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 92vh;
+    overflow-y: auto;
+}
+
+.tienda-import-body {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.tienda-import-info {
+    font-size: 13px;
+    color: var(--text-secondary, var(--t-dim));
+    line-height: 1.55;
+}
+
+.tienda-import-info strong {
+    color: var(--t-text);
+}
+
+.tienda-import-info p {
+    margin: 0 0 4px;
+}
+
+.tienda-import-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 28px 18px;
+    border: 1.5px dashed var(--t-w12);
+    border-radius: 14px;
+    background: var(--t-w02);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.tienda-import-dropzone:hover,
+.tienda-import-dropzone.drag {
+    border-color: rgba(29,185,84,0.6);
+    background: rgba(29,185,84,0.05);
+}
+
+.tienda-import-dropzone-icon {
+    font-size: 30px;
+    line-height: 1;
+}
+
+.tienda-import-dropzone-text {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--t-text);
+}
+
+.tienda-import-dropzone-sub {
+    font-size: 11.5px;
+    color: var(--text-secondary, var(--t-dim));
+}
+
+.tienda-import-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(56,189,248,0.08);
+    border: 1px solid rgba(56,189,248,0.25);
+    color: #38BDF8;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tienda-import-loading::before {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(56,189,248,0.3);
+    border-top-color: #38BDF8;
+    border-radius: 50%;
+    animation: tiendasSpin 0.8s linear infinite;
+    flex-shrink: 0;
+}
+
+.tienda-import-error {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #EF4444;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.tienda-import-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.tienda-import-sum-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--t-w08);
+    background: var(--t-w03);
+    text-align: center;
+}
+
+.tienda-import-sum-card.nueva {
+    border-color: rgba(29,185,84,0.35);
+    background: rgba(29,185,84,0.08);
+}
+
+.tienda-import-sum-card.duplicada {
+    border-color: rgba(245,158,11,0.35);
+    background: rgba(245,158,11,0.08);
+}
+
+.tienda-import-sum-card.invalida {
+    border-color: rgba(239,68,68,0.35);
+    background: rgba(239,68,68,0.08);
+}
+
+.tienda-import-sum-num {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.tienda-import-sum-card.nueva .tienda-import-sum-num { color: #1DB954; }
+.tienda-import-sum-card.duplicada .tienda-import-sum-num { color: #F59E0B; }
+.tienda-import-sum-card.invalida .tienda-import-sum-num { color: #EF4444; }
+
+.tienda-import-sum-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-secondary, var(--t-dim));
+}
+
+.tienda-import-detalle {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--t-w08);
+    background: var(--t-w02);
+}
+
+.tienda-import-detalle.invalidas {
+    border-color: rgba(239,68,68,0.25);
+}
+
+.tienda-import-detalle-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #F59E0B;
+    margin-bottom: 8px;
+}
+
+.tienda-import-detalle.invalidas .tienda-import-detalle-title {
+    color: #EF4444;
+}
+
+.tienda-import-detalle ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+.tienda-import-detalle li {
+    font-size: 12.5px;
+    color: var(--text-secondary, var(--t-dim));
+    line-height: 1.45;
+}
+
+.tienda-import-detalle li strong {
+    color: var(--t-text);
+}
+
+.tienda-import-detalle li.tienda-import-mas {
+    color: var(--text-subdued, #666);
+    font-style: italic;
+}
+
+@keyframes tiendasSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* ---------- Resumen / contadores ---------- */
 .gestion-tiendas-body {
     padding: 4px 0;
@@ -564,13 +841,21 @@
     .tiendas-table-scroll-area {
         overflow-x: auto;
     }
+    .tiendas-header-right {
+        flex-wrap: wrap;
+    }
+    .tienda-import-summary {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 480px) {
     .tiendas-header h2 {
         font-size: 19px;
     }
-    .tiendas-btn-nueva {
+    .tiendas-btn-nueva,
+    .tiendas-btn-excel,
+    .tiendas-btn-importar {
         padding: 8px 14px;
         font-size: 12px;
     }

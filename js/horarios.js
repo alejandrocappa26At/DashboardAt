@@ -281,6 +281,18 @@ function renderGestionPromotores() {
                 <h2>Gestión de Promotores</h2>
             </div>
             <div class="horarios-header-right">
+                <button class="horarios-btn-excel" onclick="descargarPlantillaPromotores()" title="Descargar plantilla Excel para carga masiva">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Descargar Plantilla</span>
+                </button>
+                <button class="horarios-btn-importar" onclick="abrirModalImportarPromotores()" title="Importar promotores desde un archivo Excel">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span>Importar Promotores</span>
+                </button>
+                <button class="horarios-btn-exportar" onclick="exportarPromotoresExcel()" title="Exportar promotores a Excel">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9z"/><path d="M9 21v-6h6v6"/></svg>
+                    <span>Exportar Promotores</span>
+                </button>
                 <button class="horarios-btn-manage-promotores" onclick="agregarNuevoPromotor()" title="Añadir promotor">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span>Añadir Promotor</span>
@@ -583,5 +595,500 @@ function eliminarPromotorHandler(promotorId) {
     if (!confirm(`¿Eliminar a "${promotor.nombre}"?`)) return;
 
     HorariosDataStore.eliminarPromotor(promotorId);
+    refrescarVistaPromotores();
+}
+
+/* =============================================
+   CARGA MASIVA DE PROMOTORES DESDE EXCEL
+   Plantilla: NOMBRE_COMPLETO | DNI | CORREO |
+   CONTRASEÑA | TIENDA | ZONA | ESTADO
+   ============================================= */
+
+const PROMOTOR_IMPORT_COLUMNAS = [
+    { header: 'NOMBRE_COMPLETO', key: 'nombre', width: 32 },
+    { header: 'DNI', key: 'dni', width: 14 },
+    { header: 'CORREO', key: 'correo', width: 30 },
+    { header: 'CONTRASEÑA', key: 'password', width: 18 },
+    { header: 'TIENDA', key: 'tienda', width: 34 },
+    { header: 'ZONA', key: 'zona', width: 24 },
+    { header: 'ESTADO', key: 'estado', width: 14 }
+];
+
+function _colPromotorIndex(normCols, tokens) {
+    return normCols.findIndex(c => tokens.every(t => c.indexOf(t) !== -1));
+}
+
+function _normColPromotor(str) {
+    return String(str || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').trim();
+}
+
+function _estadoPromotorExcel(valor) {
+    const v = String(valor || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (v === '' || v === 'ACTIVO' || v === 'ACTIVA' || v === '1' || v === 'SI') return 'Activo';
+    if (v === 'INACTIVO' || v === 'INACTIVA' || v === '0' || v === 'NO') return 'Inactivo';
+    if (v === 'LICENCIA') return 'Licencia';
+    if (v === 'VACACIONES') return 'Vacaciones';
+    return 'Activo';
+}
+
+function _tiendaPromotorExcel(nombreTienda) {
+    const norm = _normalizarZonaGestion(nombreTienda);
+    if (!norm) return null;
+    return (HorariosDataStore.zonas || []).find(z =>
+        _normalizarZonaGestion(z.id) === norm || _normalizarZonaGestion(z.nombre) === norm
+    ) || null;
+}
+
+function _procesarImportacionPromotores(filas) {
+    const validos = [];
+    const duplicados = [];
+    const errores = [];
+    const dnisVistos = new Set();
+    const correosVistos = new Set();
+
+    for (const fila of filas) {
+        const nombre = String(fila.nombre == null ? '' : fila.nombre).trim();
+        const dni = String(fila.dni == null ? '' : fila.dni).trim();
+        const correo = String(fila.correo == null ? '' : fila.correo).trim().toLowerCase();
+        const password = String(fila.password == null ? '' : fila.password).trim();
+        const tiendaNombre = String(fila.tienda == null ? '' : fila.tienda).trim();
+        const zonaCol = String(fila.zona == null ? '' : fila.zona).trim();
+        const razones = [];
+
+        if (!nombre) razones.push('Nombre vac\u00edo');
+
+        if (!dni) razones.push('DNI vac\u00edo');
+        else if (!/^\d{8}$/.test(dni)) razones.push('DNI debe tener 8 d\u00edgitos');
+
+        if (!correo) razones.push('Correo vac\u00edo');
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) razones.push('Formato de correo inv\u00e1lido');
+
+        if (!password) razones.push('Contrase\u00f1a vac\u00eda');
+        else if (password.length < 4) razones.push('Contrase\u00f1a muy corta (m\u00edn. 4 caracteres)');
+
+        let zona = null;
+        if (!tiendaNombre) razones.push('Tienda vac\u00eda');
+        else {
+            zona = _tiendaPromotorExcel(tiendaNombre);
+            if (!zona) razones.push('Tienda no v\u00e1lida: ' + tiendaNombre);
+        }
+
+        if (zona) {
+            const cadenaNorm = _normalizarZonaGestion(zona.cadena);
+            if (!zonaCol) {
+                razones.push('Zona vac\u00eda');
+            } else if (cadenaNorm && cadenaNorm !== _normalizarZonaGestion(zonaCol)) {
+                razones.push('La zona no corresponde a la tienda');
+            }
+        } else if (zonaCol) {
+            razones.push('Zona sin tienda v\u00e1lida');
+        }
+
+        if (razones.length > 0) {
+            errores.push({ numero: fila.numero, nombre, razon: razones.join(', ') });
+            continue;
+        }
+
+        const dniKey = dni;
+        const correoKey = correo;
+        const esDupDniArchivo = dnisVistos.has(dniKey);
+        const esDupCorreoArchivo = correosVistos.has(correoKey);
+        const esDupDniExistente = HorariosDataStore.promotores.some(p => p.dni && String(p.dni).trim() === dniKey);
+        const esDupCorreoExistente = HorariosDataStore.promotores.some(p => p.email && String(p.email).trim().toLowerCase() === correoKey);
+
+        if (esDupDniArchivo || esDupCorreoArchivo || esDupDniExistente || esDupCorreoExistente) {
+            const motivos = [];
+            if (esDupDniArchivo) motivos.push('DNI repetido en el archivo');
+            if (esDupCorreoArchivo) motivos.push('Correo repetido en el archivo');
+            if (esDupDniExistente) motivos.push('DNI ya registrado');
+            if (esDupCorreoExistente) motivos.push('Correo ya registrado');
+            duplicados.push({ numero: fila.numero, nombre, razon: motivos.join(', ') });
+            continue;
+        }
+
+        dnisVistos.add(dniKey);
+        correosVistos.add(correoKey);
+        validos.push({
+            numero: fila.numero,
+            nombre,
+            dni,
+            email: correo,
+            password,
+            zona_principal_id: zona.id,
+            cadena: zona.cadena || '',
+            estado: _estadoPromotorExcel(fila.estado)
+        });
+    }
+
+    return {
+        validos,
+        duplicados,
+        errores,
+        registrosValidos: validos.length + duplicados.length,
+        total: filas.length
+    };
+}
+
+function descargarPlantillaPromotores() {
+    try {
+        if (typeof ExcelJS === 'undefined' || typeof saveAs === 'undefined') {
+            console.error('[PROMOTORES] ExcelJS o FileSaver no disponibles.');
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('No se pudo generar la plantilla: librerías de Excel no disponibles.', 'error');
+            }
+            return;
+        }
+        const workbook = new ExcelJS.Workbook();
+        const ws = workbook.addWorksheet('Promotores');
+        ws.columns = PROMOTOR_IMPORT_COLUMNAS.map(c => ({ header: c.header, key: c.key, width: c.width }));
+
+        const headRow = ws.getRow(1);
+        headRow.height = 24;
+        headRow.eachCell(c => {
+            c.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+            c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F6E4D' } };
+            c.alignment = { vertical: 'middle', horizontal: 'center' };
+            c.border = { bottom: { style: 'medium', color: { argb: 'FF1DB954' } } };
+        });
+        ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+        const ejemplos = [
+            ['JUAN CARLOS PEREZ', '12345678', 'juan.perez@empresa.com', 'Clave2026', 'RED AT ALTO SELVA ALEGRE', 'AREQUIPA SUR', 'ACTIVO'],
+            ['MARIA FERNANDA ROJAS', '87654321', 'maria.rojas@empresa.com', 'Clave2026', 'RED AT BELEN', 'CUSCO SUR', 'ACTIVO']
+        ];
+        ejemplos.forEach(row => ws.addRow(row));
+
+        const nota = ws.addRow(['Completa cada fila con los datos del promotor. Usa una tienda y zona existentes del dashboard.']);
+        nota.getCell(1).font = { italic: true, size: 9, color: { argb: 'FF8A8A8A' } };
+        ws.mergeCells(nota.number, 1, nota.number, 7);
+
+        const nombreArchivo = 'Plantilla_Promotores_DriveATSur.xlsx';
+        workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, nombreArchivo);
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('Plantilla Excel descargada.', 'success');
+            }
+        });
+    } catch (e) {
+        console.error('[PROMOTORES] Error al generar la plantilla:', e);
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion('Error al generar la plantilla: ' + e.message, 'error');
+        }
+    }
+}
+
+function exportarPromotoresExcel() {
+    try {
+        if (typeof ExcelJS === 'undefined' || typeof saveAs === 'undefined') {
+            console.error('[PROMOTORES] ExcelJS o FileSaver no disponibles.');
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('No se pudo exportar: librerías de Excel no disponibles.', 'error');
+            }
+            return;
+        }
+
+        const zonaActiva = _zonaGestionSesion();
+        const promotores = zonaActiva
+            ? (HorariosDataStore.promotores || []).filter(p => _promotorEnZonaGestion(p))
+            : (HorariosDataStore.promotores || []);
+
+        const workbook = new ExcelJS.Workbook();
+        const ws = workbook.addWorksheet('Promotores');
+        ws.columns = PROMOTOR_IMPORT_COLUMNAS.map(c => ({ header: c.header, key: c.key, width: c.width }));
+
+        const headRow = ws.getRow(1);
+        headRow.height = 24;
+        headRow.eachCell(c => {
+            c.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+            c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F6E4D' } };
+            c.alignment = { vertical: 'middle', horizontal: 'center' };
+            c.border = { bottom: { style: 'medium', color: { argb: 'FF1DB954' } } };
+        });
+        ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+        for (const p of promotores) {
+            const zona = (HorariosDataStore.zonas || []).find(z => z.id === p.zona_principal_id);
+            ws.addRow([
+                p.nombre || '',
+                p.dni || '',
+                p.email || '',
+                p.password || '',
+                zona ? zona.nombre : (p.zona_principal_id || ''),
+                zona ? zona.cadena : '',
+                p.estado || 'Activo'
+            ]);
+        }
+
+        const hoy = new Date();
+        const stamp = hoy.getFullYear() + '-' +
+            String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+            String(hoy.getDate()).padStart(2, '0');
+        const nombreArchivo = 'Promotores_' + stamp + '.xlsx';
+
+        workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, nombreArchivo);
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('Se exportaron ' + promotores.length + ' promotor' + (promotores.length !== 1 ? 'es' : '') + ' a Excel.', 'success');
+            }
+        });
+    } catch (e) {
+        console.error('[PROMOTORES] Error al exportar:', e);
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion('Error al exportar: ' + e.message, 'error');
+        }
+    }
+}
+
+let promotorImportacionEnCurso = null;
+
+function abrirModalImportarPromotores() {
+    console.log('Abriendo modal de importación');
+    try {
+        let overlay = document.getElementById('promotor-import-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'promotor-import-overlay';
+            overlay.className = 'horarios-modal-overlay promotor-import-overlay';
+            document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = `
+            <div class="horarios-modal promotor-import-modal open">
+                <div class="horarios-modal-header">
+                    <h3>Importar Promotores desde Excel</h3>
+                    <button class="horarios-modal-close" onclick="cerrarModalImportarPromotores()" title="Cerrar" aria-label="Cerrar">&#10005;</button>
+                </div>
+                <div class="horarios-modal-body">
+                    <div class="promotor-import-info">
+                        <p>Sube un archivo Excel con las columnas <strong>NOMBRE_COMPLETO</strong>, <strong>DNI</strong>, <strong>CORREO</strong>, <strong>CONTRASE&Ntilde;A</strong>, <strong>TIENDA</strong>, <strong>ZONA</strong> y <strong>ESTADO</strong>.</p>
+                        <p>Usa solo tiendas y zonas registradas en el dashboard. Descarga la plantilla modelo para respetar el formato.</p>
+                    </div>
+                    <div class="promotor-import-dropzone" id="promotor-import-dropzone" onclick="document.getElementById('promotor-import-file').click()">
+                        <input type="file" id="promotor-import-file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none">
+                        <div class="promotor-import-dropzone-icon">&#128229;</div>
+                        <div class="promotor-import-dropzone-text">Haz clic para seleccionar el archivo Excel</div>
+                        <div class="promotor-import-dropzone-sub">Solo archivos .xlsx &middot; NOMBRE_COMPLETO | DNI | CORREO | CONTRASE&Ntilde;A | TIENDA | ZONA | ESTADO</div>
+                    </div>
+                    <div id="promotor-import-resultado"></div>
+                </div>
+                <div class="horarios-modal-footer">
+                    <button class="horarios-btn-modal-secondary" onclick="cerrarModalImportarPromotores()">Cancelar</button>
+                    <button class="horarios-btn-modal-primary" id="promotor-import-confirmar" onclick="confirmarImportacionPromotores()" style="display:none;">Confirmar importaci&oacute;n</button>
+                </div>
+            </div>
+        `;
+        const modal = overlay.querySelector('.horarios-modal');
+        console.log('Modal encontrado:', modal);
+        overlay.classList.add('open');
+        promotorImportacionEnCurso = null;
+
+        const fileInput = document.getElementById('promotor-import-file');
+        if (fileInput) {
+            fileInput.addEventListener('change', function () {
+                const file = this.files && this.files[0];
+                if (file) _manejarArchivoImportacionPromotores(file);
+                this.value = '';
+            });
+        }
+
+        const dz = document.getElementById('promotor-import-dropzone');
+        if (dz) {
+            dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+            dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+            dz.addEventListener('drop', e => {
+                e.preventDefault();
+                dz.classList.remove('drag');
+                const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                if (file) _manejarArchivoImportacionPromotores(file);
+            });
+        }
+    } catch (e) {
+        console.error('[PROMOTORES] Error al abrir el modal de importación:', e);
+        const overlay = document.getElementById('promotor-import-overlay');
+        if (overlay) overlay.classList.remove('open');
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion('No se pudo abrir la ventana de importación.', 'error');
+        }
+    }
+}
+
+function cerrarModalImportarPromotores() {
+    const overlay = document.getElementById('promotor-import-overlay');
+    if (overlay) overlay.classList.remove('open');
+    promotorImportacionEnCurso = null;
+}
+
+async function _manejarArchivoImportacionPromotores(file) {
+    const resultadoEl = document.getElementById('promotor-import-resultado');
+    if (!resultadoEl) return;
+    resultadoEl.innerHTML = '<div class="promotor-import-loading">Procesando archivo <strong>' + escHtml(file.name) + '</strong>&hellip;</div>';
+    try {
+        const filas = await _procesarArchivoPromotoresExcel(file);
+        const resumen = _procesarImportacionPromotores(filas);
+        _renderResumenImportacionPromotores(resumen);
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion(
+                'Archivo procesado: ' + resumen.validos.length + ' a importar, ' +
+                resumen.duplicados.length + ' duplicado' + (resumen.duplicados.length !== 1 ? 's' : '') + ', ' +
+                resumen.errores.length + ' error' + (resumen.errores.length !== 1 ? 'es' : '') + '.',
+                resumen.validos.length > 0 ? 'success' : 'warning'
+            );
+        }
+    } catch (e) {
+        console.error('[PROMOTORES] Error al importar:', e);
+        resultadoEl.innerHTML = '<div class="promotor-import-error">&#10060; ' + escHtml(e.message || 'No se pudo leer el archivo. Verifica que sea un Excel .xlsx válido.') + '</div>';
+    }
+}
+
+async function _procesarArchivoPromotoresExcel(file) {
+    if (typeof ExcelJS === 'undefined') {
+        throw new Error('La librería de Excel no está disponible. Recarga la página.');
+    }
+    const nombre = (file && file.name) || '';
+    if (/\.xls$/i.test(nombre)) {
+        throw new Error('El formato .xls no es compatible. Guarda el archivo como .xlsx (Excel 2010 o posterior) e inténtalo de nuevo.');
+    }
+    const buffer = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    return _promotoresDesdeWorkbook(workbook);
+}
+
+function _promotoresDesdeWorkbook(workbook) {
+    const ws = workbook.worksheets[0];
+    if (!ws) throw new Error('El archivo no contiene hojas de cálculo.');
+
+    const filas = [];
+    ws.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        const valores = [];
+        for (let i = 1; i <= 8; i++) {
+            valores.push(String(row.getCell(i).text == null ? '' : row.getCell(i).text).trim());
+        }
+        filas.push({ numero: rowNumber, valores });
+    });
+
+    let headerIndex = -1;
+    let headerMap = { nombre: -1, dni: -1, correo: -1, password: -1, tienda: -1, zona: -1, estado: -1 };
+    for (let i = 0; i < filas.length && i < 10; i++) {
+        const cols = filas[i].valores.map(_normColPromotor);
+        const idxNombre = _colPromotorIndex(cols, ['NOMBRE']);
+        if (idxNombre === -1) continue;
+        const idxDni = _colPromotorIndex(cols, ['DNI']);
+        const idxCorreo = _colPromotorIndex(cols, ['CORREO']) !== -1
+            ? _colPromotorIndex(cols, ['CORREO'])
+            : _colPromotorIndex(cols, ['EMAIL']);
+        const idxPassword = _colPromotorIndex(cols, ['CONTRASE']) !== -1
+            ? _colPromotorIndex(cols, ['CONTRASE'])
+            : _colPromotorIndex(cols, ['CLAVE']) !== -1
+                ? _colPromotorIndex(cols, ['CLAVE'])
+                : _colPromotorIndex(cols, ['PASSWORD']);
+        const idxTienda = _colPromotorIndex(cols, ['TIENDA']) !== -1
+            ? _colPromotorIndex(cols, ['TIENDA'])
+            : _colPromotorIndex(cols, ['PDV']);
+        const idxZona = _colPromotorIndex(cols, ['ZONA']);
+        const idxEstado = _colPromotorIndex(cols, ['ESTADO']);
+        headerIndex = i;
+        headerMap = { nombre: idxNombre, dni: idxDni, correo: idxCorreo, password: idxPassword, tienda: idxTienda, zona: idxZona, estado: idxEstado };
+        break;
+    }
+
+    if (headerIndex === -1 || headerMap.nombre === -1) {
+        throw new Error('Estructura no válida: se esperaban las columnas NOMBRE_COMPLETO, DNI, CORREO, CONTRASEÑA, TIENDA, ZONA y ESTADO.');
+    }
+    const requeridas = ['nombre', 'dni', 'correo', 'password', 'tienda', 'zona'];
+    const faltantes = requeridas.filter(k => headerMap[k] === -1);
+    if (faltantes.length > 0) {
+        throw new Error('Estructura incompleta: faltan las columnas ' + faltantes.join(', ') + '.');
+    }
+
+    return filas
+        .slice(headerIndex + 1)
+        .filter(r => r.valores.some(v => v !== ''))
+        .map(r => ({
+            numero: r.numero,
+            nombre: r.valores[headerMap.nombre],
+            dni: r.valores[headerMap.dni],
+            correo: r.valores[headerMap.correo],
+            password: r.valores[headerMap.password],
+            tienda: r.valores[headerMap.tienda],
+            zona: r.valores[headerMap.zona],
+            estado: headerMap.estado >= 0 ? r.valores[headerMap.estado] : ''
+        }));
+}
+
+function _renderResumenImportacionPromotores(resumen) {
+    const resultadoEl = document.getElementById('promotor-import-resultado');
+    const confirmarBtn = document.getElementById('promotor-import-confirmar');
+    if (!resultadoEl) return;
+
+    promotorImportacionEnCurso = resumen;
+
+    const cards =
+        '<div class="promotor-import-summary">' +
+            '<div class="promotor-import-sum-card nuevo"><span class="promotor-import-sum-num">' + resumen.validos.length + '</span><span class="promotor-import-sum-label">Promotores a importar</span></div>' +
+            '<div class="promotor-import-sum-card duplicado"><span class="promotor-import-sum-num">' + resumen.duplicados.length + '</span><span class="promotor-import-sum-label">Duplicados</span></div>' +
+            '<div class="promotor-import-sum-card error"><span class="promotor-import-sum-num">' + resumen.errores.length + '</span><span class="promotor-import-sum-label">Errores</span></div>' +
+            '<div class="promotor-import-sum-card valido"><span class="promotor-import-sum-num">' + resumen.registrosValidos + '</span><span class="promotor-import-sum-label">Registros v\u00e1lidos</span></div>' +
+        '</div>';
+
+    let detalles = '';
+    if (resumen.duplicados.length > 0) {
+        detalles += '<div class="promotor-import-detalle"><div class="promotor-import-detalle-title">Duplicados</div><ul>' +
+            resumen.duplicados.slice(0, 20).map(d =>
+                '<li>Fila ' + d.numero + ': <strong>' + escHtml(d.nombre) + '</strong> &mdash; ' + escHtml(d.razon) + '</li>'
+            ).join('') +
+            (resumen.duplicados.length > 20 ? '<li class="promotor-import-mas">+ ' + (resumen.duplicados.length - 20) + ' m&aacute;s...</li>' : '') +
+            '</ul></div>';
+    }
+    if (resumen.errores.length > 0) {
+        detalles += '<div class="promotor-import-detalle errores"><div class="promotor-import-detalle-title">Errores</div><ul>' +
+            resumen.errores.slice(0, 20).map(d =>
+                '<li>Fila ' + d.numero + ': <strong>' + escHtml(d.nombre || '(sin nombre)') + '</strong> &mdash; ' + escHtml(d.razon) + '</li>'
+            ).join('') +
+            (resumen.errores.length > 20 ? '<li class="promotor-import-mas">+ ' + (resumen.errores.length - 20) + ' m&aacute;s...</li>' : '') +
+            '</ul></div>';
+    }
+
+    resultadoEl.innerHTML = cards + detalles;
+
+    if (confirmarBtn) {
+        if (resumen.validos.length > 0) {
+            confirmarBtn.style.display = 'inline-flex';
+            confirmarBtn.textContent = 'Importar ' + resumen.validos.length + ' promotor' + (resumen.validos.length !== 1 ? 'es' : '');
+        } else {
+            confirmarBtn.style.display = 'none';
+        }
+    }
+}
+
+async function confirmarImportacionPromotores() {
+    if (!promotorImportacionEnCurso) return;
+    const validos = promotorImportacionEnCurso.validos;
+    if (!validos || validos.length === 0) return;
+
+    const conHash = [];
+    for (const p of validos) {
+        let hash = '';
+        if (typeof hashPassword === 'function') {
+            try { hash = await hashPassword(p.password); } catch (e) { hash = ''; }
+        }
+        conHash.push({ ...p, password_hash: hash });
+    }
+
+    const resultado = HorariosDataStore.importarPromotores(conHash);
+    if (resultado.errores && resultado.errores.length > 0) {
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion('No se pudo importar: ' + resultado.errores[0].error, 'error');
+        }
+        return;
+    }
+
+    const creados = resultado.creados.length;
+    promotorImportacionEnCurso = null;
+    cerrarModalImportarPromotores();
+    if (typeof mostrarNotificacion === 'function') {
+        mostrarNotificacion(creados + ' promotor' + (creados !== 1 ? 'es importados' : ' importado') + ' correctamente.', 'success');
+    }
     refrescarVistaPromotores();
 }

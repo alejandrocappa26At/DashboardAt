@@ -337,6 +337,63 @@ const HorariosDataStore = {
         return true;
     },
 
+    /* Importación masiva desde Excel: recibe una lista ya validada
+       [{ nombre, dni, email, password, password_hash, zona_principal_id, tipo, estado }]
+       y los registra en una sola operación (Firestore horarios/config). */
+    importarPromotores(lista) {
+        if (!Array.isArray(lista) || lista.length === 0) return { creados: [], errores: [] };
+        const ahora = new Date().toISOString();
+        const creados = [];
+        const errores = [];
+        for (const item of lista) {
+            const nombre = String((item && item.nombre) || '').trim();
+            if (!nombre) { errores.push({ error: 'El nombre es obligatorio.' }); continue; }
+
+            const email = String((item && item.email) || '').trim().toLowerCase();
+            const dni = String((item && item.dni) || '').trim();
+
+            const existeEmail = email && this.promotores.some(p => p.email && String(p.email).trim().toLowerCase() === email);
+            if (existeEmail) { errores.push({ error: 'El correo ya existe: ' + email }); continue; }
+
+            const existeDni = dni && this.promotores.some(p => p.dni && String(p.dni).trim() === dni);
+            if (existeDni) { errores.push({ error: 'El DNI ya existe: ' + dni }); continue; }
+
+            const id = this._proximoIdPromotor();
+            const promotor = {
+                id,
+                nombre,
+                zona_principal_id: (item && item.zona_principal_id) || null,
+                tipo: (item && item.tipo) || 'fijo',
+                dni,
+                email,
+                password: (item && item.password) || '',
+                password_hash: (item && item.password_hash) || '',
+                estado: (item && item.estado) || 'Activo',
+                fecha_creacion: ahora,
+                fecha_actualizacion: ahora
+            };
+            this.promotores.push(promotor);
+
+            for (let key in this.semanas) {
+                const semana = this.semanas[key];
+                for (let d = 0; d < 7; d++) {
+                    const turnoKey = `${id}-${d}`;
+                    semana.turnos[turnoKey] = {
+                        promotor_id: id, dia: d,
+                        estado: 'sin_asignar', hora_inicio: null, hora_fin: null,
+                        zona_id: null, descuento_refrigerio: 0, horas_calculadas: 0
+                    };
+                }
+            }
+
+            creados.push(promotor);
+        }
+        if (creados.length > 0) {
+            this._guardarEnFirestore();
+        }
+        return { creados, errores };
+    },
+
     getPromotoresDeZona(zonaId) {
         return this.promotores.filter(p => p.zona_principal_id === zonaId);
     },
