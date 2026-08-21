@@ -166,6 +166,16 @@
     #pdv-content table.ctl-table.promo-avance-table th:nth-child(7),
     #pdv-content table.ctl-table.promo-avance-table td:nth-child(7) { display: none; }
 
+    /* ---------- AVANCE MI ZONA / ZONAL: todas las columnas con scroll ---------- */
+    #pdv-content table.ctl-table.avance-zona-table,
+    #pdv-content table.ctl-table.avance-zonal-table { min-width: 900px; }
+    #pdv-content table.ctl-table.avance-zona-table th:nth-child(n+5),
+    #pdv-content table.ctl-table.avance-zona-table td:nth-child(n+5),
+    #pdv-content table.ctl-table.avance-zonal-table th:nth-child(n+5),
+    #pdv-content table.ctl-table.avance-zonal-table td:nth-child(n+5) { display: table-cell; }
+    #pdv-content .ctl-table-wrap:has(table.avance-zona-table),
+    #pdv-content .ctl-table-wrap:has(table.avance-zonal-table) { overflow-x: auto; }
+
     /* ---------- RESUMEN PROMOCIONES: tablas con scroll horizontal ---------- */
     #resumen-promociones .ctl-table-wrap { overflow-x: auto; }
     .promo-filtro-bar { flex-direction: column; align-items: stretch; }

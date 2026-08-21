@@ -4,6 +4,13 @@ let infPromTab = 'ventas';
 let gestionPromocionesEditando = null;
 let filtroPromo = '';
 
+/* ===== VISTA PROMOTOR: Mi Tienda / Mi Zona ===== */
+let avanceVista = 'tienda';
+let acuVista = 'tienda';
+
+/* ===== VISTA ZONAL (SUPERVISOR / JEFE COMERCIAL) ===== */
+let avanceZonalVista = 'tienda';
+
 function syncTipoInfoUI() {
     const sel = document.getElementById('filtro-tipo-info');
     if (sel) sel.value = filtroTipoInformacion;
@@ -45,6 +52,7 @@ function reRenderCurrentPage() {
     else if (id === 'page-avance') renderizarAvancePDV();
     else if (id === 'page-informe-promotor') recargarInformeSiAplica();
     else if (id === 'page-informe-individual') renderizarInformeIndividual();
+    else if (id === 'page-acumulado-diario') renderizarAcumuladoDiario();
     else if (id === 'page-vista-ejecutiva') renderizarVistaEjecutiva();
     else if (id === 'page-corte-comercial') renderizarCorteComercial();
     else if (id === 'page-jefe-dashboard') renderJefeDashboard();
@@ -1036,16 +1044,32 @@ function _pdvsPermitidosPromotor() {
     return [tienda];
 }
 
+function _pdvsDeZonaDeTienda(tienda) {
+    if (!tienda) return [];
+    if (typeof DataStore === 'undefined' || typeof DataStore.getPDVs !== 'function') return [];
+    const pdvs = DataStore.getPDVs();
+    if (typeof DataStore.getTiendaCadena !== 'function') {
+        return (pdvs.indexOf(tienda) !== -1) ? [tienda] : [];
+    }
+    const norm = DataStore._normalizarZona
+        ? DataStore._normalizarZona(DataStore.getTiendaCadena(tienda))
+        : String(DataStore.getTiendaCadena(tienda) || '').trim().toUpperCase();
+    if (!norm) {
+        return (pdvs.indexOf(tienda) !== -1) ? [tienda] : [];
+    }
+    const igualZona = DataStore._normalizarZona
+        ? p => DataStore._normalizarZona(DataStore.getTiendaCadena(p))
+        : p => String(DataStore.getTiendaCadena(p) || '').trim().toUpperCase();
+    const zonaPDVs = pdvs.filter(p => igualZona(p) === norm);
+    return zonaPDVs.length ? zonaPDVs : (pdvs.indexOf(tienda) !== -1 ? [tienda] : []);
+}
+
 function _pdvsZonaPromotor() {
     if (!_esPromotorRestringido()) return null;
     const tienda = _tiendaPromotorSesion();
     if (!tienda) return null;
-    if (typeof DataStore === 'undefined' || typeof DataStore.getTiendaCadena !== 'function' || typeof DataStore.getPDVs !== 'function') return null;
-    const norm = DataStore._normalizarZona ? DataStore._normalizarZona(DataStore.getTiendaCadena(tienda)) : '';
-    if (!norm) return null;
-    return DataStore.getPDVs().filter(p =>
-        (DataStore._normalizarZona ? DataStore._normalizarZona(DataStore.getTiendaCadena(p)) : '') === norm
-    );
+    const zonaPDVs = _pdvsDeZonaDeTienda(tienda);
+    return zonaPDVs.length ? zonaPDVs : null;
 }
 
 function _getRankingRestringido() {
@@ -1059,6 +1083,33 @@ function _getRankingRestringido() {
 }
 
 function renderizarAvancePDV(pdvSeleccionado) {
+    if (!_esPromotorRestringido()) {
+        avanceVista = 'tienda';
+    }
+    syncVistaAvanceUI();
+    if (avanceVista === 'zona') {
+        renderAvanceZona();
+        return;
+    }
+    const zonal = (!_esPromotorRestringido() && estaSupervisorDesbloqueado());
+    if (avanceZonalVista === 'zonasur' && !esJefeComercial()) {
+        avanceZonalVista = 'tienda';
+    }
+    syncVistaZonalUI(zonal);
+    if (zonal) {
+        if (avanceZonalVista === 'zonasur') {
+            renderResumenZonaSur();
+            return;
+        }
+        if (avanceZonalVista === 'diario') {
+            renderResumenZonalDiario();
+            return;
+        }
+        if (avanceZonalVista === 'acumulado') {
+            renderResumenZonalAcumulado();
+            return;
+        }
+    }
     if ((filtroTipoInformacion || 'productos') === 'promociones') {
         renderPromocionesAvancePDV(pdvSeleccionado);
         return;
@@ -1165,7 +1216,635 @@ const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSelecci
         '<thead><tr>' +
         '<th class="ctl-th-left">Producto</th><th>Venta</th><th>Cuota</th><th>Faltante</th><th>Cuota D\u00eda</th><th>Alcance</th><th>Proyecci\u00f3n</th><th>Estado</th>' +
         '</tr></thead><tbody>' + rowsHtml + '</tbody>' +
-        '</table></div></div>';
+'</table></div></div>';
+}
+
+function cambiarVistaAvance(vista) {
+    avanceVista = (vista === 'zona') ? 'zona' : 'tienda';
+    if (avanceVista === 'zona' && (filtroTipoInformacion || 'productos') === 'promociones') {
+        filtroTipoInformacion = 'productos';
+        syncTipoInfoUI();
+    }
+    renderizarAvancePDV();
+}
+
+function syncVistaAvanceUI() {
+    const restringido = _esPromotorRestringido();
+    const tabs = document.getElementById('avance-view-tabs');
+    if (tabs) {
+        tabs.style.display = restringido ? '' : 'none';
+        tabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.vista === avanceVista));
+    }
+    if (restringido) {
+        const pdvWrapper = document.querySelector('#page-avance .pdv-selector-wrapper');
+        if (pdvWrapper) pdvWrapper.style.display = (avanceVista === 'zona') ? 'none' : '';
+        const modeToggle = document.getElementById('avance-mode-toggle');
+        if (modeToggle) modeToggle.style.display = (avanceVista === 'zona') ? 'none' : '';
+    }
+}
+
+function renderAvanceZona() {
+    renderAvisoOficial();
+    renderPeriodoAnalizado('periodo-analizado-avance');
+    const periodoHeader = DataStore.getInfoPeriodo();
+    const diaActualEl = document.getElementById('pdv-dia-actual');
+    const diaTotalEl = document.getElementById('pdv-dia-total');
+    if (diaActualEl) diaActualEl.textContent = periodoHeader.elapsed;
+    if (diaTotalEl) diaTotalEl.textContent = '/' + periodoHeader.total;
+
+    const container = document.getElementById('pdv-content');
+    if (!container) return;
+
+    const tienda = _tiendaPromotorSesion();
+    const zonaPDVs = _pdvsDeZonaDeTienda(tienda);
+    if (!zonaPDVs.length) {
+        container.innerHTML = '<div class="empty-state"><p>No se pudo identificar los puntos de venta de tu zona.</p></div>';
+        return;
+    }
+
+    const AD = 'Apuestas Deportivas';
+    const JV = 'Juegos Virtuales';
+    const ADn = _acuNorm(AD);
+    const JVn = _acuNorm(JV);
+    const allData = DataStore.getCumplimientoPorPDV();
+
+    let rowsHtml = '';
+    let totADv = 0, totADc = 0, totJVv = 0, totJVc = 0;
+    for (const pdv of zonaPDVs) {
+        const d = allData[pdv];
+        const ad = { venta: 0, cuota: 0, cumplimiento: 0 };
+        const jv = { venta: 0, cuota: 0, cumplimiento: 0 };
+        if (d && d.productos) {
+            for (const key of Object.keys(d.productos)) {
+                const p = d.productos[key];
+                const n = _acuNorm(key);
+                if (n === ADn) { ad.venta = p.venta || 0; ad.cuota = p.cuota || 0; ad.cumplimiento = p.cumplimiento || 0; }
+                else if (n === JVn) { jv.venta = p.venta || 0; jv.cuota = p.cuota || 0; jv.cumplimiento = p.cumplimiento || 0; }
+            }
+        }
+        const adFalt = ad.cuota - ad.venta;
+        const jvFalt = jv.cuota - jv.venta;
+        totADv += ad.venta; totADc += ad.cuota;
+        totJVv += jv.venta; totJVc += jv.cuota;
+
+        rowsHtml += '<tr>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(ctlNombreCorto(pdv)) + '</td>' +
+            '<td>' + formatCurrency(ad.venta) + '</td>' +
+            '<td>' + formatCurrency(ad.cuota) + '</td>' +
+            '<td class="' + (adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (adFalt <= 0 ? '\u2713 0' : formatCurrency(adFalt)) + '</td>' +
+            '<td>' + ctlBarCell(ad.cumplimiento) + '</td>' +
+            '<td>' + formatCurrency(jv.venta) + '</td>' +
+            '<td>' + formatCurrency(jv.cuota) + '</td>' +
+            '<td class="' + (jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (jvFalt <= 0 ? '\u2713 0' : formatCurrency(jvFalt)) + '</td>' +
+            '<td>' + ctlBarCell(jv.cumplimiento) + '</td>' +
+            '</tr>';
+    }
+
+    const totADfalt = totADc - totADv;
+    const totJVfalt = totJVc - totJVv;
+    const alcAD = totADc > 0 ? (totADv / totADc) * 100 : 0;
+    const alcJV = totJVc > 0 ? (totJVv / totJVc) * 100 : 0;
+    const alcGen = (totADc + totJVc) > 0 ? ((totADv + totJVv) / (totADc + totJVc)) * 100 : 0;
+
+    const totalRow = '<tr class="acu-total-row">' +
+        '<td class="ctl-td-left acu-total-label">TOTAL ZONA</td>' +
+        '<td class="acu-total-val">' + formatCurrency(totADv) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(totADc) + '</td>' +
+        '<td class="acu-total-val ' + (totADfalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (totADfalt <= 0 ? '\u2713 0' : formatCurrency(totADfalt)) + '</td>' +
+        '<td class="acu-total-val">' + formatPercent(alcAD) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(totJVv) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(totJVc) + '</td>' +
+        '<td class="acu-total-val ' + (totJVfalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (totJVfalt <= 0 ? '\u2713 0' : formatCurrency(totJVfalt)) + '</td>' +
+        '<td class="acu-total-val">' + formatPercent(alcJV) + '</td>' +
+        '</tr>';
+
+    const faltGen = totADfalt + totJVfalt;
+    const summary = '<div class="acu-zona-resumen">' +
+        '<div class="acu-zona-resumen-item"><span>Venta Total Zona</span><strong>' + formatCurrency(totADv + totJVv) + '</strong></div>' +
+        '<div class="acu-zona-resumen-item"><span>Cuota Total Zona</span><strong>' + formatCurrency(totADc + totJVc) + '</strong></div>' +
+        '<div class="acu-zona-resumen-item"><span>Faltante Total Zona</span><strong class="' + (faltGen <= 0 ? 'acu-var-ok' : 'acu-var-bad') + '">' + (faltGen <= 0 ? '\u2713 0' : formatCurrency(faltGen)) + '</strong></div>' +
+        '<div class="acu-zona-resumen-item"><span>Alcance General</span><strong>' + formatPercent(alcGen) + '</strong></div>' +
+        '</div>';
+
+    container.innerHTML = '' +
+        '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title">\ud83c\udf0e Mi Zona \u00b7 Avance por Punto de Venta</span>' +
+        '<span class="ctl-card-count">' + zonaPDVs.length + ' PDVs \u00b7 Apuestas Deportivas y Juegos Virtuales</span>' +
+        '</div>' +
+        '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zona-table">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">Punto de Venta</th>' +
+        '<th>Venta AD</th><th>Cuota AD</th><th>Faltante AD</th><th>Alcance AD %</th>' +
+        '<th>Venta JV</th><th>Cuota JV</th><th>Faltante JV</th><th>Alcance JV %</th>' +
+        '</tr></thead><tbody>' + rowsHtml + totalRow + '</tbody>' +
+        '</table></div>' +
+        summary +
+        '</div>';
+}
+
+/* ===== RESUMEN ZONAL (SUPERVISOR / JEFE COMERCIAL) ===== */
+function zonalSem(pct) {
+    if (pct >= 100) return { cls: 'ok', dot: '\ud83d\udfe2' };
+    if (pct >= 70) return { cls: 'mid', dot: '\ud83d\udfe1' };
+    return { cls: 'low', dot: '\ud83d\udd34' };
+}
+
+function _zonalPctCell(pct, bold) {
+    const s = zonalSem(pct);
+    return '<span class="zonal-sem-' + s.cls + '"' + (bold ? ' style="font-weight:800"' : '') + '>' + s.dot + ' ' + formatPercent(pct) + '</span>';
+}
+
+function _zonasDisponibles() {
+    const cadenas = [];
+    if (typeof DataStore !== 'undefined' && typeof DataStore.getPDVs === 'function') {
+        DataStore.getPDVs().forEach(p => {
+            const cadena = (typeof DataStore.getTiendaCadena === 'function') ? DataStore.getTiendaCadena(p) : '';
+            if (cadena && cadenas.indexOf(cadena) === -1) cadenas.push(cadena);
+        });
+    }
+    if (!cadenas.length && typeof ZONAS_OFICIALES !== 'undefined') {
+        ZONAS_OFICIALES.forEach(z => { if (cadenas.indexOf(z) === -1) cadenas.push(z); });
+    }
+    return cadenas.sort();
+}
+
+function _poblarZonasAvance() {
+    const sel = document.getElementById('filtro-avance-zona');
+    if (!sel) return;
+    const actual = sel.value;
+    const zonas = _zonasDisponibles();
+    sel.innerHTML = '<option value="">Todas las Zonas</option>' +
+        zonas.map(z => '<option value="' + ctlEsc(z) + '">' + ctlEsc(z) + '</option>').join('');
+    sel.value = actual;
+}
+
+function _zonaAvanceSeleccionada() {
+    if (!esJefeComercial()) {
+        return _supervisorZonaSesion() || null;
+    }
+    const sel = document.getElementById('filtro-avance-zona');
+    const v = sel ? sel.value : '';
+    return v || null;
+}
+
+function _nombreZonaSeleccionada() {
+    return _zonaAvanceSeleccionada() || 'Todas las Zonas';
+}
+
+function _pdvsDeZona(nombreZona) {
+    const pdvs = (typeof DataStore !== 'undefined' && typeof DataStore.getPDVs === 'function') ? DataStore.getPDVs() : [];
+    if (!nombreZona) return pdvs;
+    const norm = DataStore._normalizarZona ? DataStore._normalizarZona(nombreZona) : String(nombreZona || '').toUpperCase();
+    return pdvs.filter(p => {
+        const cadena = (typeof DataStore.getTiendaCadena === 'function') ? DataStore.getTiendaCadena(p) : '';
+        const n = DataStore._normalizarZona ? DataStore._normalizarZona(cadena) : String(cadena || '').toUpperCase();
+        return n === norm;
+    });
+}
+
+function _zonasSur() {
+    if (typeof ZONAS_OFICIALES !== 'undefined' && ZONAS_OFICIALES.length) {
+        return ZONAS_OFICIALES.slice();
+    }
+    return _zonasDisponibles();
+}
+
+function _acumuladoZonasSurRows() {
+    const zonas = _zonasSur();
+    const ADn = _acuNorm('Apuestas Deportivas');
+    const JVn = _acuNorm('Juegos Virtuales');
+    const allData = DataStore.getCumplimientoPorPDV();
+    const rows = [];
+    let totADv = 0, totADc = 0, totJVv = 0, totJVc = 0;
+    for (const zona of zonas) {
+        let adV = 0, adC = 0, jvV = 0, jvC = 0;
+        for (const pdv of _pdvsDeZona(zona)) {
+            const d = allData[pdv];
+            if (!d || !d.productos) continue;
+            for (const key of Object.keys(d.productos)) {
+                const p = d.productos[key];
+                const n = _acuNorm(key);
+                if (n === ADn) { adV += p.venta || 0; adC += p.cuota || 0; }
+                else if (n === JVn) { jvV += p.venta || 0; jvC += p.cuota || 0; }
+            }
+        }
+        rows.push({
+            pdv: zona,
+            zona,
+            adVenta: adV, adCuota: adC, adFalt: adC - adV,
+            alcAD: adC > 0 ? (adV / adC) * 100 : 0,
+            jvVenta: jvV, jvCuota: jvC, jvFalt: jvC - jvV,
+            alcJV: jvC > 0 ? (jvV / jvC) * 100 : 0,
+            alcance: (adC + jvC) > 0 ? ((adV + jvV) / (adC + jvC)) * 100 : 0
+        });
+        totADv += adV; totADc += adC;
+        totJVv += jvV; totJVc += jvC;
+    }
+    const totales = {
+        adVenta: totADv, adCuota: totADc, adFalt: totADc - totADv,
+        alcAD: totADc > 0 ? (totADv / totADc) * 100 : 0,
+        jvVenta: totJVv, jvCuota: totJVc, jvFalt: totJVc - totJVv,
+        alcJV: totJVc > 0 ? (totJVv / totJVc) * 100 : 0
+    };
+    return {
+        rows,
+        totales,
+        alcGen: (totADc + totJVc) > 0 ? ((totADv + totJVv) / (totADc + totJVc)) * 100 : 0,
+        venta: totADv + totJVv,
+        cuota: totADc + totJVc,
+        faltante: (totADc - totADv) + (totJVc - totJVv)
+    };
+}
+
+function _ventasDelDiaGlobal(fecha) {
+    const anio = fecha.getFullYear();
+    const mes = fecha.getMonth() + 1;
+    const dia = fecha.getDate();
+    const ventas = (typeof DataStore !== 'undefined' && typeof DataStore.getVentasActivas === 'function') ? DataStore.getVentasActivas() : [];
+    return ventas.filter(v => {
+        if (!v || !v.punto_venta) return false;
+        const f = v.fecha ? new Date(v.fecha) : null;
+        if (f && !isNaN(f.getTime())) {
+            return f.getFullYear() === anio && f.getMonth() + 1 === mes && f.getDate() === dia;
+        }
+        return v.dia === dia && (v.mes || mes) === mes && (v.anio || anio) === anio;
+    });
+}
+
+function _acumuladoZonalRows(zonaPDVs) {
+    const ADn = _acuNorm('Apuestas Deportivas');
+    const JVn = _acuNorm('Juegos Virtuales');
+    const allData = DataStore.getCumplimientoPorPDV();
+    const rows = [];
+    let totADv = 0, totADc = 0, totJVv = 0, totJVc = 0;
+    for (const pdv of zonaPDVs) {
+        const d = allData[pdv];
+        const ad = { venta: 0, cuota: 0, cumplimiento: 0 };
+        const jv = { venta: 0, cuota: 0, cumplimiento: 0 };
+        if (d && d.productos) {
+            for (const key of Object.keys(d.productos)) {
+                const p = d.productos[key];
+                const n = _acuNorm(key);
+                if (n === ADn) { ad.venta = p.venta || 0; ad.cuota = p.cuota || 0; ad.cumplimiento = p.cumplimiento || 0; }
+                else if (n === JVn) { jv.venta = p.venta || 0; jv.cuota = p.cuota || 0; jv.cumplimiento = p.cumplimiento || 0; }
+            }
+        }
+        rows.push({
+            pdv,
+            adVenta: ad.venta, adCuota: ad.cuota, adFalt: ad.cuota - ad.venta,
+            alcAD: ad.cuota > 0 ? (ad.venta / ad.cuota) * 100 : 0,
+            jvVenta: jv.venta, jvCuota: jv.cuota, jvFalt: jv.cuota - jv.venta,
+            alcJV: jv.cuota > 0 ? (jv.venta / jv.cuota) * 100 : 0,
+            alcance: (ad.cuota + jv.cuota) > 0 ? ((ad.venta + jv.venta) / (ad.cuota + jv.cuota)) * 100 : 0
+        });
+        totADv += ad.venta; totADc += ad.cuota;
+        totJVv += jv.venta; totJVc += jv.cuota;
+    }
+    const totales = {
+        adVenta: totADv, adCuota: totADc, adFalt: totADc - totADv,
+        alcAD: totADc > 0 ? (totADv / totADc) * 100 : 0,
+        jvVenta: totJVv, jvCuota: totJVc, jvFalt: totJVc - totJVv,
+        alcJV: totJVc > 0 ? (totJVv / totJVc) * 100 : 0
+    };
+    return {
+        rows,
+        totales,
+        alcGen: (totADc + totJVc) > 0 ? ((totADv + totJVv) / (totADc + totJVc)) * 100 : 0,
+        venta: totADv + totJVv,
+        cuota: totADc + totJVc,
+        faltante: (totADc - totADv) + (totJVc - totJVv)
+    };
+}
+
+function _diarioZonalRows(zonaPDVs, fecha) {
+    const ventasDia = _ventasDelDiaGlobal(fecha);
+    const anio = fecha.getFullYear();
+    const mes = fecha.getMonth() + 1;
+    const diasMes = new Date(anio, mes, 0).getDate();
+    const ADn = _acuNorm('Apuestas Deportivas');
+    const JVn = _acuNorm('Juegos Virtuales');
+    const cuotasMes = (typeof DataStore !== 'undefined' && typeof DataStore.getCuotas === 'function') ? DataStore.getCuotas(mes, anio) : [];
+    const rows = [];
+    let totAD = 0, totJV = 0, totCuotaAD = 0, totCuotaJV = 0;
+    for (const pdv of zonaPDVs) {
+        let ad = 0, jv = 0;
+        ventasDia.forEach(v => {
+            if (v.punto_venta !== pdv) return;
+            const n = _acuNorm(v.producto);
+            if (n === ADn) ad += (v.venta || 0);
+            else if (n === JVn) jv += (v.venta || 0);
+        });
+        let cuotaAD = 0, cuotaJV = 0;
+        cuotasMes.forEach(c => {
+            if (c.punto_venta !== pdv) return;
+            const n = _acuNorm(c.producto);
+            if (n === ADn) cuotaAD += (c.cuota || 0);
+            else if (n === JVn) cuotaJV += (c.cuota || 0);
+        });
+        const cuotaADd = diasMes > 0 ? cuotaAD / diasMes : 0;
+        const cuotaJVd = diasMes > 0 ? cuotaJV / diasMes : 0;
+        const total = ad + jv;
+        rows.push({
+            pdv, ad, jv, total,
+            cuotaDia: cuotaADd + cuotaJVd,
+            alcance: (cuotaADd + cuotaJVd) > 0 ? (total / (cuotaADd + cuotaJVd)) * 100 : 0
+        });
+        totAD += ad; totJV += jv;
+        totCuotaAD += cuotaADd; totCuotaJV += cuotaJVd;
+    }
+    const totTotal = totAD + totJV;
+    const totCuota = totCuotaAD + totCuotaJV;
+    return {
+        rows,
+        totales: { ad: totAD, jv: totJV, total: totTotal, cuota: totCuota, faltante: totCuota - totTotal },
+        alcGen: totCuota > 0 ? (totTotal / totCuota) * 100 : 0,
+        venta: totTotal,
+        cuota: totCuota,
+        faltante: totCuota - totTotal
+    };
+}
+
+function _renderZonalKpis(venta, cuota, faltante, alcance, mejor, riesgo, mejorLabel, riesgoLabel) {
+    mejorLabel = mejorLabel || 'Mejor PDV';
+    riesgoLabel = riesgoLabel || 'PDV en Riesgo';
+    const wrap = document.getElementById('zonal-kpis');
+    if (!wrap) return;
+    const sem = zonalSem(alcance);
+    const faltOk = faltante <= 0;
+    const nombre = (r) => r ? ctlEsc(ctlNombreCorto(r.pdv || r.zona || '')) : '\u2014';
+    const card = (label, value, cls, sub) =>
+        '<div class="zonal-kpi"><span class="zonal-kpi-label">' + label + '</span>' +
+        '<span class="zonal-kpi-value ' + (cls || '') + '">' + value + '</span>' +
+        (sub ? '<span class="zonal-kpi-sub">' + sub + '</span>' : '') +
+        '</div>';
+    wrap.innerHTML =
+        card('\ud83d\udcb0 Venta Total Zona', formatCurrency(venta)) +
+        card('\ud83c\udfaf Cuota Total Zona', formatCurrency(cuota)) +
+        card('\ud83d\udcc9 Faltante Total Zona', (faltOk ? '\u2713 0' : formatCurrency(faltante)), (faltOk ? 'zonal-ok' : 'zonal-low')) +
+        card('\ud83d\udcca Alcance General Zona', formatPercent(alcance), sem.cls === 'ok' ? 'zonal-ok' : sem.cls === 'mid' ? 'zonal-mid' : 'zonal-low') +
+        card('\ud83c\udfc6 ' + mejorLabel, mejor ? nombre(mejor) : '\u2014', mejor ? 'zonal-ok' : '', mejor ? formatPercent(mejor.alcance) + ' de alcance' : '') +
+        card('\u26a0\ufe0f ' + riesgoLabel, riesgo ? nombre(riesgo) : 'Ninguno', riesgo ? 'zonal-low' : 'zonal-ok', riesgo ? formatPercent(riesgo.alcance) + ' de alcance' : '');
+}
+
+function _mejorYRiesgo(rows) {
+    if (!rows.length) return { mejor: null, riesgo: null };
+    const conAlcance = rows.filter(r => r.alcance > 0);
+    const mejor = conAlcance.length ? conAlcance.reduce((a, b) => (b.alcance > a.alcance ? b : a)) : null;
+    const enRiesgo = rows.filter(r => r.alcance < 100);
+    const riesgo = enRiesgo.length ? enRiesgo.reduce((a, b) => (b.alcance < a.alcance ? b : a)) : null;
+    return { mejor, riesgo };
+}
+
+function cambiarZonaAvance() {
+    renderizarAvancePDV();
+}
+
+function cambiarVistaZonal(vista) {
+    avanceZonalVista = (vista === 'diario' || vista === 'acumulado' || vista === 'zonasur') ? vista : 'tienda';
+    if (avanceZonalVista !== 'tienda' && (filtroTipoInformacion || 'productos') === 'promociones') {
+        filtroTipoInformacion = 'productos';
+        syncTipoInfoUI();
+    }
+    renderizarAvancePDV();
+}
+
+function syncVistaZonalUI(zonal) {
+    _poblarZonasAvance();
+    const esZonal = zonal && avanceZonalVista !== 'tienda';
+    const tabs = document.getElementById('avance-zonal-tabs');
+    if (tabs) {
+        tabs.style.display = zonal ? '' : 'none';
+        tabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.vista === avanceZonalVista));
+    }
+    const btnSur = document.getElementById('btn-avance-zonasur');
+    if (btnSur) btnSur.style.display = (zonal && esJefeComercial()) ? '' : 'none';
+    if (zonal) {
+        const pdvWrapper = document.querySelector('#page-avance .pdv-selector-wrapper');
+        if (pdvWrapper) pdvWrapper.style.display = esZonal ? 'none' : '';
+        const modeToggle = document.getElementById('avance-mode-toggle');
+        if (modeToggle) modeToggle.style.display = esZonal ? 'none' : '';
+        const mesWrap = document.querySelector('#page-avance .avance-filtro-mes');
+        if (mesWrap) mesWrap.style.display = (esZonal && avanceZonalVista === 'diario') ? 'none' : '';
+    }
+    const zonaWrap = document.getElementById('avance-zona-filter');
+    if (zonaWrap) zonaWrap.style.display = (esZonal && esJefeComercial() && avanceZonalVista !== 'zonasur') ? '' : 'none';
+    const fechaWrap = document.getElementById('avance-filtro-fecha');
+    if (fechaWrap) fechaWrap.style.display = (esZonal && avanceZonalVista === 'diario') ? '' : 'none';
+    const kpis = document.getElementById('zonal-kpis');
+    if (kpis) kpis.style.display = esZonal ? '' : 'none';
+}
+
+function renderResumenZonalDiario() {
+    renderAvisoOficial();
+    const periodoHeader = DataStore.getInfoPeriodo();
+    const diaActualEl = document.getElementById('pdv-dia-actual');
+    const diaTotalEl = document.getElementById('pdv-dia-total');
+    if (diaActualEl) diaActualEl.textContent = periodoHeader.elapsed;
+    if (diaTotalEl) diaTotalEl.textContent = '/' + periodoHeader.total;
+    renderPeriodoAnalizado('periodo-analizado-avance');
+
+    const container = document.getElementById('pdv-content');
+    if (!container) return;
+
+    const fechaInput = document.getElementById('zonal-fecha');
+    const hoy = new Date();
+    const hoyStr = _acuDiaStr(hoy);
+    if (fechaInput) {
+        if (!fechaInput.max) fechaInput.max = hoyStr;
+        if (!fechaInput.value) fechaInput.value = hoyStr;
+    }
+    const selStr = fechaInput ? (fechaInput.value || hoyStr) : hoyStr;
+    const partes = String(selStr).split('-').map(Number);
+    if (partes.length !== 3 || partes.some(isNaN)) return;
+    const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+    const fecLegible = fecha.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const pill = document.getElementById('periodo-analizado-avance');
+    if (pill) {
+        const txt = pill.querySelector('.periodo-analizado-text');
+        if (txt) {
+            txt.innerHTML = 'Fecha seleccionada: <strong>' + ctlEsc(fecLegible) + '</strong>';
+        }
+    }
+
+    const zona = _zonaAvanceSeleccionada();
+    const zonaPDVs = _pdvsDeZona(zona);
+    if (!zonaPDVs.length) {
+        container.innerHTML = '<div class="empty-state"><p>No se encontraron puntos de venta para la zona seleccionada.</p></div>';
+        _renderZonalKpis(0, 0, 0, 0, null, null);
+        return;
+    }
+
+    const data = _diarioZonalRows(zonaPDVs, fecha);
+    let rowsHtml = '';
+    data.rows.forEach(r => {
+        rowsHtml += '<tr>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(ctlNombreCorto(r.pdv)) + '</td>' +
+            '<td>' + (r.ad > 0 ? formatCurrency(r.ad) : '\u2014') + '</td>' +
+            '<td>' + (r.jv > 0 ? formatCurrency(r.jv) : '\u2014') + '</td>' +
+            '<td class="ctl-td-strong">' + formatCurrency(r.total) + '</td>' +
+            '</tr>';
+    });
+
+    const t = data.totales;
+    const totalRow = '<tr class="acu-total-row">' +
+        '<td class="ctl-td-left acu-total-label">TOTAL ZONA</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.ad) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.jv) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.total) + '</td>' +
+        '</tr>';
+
+    container.innerHTML = '' +
+        '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title">\ud83c\udf0e Resumen Zonal Diario \u00b7 ' + ctlEsc(_nombreZonaSeleccionada()) + '</span>' +
+        '<span class="ctl-card-count">' + fecLegible + ' \u00b7 ' + zonaPDVs.length + ' PDVs</span>' +
+        '</div>' +
+        '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">PDV</th>' +
+        '<th>Apuestas Deportivas</th><th>Juegos Virtuales</th><th>Total D\u00eda</th>' +
+        '</tr></thead><tbody>' + rowsHtml + totalRow + '</tbody>' +
+        '</table></div>' +
+        '</div>';
+
+    const mr = _mejorYRiesgo(data.rows);
+    _renderZonalKpis(data.venta, data.cuota, data.faltante, data.alcGen, mr.mejor, mr.riesgo);
+}
+
+function renderResumenZonalAcumulado() {
+    renderAvisoOficial();
+    const periodoHeader = DataStore.getInfoPeriodo();
+    const diaActualEl = document.getElementById('pdv-dia-actual');
+    const diaTotalEl = document.getElementById('pdv-dia-total');
+    if (diaActualEl) diaActualEl.textContent = periodoHeader.elapsed;
+    if (diaTotalEl) diaTotalEl.textContent = '/' + periodoHeader.total;
+    renderPeriodoAnalizado('periodo-analizado-avance');
+
+    const container = document.getElementById('pdv-content');
+    if (!container) return;
+
+    const zona = _zonaAvanceSeleccionada();
+    const zonaPDVs = _pdvsDeZona(zona);
+    if (!zonaPDVs.length) {
+        container.innerHTML = '<div class="empty-state"><p>No se encontraron puntos de venta para la zona seleccionada.</p></div>';
+        _renderZonalKpis(0, 0, 0, 0, null, null);
+        return;
+    }
+
+    const data = _acumuladoZonalRows(zonaPDVs);
+    let rowsHtml = '';
+    data.rows.forEach(r => {
+        rowsHtml += '<tr>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(ctlNombreCorto(r.pdv)) + '</td>' +
+            '<td>' + formatCurrency(r.adVenta) + '</td>' +
+            '<td>' + formatCurrency(r.adCuota) + '</td>' +
+            '<td class="' + (r.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.adFalt <= 0 ? '\u2713 0' : formatCurrency(r.adFalt)) + '</td>' +
+            '<td>' + _zonalPctCell(r.alcAD) + '</td>' +
+            '<td>' + formatCurrency(r.jvVenta) + '</td>' +
+            '<td>' + formatCurrency(r.jvCuota) + '</td>' +
+            '<td class="' + (r.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.jvFalt <= 0 ? '\u2713 0' : formatCurrency(r.jvFalt)) + '</td>' +
+            '<td>' + _zonalPctCell(r.alcJV) + '</td>' +
+            '</tr>';
+    });
+
+    const t = data.totales;
+    const totalRow = '<tr class="acu-total-row">' +
+        '<td class="ctl-td-left acu-total-label">TOTAL ZONA</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.adVenta) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.adCuota) + '</td>' +
+        '<td class="acu-total-val ' + (t.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.adFalt <= 0 ? '\u2713 0' : formatCurrency(t.adFalt)) + '</td>' +
+        '<td class="acu-total-val">' + _zonalPctCell(t.alcAD, true) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.jvVenta) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.jvCuota) + '</td>' +
+        '<td class="acu-total-val ' + (t.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.jvFalt <= 0 ? '\u2713 0' : formatCurrency(t.jvFalt)) + '</td>' +
+        '<td class="acu-total-val">' + _zonalPctCell(t.alcJV, true) + '</td>' +
+        '</tr>';
+
+    container.innerHTML = '' +
+        '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title">\ud83d\udcca Resumen Zonal Acumulado \u00b7 ' + ctlEsc(_nombreZonaSeleccionada()) + '</span>' +
+        '<span class="ctl-card-count">' + zonaPDVs.length + ' PDVs \u00b7 Apuestas Deportivas y Juegos Virtuales</span>' +
+        '</div>' +
+        '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zonal-table">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">PDV</th>' +
+        '<th>Venta AD</th><th>Cuota AD</th><th>Faltante AD</th><th>% AD</th>' +
+        '<th>Venta JV</th><th>Cuota JV</th><th>Faltante JV</th><th>% JV</th>' +
+        '</tr></thead><tbody>' + rowsHtml + totalRow + '</tbody>' +
+        '</table></div>' +
+        '</div>';
+
+    const mr = _mejorYRiesgo(data.rows);
+    _renderZonalKpis(data.venta, data.cuota, data.faltante, data.alcGen, mr.mejor, mr.riesgo);
+}
+
+function renderResumenZonaSur() {
+    renderAvisoOficial();
+    const periodoHeader = DataStore.getInfoPeriodo();
+    const diaActualEl = document.getElementById('pdv-dia-actual');
+    const diaTotalEl = document.getElementById('pdv-dia-total');
+    if (diaActualEl) diaActualEl.textContent = periodoHeader.elapsed;
+    if (diaTotalEl) diaTotalEl.textContent = '/' + periodoHeader.total;
+    renderPeriodoAnalizado('periodo-analizado-avance');
+
+    const container = document.getElementById('pdv-content');
+    if (!container) return;
+
+    const zonas = _zonasSur();
+    if (!zonas.length) {
+        container.innerHTML = '<div class="empty-state"><p>No hay zonas configuradas.</p></div>';
+        _renderZonalKpis(0, 0, 0, 0, null, null, 'Mejor Zona', 'Zona en Riesgo');
+        return;
+    }
+
+    const data = _acumuladoZonasSurRows();
+    let rowsHtml = '';
+    data.rows.forEach(r => {
+        rowsHtml += '<tr>' +
+            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(r.zona) + '</td>' +
+            '<td>' + formatCurrency(r.adVenta) + '</td>' +
+            '<td>' + formatCurrency(r.adCuota) + '</td>' +
+            '<td class="' + (r.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.adFalt <= 0 ? '\u2713 0' : formatCurrency(r.adFalt)) + '</td>' +
+            '<td>' + _zonalPctCell(r.alcAD) + '</td>' +
+            '<td>' + formatCurrency(r.jvVenta) + '</td>' +
+            '<td>' + formatCurrency(r.jvCuota) + '</td>' +
+            '<td class="' + (r.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.jvFalt <= 0 ? '\u2713 0' : formatCurrency(r.jvFalt)) + '</td>' +
+            '<td>' + _zonalPctCell(r.alcJV) + '</td>' +
+            '</tr>';
+    });
+
+    const t = data.totales;
+    const totalRow = '<tr class="acu-total-row">' +
+        '<td class="ctl-td-left acu-total-label">TOTAL ZONAS SUR</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.adVenta) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.adCuota) + '</td>' +
+        '<td class="acu-total-val ' + (t.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.adFalt <= 0 ? '\u2713 0' : formatCurrency(t.adFalt)) + '</td>' +
+        '<td class="acu-total-val">' + _zonalPctCell(t.alcAD, true) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.jvVenta) + '</td>' +
+        '<td class="acu-total-val">' + formatCurrency(t.jvCuota) + '</td>' +
+        '<td class="acu-total-val ' + (t.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.jvFalt <= 0 ? '\u2713 0' : formatCurrency(t.jvFalt)) + '</td>' +
+        '<td class="acu-total-val">' + _zonalPctCell(t.alcJV, true) + '</td>' +
+        '</tr>';
+
+    container.innerHTML = '' +
+        '<div class="ctl-card">' +
+        '<div class="ctl-card-header">' +
+        '<span class="ctl-card-title">\ud83c\udf0e Resumen Zona Sur</span>' +
+        '<span class="ctl-card-count">' + zonas.length + ' zonas \u00b7 Apuestas Deportivas y Juegos Virtuales</span>' +
+        '</div>' +
+        '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zonal-table">' +
+        '<thead><tr>' +
+        '<th class="ctl-th-left">Zona</th>' +
+        '<th>Venta AD</th><th>Cuota AD</th><th>Faltante AD</th><th>% AD</th>' +
+        '<th>Venta JV</th><th>Cuota JV</th><th>Faltante JV</th><th>% JV</th>' +
+        '</tr></thead><tbody>' + rowsHtml + totalRow + '</tbody>' +
+        '</table></div>' +
+        '</div>';
+
+    const mr = _mejorYRiesgo(data.rows);
+    _renderZonalKpis(data.venta, data.cuota, data.faltante, data.alcGen, mr.mejor, mr.riesgo, 'Mejor Zona', 'Zona en Riesgo');
 }
 
 function exportarAvancePDVExcel() {
@@ -1174,11 +1853,20 @@ function exportarAvancePDVExcel() {
             console.error('[EXPORT] ExcelJS o FileSaver no disponibles.');
             return;
         }
+        if (avanceZonalVista === 'diario' || avanceZonalVista === 'acumulado' || avanceZonalVista === 'zonasur') {
+            exportarZonalExcel();
+            return;
+        }
 
         const pdvSeleccionado = (document.getElementById('pdv-select') || {}).value || 'todos';
         const pdvs = DataStore.getPDVs();
         const restringidos = _pdvsPermitidosPromotor();
-        const listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSeleccionado] : (restringidos || pdvs);
+        let listaPDVs;
+        if (avanceVista === 'zona' && _esPromotorRestringido()) {
+            listaPDVs = _pdvsZonaPromotor() || [];
+        } else {
+            listaPDVs = (pdvSeleccionado && pdvSeleccionado !== 'todos') ? [pdvSeleccionado] : (restringidos || pdvs);
+        }
         const allData = DataStore.getCumplimientoPorPDV();
         const productos = DataStore.getProductos();
         const periodo = DataStore.getInfoPeriodo();
@@ -1304,12 +1992,149 @@ function exportarAvancePDVExcel() {
             String(hoy.getDate()).padStart(2, '0');
         const nombreArchivo = 'Avance_PDV_' + stamp + '.xlsx';
 
-        workbook.xlsx.writeBuffer().then(buffer => {
+workbook.xlsx.writeBuffer().then(buffer => {
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             saveAs(blob, nombreArchivo);
         });
     } catch (e) {
         console.error('[EXPORT] Error al generar el Excel:', e);
+    }
+}
+
+function exportarZonalExcel() {
+    try {
+        if (typeof ExcelJS === 'undefined' || typeof saveAs === 'undefined') return;
+        const esDiario = avanceZonalVista === 'diario';
+        const esSur = avanceZonalVista === 'zonasur';
+        const zona = _zonaAvanceSeleccionada();
+        const zonaPDVs = esSur ? _pdvsDeZona(null) : _pdvsDeZona(zona);
+        if (!zonaPDVs.length) {
+            mostrarNotificacion('No hay PDVs para la zona seleccionada', 'warning');
+            return;
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        const ws = workbook.addWorksheet(esDiario ? 'Resumen Zonal Diario' : esSur ? 'Resumen Zona Sur' : 'Resumen Zonal Acumulado');
+        const colCount = esDiario ? 4 : 9;
+        const firstHead = esSur ? 'ZONA' : 'PDV';
+        const columns = esDiario
+            ? [
+                { header: 'PDV', key: 'pdv', width: 30 },
+                { header: 'APUESTAS DEPORTIVAS', key: 'ad', width: 20 },
+                { header: 'JUEGOS VIRTUALES', key: 'jv', width: 20 },
+                { header: 'TOTAL DIA', key: 'total', width: 18 }
+            ]
+            : [
+                { header: firstHead, key: 'pdv', width: 30 },
+                { header: 'VENTA AD', key: 'ventaAD', width: 15 },
+                { header: 'CUOTA AD', key: 'cuotaAD', width: 15 },
+                { header: 'FALTANTE AD', key: 'faltAD', width: 15 },
+                { header: '% AD', key: 'pctAD', width: 12 },
+                { header: 'VENTA JV', key: 'ventaJV', width: 15 },
+                { header: 'CUOTA JV', key: 'cuotaJV', width: 15 },
+                { header: 'FALTANTE JV', key: 'faltJV', width: 15 },
+                { header: '% JV', key: 'pctJV', width: 12 }
+            ];
+        ws.columns = columns;
+
+        const titulo = esDiario ? 'Resumen Zonal Diario' : esSur ? 'Resumen Zona Sur' : 'Resumen Zonal Acumulado';
+        const titleRow = ws.addRow([titulo]);
+        ws.mergeCells(titleRow.number, 1, titleRow.number, colCount);
+        titleRow.height = 28;
+        titleRow.getCell(1).font = { bold: true, size: 15, color: { argb: 'FFFFFFFF' } };
+        for (let t = 1; t <= colCount; t++) {
+            titleRow.getCell(t).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF155a3a' } };
+        }
+
+        let subLabel;
+        if (esSur) {
+            const mesSel = document.getElementById('filtro-avance-mes');
+            subLabel = 'Periodo: ' + (mesSel && mesSel.selectedIndex > -1 ? mesSel.options[mesSel.selectedIndex].text : '');
+        } else {
+            subLabel = 'Zona: ' + _nombreZonaSeleccionada();
+        }
+        const sub = ws.addRow([subLabel]);
+        ws.mergeCells(sub.number, 1, sub.number, colCount);
+        sub.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF8A8A8A' } };
+
+        const headRow = ws.addRow(columns.map(c => c.header));
+        headRow.height = 22;
+        headRow.eachCell(c => {
+            c.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+            c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F0F0F' } };
+            c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            c.border = { bottom: { style: 'medium', color: { argb: 'FF1DB954' } } };
+        });
+        ws.views = [{ state: 'frozen', ySplit: headRow.number }];
+        const dinero = '"S/ "#,##0.00';
+
+        if (esDiario) {
+            const fechaInput = document.getElementById('zonal-fecha');
+            const selStr = fechaInput ? fechaInput.value : '';
+            const partes = String(selStr).split('-').map(Number);
+            const fecha = (partes.length === 3 && !partes.some(isNaN)) ? new Date(partes[0], partes[1] - 1, partes[2]) : new Date();
+            const data = _diarioZonalRows(zonaPDVs, fecha);
+            data.rows.forEach(r => {
+                const row = ws.addRow([r.pdv, r.ad, r.jv, r.total]);
+                row.getCell(1).alignment = { horizontal: 'left' };
+                for (let c = 2; c <= 4; c++) {
+                    row.getCell(c).numFmt = dinero;
+                    row.getCell(c).alignment = { horizontal: 'center' };
+                }
+            });
+            const t = data.totales;
+            const tr = ws.addRow(['TOTAL ZONA', t.ad, t.jv, t.total]);
+            for (let c = 1; c <= 4; c++) {
+                tr.getCell(c).font = { bold: true };
+                tr.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCF3E5' } };
+                if (c > 1) tr.getCell(c).numFmt = dinero;
+                tr.getCell(c).alignment = { horizontal: 'center' };
+            }
+        } else {
+            const data = esSur ? _acumuladoZonasSurRows() : _acumuladoZonalRows(zonaPDVs);
+            data.rows.forEach(r => {
+                const row = ws.addRow([r.pdv, r.adVenta, r.adCuota, r.adFalt, r.alcAD, r.jvVenta, r.jvCuota, r.jvFalt, r.alcJV]);
+                row.getCell(1).alignment = { horizontal: 'left' };
+                for (let c = 2; c <= 4; c++) row.getCell(c).numFmt = dinero;
+                for (let c = 6; c <= 8; c++) row.getCell(c).numFmt = dinero;
+                row.getCell(5).numFmt = '0.0%';
+                row.getCell(9).numFmt = '0.0%';
+                row.getCell(5).value = r.alcAD / 100;
+                row.getCell(9).value = r.alcJV / 100;
+                const semAD = zonalSem(r.alcAD);
+                const semJV = zonalSem(r.alcJV);
+                const colAD = semAD.cls === 'ok' ? 'FF1DB954' : semAD.cls === 'mid' ? 'FFF59E0B' : 'FFEF4444';
+                const colJV = semJV.cls === 'ok' ? 'FF1DB954' : semJV.cls === 'mid' ? 'FFF59E0B' : 'FFEF4444';
+                row.getCell(5).font = { bold: true, color: { argb: colAD } };
+                row.getCell(9).font = { bold: true, color: { argb: colJV } };
+                row.getCell(5).alignment = { horizontal: 'center' };
+                row.getCell(9).alignment = { horizontal: 'center' };
+            });
+            const t = data.totales;
+            const tr = ws.addRow([esSur ? 'TOTAL ZONAS SUR' : 'TOTAL ZONA', t.adVenta, t.adCuota, t.adFalt, t.alcAD / 100, t.jvVenta, t.jvCuota, t.jvFalt, t.alcJV / 100]);
+            for (let c = 1; c <= 9; c++) {
+                tr.getCell(c).font = { bold: true };
+                tr.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCF3E5' } };
+                tr.getCell(c).alignment = { horizontal: 'center' };
+            }
+            tr.getCell(2).numFmt = dinero; tr.getCell(3).numFmt = dinero; tr.getCell(4).numFmt = dinero;
+            tr.getCell(6).numFmt = dinero; tr.getCell(7).numFmt = dinero; tr.getCell(8).numFmt = dinero;
+            tr.getCell(5).numFmt = '0.0%';
+            tr.getCell(9).numFmt = '0.0%';
+        }
+
+        const hoy = new Date();
+        const stamp = hoy.getFullYear() + '-' +
+            String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+            String(hoy.getDate()).padStart(2, '0');
+        const nombreArchivo = 'Resumen_' + (esDiario ? 'Zonal_Diario' : esSur ? 'Zona_Sur' : 'Zonal_Acumulado') + '_' + stamp + '.xlsx';
+
+        workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, nombreArchivo);
+        });
+    } catch (e) {
+        console.error('[EXPORT][ZONAL] Error al generar el Excel:', e);
     }
 }
 
@@ -1725,8 +2550,10 @@ function bloquearSupervisor() {
 function actualizarSidebarSupervisor() {
     const unlocked = estaSupervisorDesbloqueado();
     document.getElementById('sidebar').classList.toggle('supervisor-unlocked', unlocked);
+    // El botón de "bloquear supervisor" queda sin uso: el menú ahora se renderiza
+    // únicamente según el rol autenticado.
     const lockBtn = document.getElementById('supervisor-lock-btn');
-    if (lockBtn) lockBtn.style.display = (unlocked && !esJefeComercial()) ? 'flex' : 'none';
+    if (lockBtn) lockBtn.style.display = 'none';
 
     const toggleIcon = document.getElementById('supervisor-toggle-icon');
     const toggleLabel = document.getElementById('supervisor-toggle-label');
@@ -1909,6 +2736,7 @@ document.getElementById('page-title').textContent =
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                     pagina === 'informe-promotor' ? 'Informe por Promotor' :
                     pagina === 'informe-individual' ? 'Informe Individual' :
+                    pagina === 'acumulado-diario' ? 'Acumulado Diario' :
                         pagina === 'horarios' ? 'Gestión de Promotores' :
                     pagina === 'tiendas' ? 'Gestión de Tiendas' :
                         pagina === 'corte-comercial' ? 'Corte Comercial' :
@@ -1929,6 +2757,8 @@ document.getElementById('page-title').textContent =
         renderizarInformePromotor();
     } else if (pagina === 'informe-individual') {
         renderizarInformeIndividual();
+    } else if (pagina === 'acumulado-diario') {
+        renderizarAcumuladoDiario();
     } else if (pagina === 'horarios') {
         if (!HorariosDataStore.initialized) {
             initHorarios('supervisor');
@@ -3509,16 +4339,21 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('sidebar').classList.remove('open');
     });
 
-    document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-        item.addEventListener('click', function (e) {
-            const rect = this.getBoundingClientRect();
+    // Delegación de clics en el menú: el menú se reconstruye por rol, por lo que
+    // los ítems no llevan listeners individuales (los inline onclick sí se conservan).
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (sidebarNav) {
+        sidebarNav.addEventListener('click', function (e) {
+            const item = e.target.closest('.nav-item[data-page]');
+            if (!item) return;
+            const rect = item.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 100;
             const y = ((e.clientY - rect.top) / rect.height) * 100;
-            this.style.setProperty('--ripple-x', x + '%');
-            this.style.setProperty('--ripple-y', y + '%');
-            cambiarPagina(this.dataset.page);
+            item.style.setProperty('--ripple-x', x + '%');
+            item.style.setProperty('--ripple-y', y + '%');
+            cambiarPagina(item.dataset.page);
         });
-    });
+    }
 
     const pdvSelect = document.getElementById('pdv-select');
     if (pdvSelect) {
@@ -3813,11 +4648,65 @@ function finishSupervisorLogin(sup) {
     }
 }
 
+/* ===== MENÚ DINÁMICO POR ROL ===== */
+/* El menú lateral se construye únicamente con los módulos permitidos para el rol
+   autenticado. No se ocultan opciones con CSS: los ítems que no corresponden se
+   eliminan del DOM. Cada ítem/separador declara su rol con data-role. */
+const MENU_POR_ROL = {
+    promotor: ['promotor'],
+    supervisor: ['supervisor', 'gestion'],
+    jefe: ['supervisor', 'gestion', 'jefe']
+};
+let _navOriginalHTML = null;
+
+function aplicarPermisosMenu() {
+    const nav = document.querySelector('.sidebar-nav');
+    if (!nav) return;
+
+    if (_navOriginalHTML === null) {
+        _navOriginalHTML = nav.innerHTML;
+    }
+    // Restaurar el menú completo antes de aplicar el rol: permite cambiar de rol
+    // en la misma sesión (cerrar sesión → iniciar sesión con otro rol) sin recargar.
+    nav.innerHTML = _navOriginalHTML;
+
+    const session = leerSesion();
+    const rol = (session && session.rol) || '';
+    const permitidos = MENU_POR_ROL[rol] || [];
+
+    nav.querySelectorAll('.nav-item, .nav-section-divider').forEach(el => {
+        const roles = (el.getAttribute('data-role') || '').split(/\s+/).filter(Boolean);
+        const permitido = roles.some(r => permitidos.indexOf(r) !== -1);
+        if (!permitido) el.remove();
+    });
+
+    // Re-aplicar tooltips en el menú restaurado
+    nav.querySelectorAll('.nav-item[data-page], .nav-item[data-action]').forEach(item => {
+        const lab = item.querySelector('.nav-label');
+        if (lab && !item.getAttribute('title')) item.setAttribute('title', lab.textContent.trim());
+    });
+    nav.querySelectorAll('.nav-section-divider').forEach(d => {
+        const tx = d.textContent.trim();
+        if (tx && !d.getAttribute('title')) d.setAttribute('title', tx);
+    });
+
+    // El mecanismo heredado de "supervisor desbloqueado" queda descartado:
+    // la visibilidad depende únicamente del rol autenticado.
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        if (rol === 'supervisor' || rol === 'jefe') sidebar.classList.add('supervisor-unlocked');
+        else sidebar.classList.remove('supervisor-unlocked');
+    }
+    const lockBtn = document.getElementById('supervisor-lock-btn');
+    if (lockBtn) lockBtn.style.display = 'none';
+}
+
 function aplicarSesionInicial() {
     const screen = document.getElementById('login-screen');
     const session = leerSesion();
 
     if (!session || !session.rol) {
+        aplicarPermisosMenu();
         if (screen) screen.classList.add('activo');
         return;
     }
@@ -3842,6 +4731,9 @@ function aplicarSesionInicial() {
         if (typeof JefeComercialStore !== 'undefined' && typeof JefeComercialStore.init === 'function') JefeComercialStore.init();
         cambiarPagina('jefe-dashboard');
     } else if (session.rol === 'promotor') {
+        // Separación total de roles: un promotor nunca conserva el flag heredado
+        // de "supervisor desbloqueado" de una sesión previa en la misma pestaña.
+        sessionStorage.removeItem('supervisor_unlocked');
         const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
         let p = session.id ? promotores.find(x => x.id === session.id) : null;
         if (!p && session.email) {
@@ -3874,6 +4766,8 @@ function aplicarSesionInicial() {
         mostrarCerrarSesion();
         cambiarPagina('avance');
     }
+
+    aplicarPermisosMenu();
 }
 
 function renderSupervisorHeader() {
@@ -3924,6 +4818,7 @@ function cerrarSesionGlobal() {
     if (screen) screen.classList.add('activo');
     mostrarFormularioLogin('roles');
     limpiarCamposLogin();
+    aplicarPermisosMenu();
     mostrarNotificacion('Sesión cerrada correctamente', 'success');
 }
 
@@ -4168,6 +5063,254 @@ function renderizarInformeIndividual() {
     if (infIndTab === 'promociones') {
         renderPromocionesInformeIndividual();
     }
+}
+
+/* ===== ACUMULADO DIARIO ===== */
+const ACU_PRODUCTOS = ['Apuestas Deportivas', 'Hípica', 'Juegos Virtuales', 'Lotobola', 'Lottingo', 'Mi Billetera', 'Torito', 'VLT'];
+
+function _acuNorm(s) {
+    if (s == null) return '';
+    return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function _acuDiaStr(fecha) {
+    const d = fecha ? new Date(fecha) : new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function _acuVentasDelDia(tienda, fecha) {
+    const anio = fecha.getFullYear();
+    const mes = fecha.getMonth() + 1;
+    const dia = fecha.getDate();
+    const ventas = (typeof DataStore !== 'undefined' && typeof DataStore.getVentasActivas === 'function') ? DataStore.getVentasActivas() : [];
+    return ventas.filter(v => {
+        if (!v || v.punto_venta !== tienda) return false;
+        const f = v.fecha ? new Date(v.fecha) : null;
+        if (f && !isNaN(f.getTime())) {
+            return f.getFullYear() === anio && f.getMonth() + 1 === mes && f.getDate() === dia;
+        }
+        return v.dia === dia && (v.mes || mes) === mes && (v.anio || anio) === anio;
+    });
+}
+
+function _acuCuotasTienda(tienda, mes, anio) {
+    if (typeof DataStore === 'undefined' || typeof DataStore.getCuotas !== 'function') return [];
+    return DataStore.getCuotas(mes, anio).filter(c => c && c.punto_venta === tienda);
+}
+
+function _acuSem(pct) {
+    if (pct >= 100) return 'ok';
+    if (pct >= 70) return 'mid';
+    return 'low';
+}
+
+function renderizarAcumuladoDiario() {
+    const page = document.getElementById('page-acumulado-diario');
+    if (!page) return;
+
+    if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized && typeof initHorarios === 'function') {
+        initHorarios('supervisor');
+        HorariosDataStore.onUpdate = function () { renderHorarios(); };
+    }
+
+    const warning = document.getElementById('acu-session-warning');
+    const dashboard = document.getElementById('acu-dashboard');
+    const heroUser = document.getElementById('acu-hero-user');
+
+    const promotor = obtenerPromotorSesionInforme();
+    if (!promotor) {
+        if (warning) {
+            warning.style.display = 'flex';
+            warning.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> <div><strong>Inicia sesi&oacute;n como promotor</strong><span>Este m&oacute;dulo es exclusivo para el promotor autenticado con su propia sesi&oacute;n.</span></div>';
+        }
+        if (dashboard) dashboard.style.display = 'none';
+        if (heroUser) heroUser.innerHTML = '';
+        const tabsAcu1 = document.getElementById('acu-view-tabs');
+        if (tabsAcu1) tabsAcu1.style.display = 'none';
+        return;
+    }
+
+    if (warning) warning.style.display = 'none';
+    if (dashboard) dashboard.style.display = '';
+    if (heroUser) heroUser.innerHTML = renderHeroUsuarioInforme(promotor);
+
+    const tienda = _tiendaNombrePromotor(promotor);
+    if (!tienda) {
+        if (warning) {
+            warning.style.display = 'flex';
+            warning.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> <div><strong>Sin tienda asignada</strong><span>El promotor no tiene una tienda asignada para consultar su acumulado diario.</span></div>';
+        }
+        if (dashboard) dashboard.style.display = 'none';
+        const tabsAcu2 = document.getElementById('acu-view-tabs');
+        if (tabsAcu2) tabsAcu2.style.display = 'none';
+        return;
+    }
+
+    const hoy = new Date();
+    const hoyStr = _acuDiaStr(hoy);
+    const fechaInput = document.getElementById('acu-fecha');
+    if (fechaInput) {
+        if (!fechaInput.max) fechaInput.max = hoyStr;
+        if (!fechaInput.value) fechaInput.value = hoyStr;
+    }
+    const selStr = fechaInput ? (fechaInput.value || hoyStr) : hoyStr;
+    const partes = String(selStr).split('-').map(Number);
+    if (partes.length !== 3 || partes.some(isNaN)) return;
+    const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+    syncVistaAcuUI();
+    const zonaContainer = document.getElementById('acu-zona');
+    if (acuVista === 'zona') {
+        if (zonaContainer) zonaContainer.style.display = '';
+        renderAcumuladoZona(fecha, tienda);
+        return;
+    }
+    if (zonaContainer) zonaContainer.style.display = 'none';
+    const mes = fecha.getMonth() + 1;
+    const anio = fecha.getFullYear();
+    const diasMes = new Date(anio, mes, 0).getDate();
+
+    const ventasDia = _acuVentasDelDia(tienda, fecha);
+    const cuotas = _acuCuotasTienda(tienda, mes, anio);
+
+    const ventaPorProd = {};
+    ventasDia.forEach(v => {
+        const n = _acuNorm(v.producto);
+        ventaPorProd[n] = (ventaPorProd[n] || 0) + (v.venta || 0);
+    });
+    const cuotaPorProd = {};
+    cuotas.forEach(c => {
+        const n = _acuNorm(c.producto);
+        cuotaPorProd[n] = (cuotaPorProd[n] || 0) + (c.cuota || 0);
+    });
+
+    const rows = ACU_PRODUCTOS.map(nombre => {
+        const n = _acuNorm(nombre);
+        const ventaDia = ventaPorProd[n] || 0;
+        const metaDia = diasMes > 0 ? (cuotaPorProd[n] || 0) / diasMes : 0;
+        const alcance = metaDia > 0 ? (ventaDia / metaDia) * 100 : 0;
+        return { nombre, ventaDia, metaDia, alcance };
+    });
+
+    const totalVentaDia = rows.reduce((s, r) => s + r.ventaDia, 0);
+    const totalMetaDia = rows.reduce((s, r) => s + r.metaDia, 0);
+    const totalAlcance = totalMetaDia > 0 ? (totalVentaDia / totalMetaDia) * 100 : 0;
+    const faltanteDia = totalMetaDia - totalVentaDia;
+
+    const fecLegible = fecha.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('acu-venta-dia').textContent = infIndMoneda(totalVentaDia);
+    document.getElementById('acu-venta-dia-sub').textContent = fecLegible + ' \u00b7 ' + tienda;
+    document.getElementById('acu-meta-dia').textContent = infIndMoneda(totalMetaDia);
+    document.getElementById('acu-meta-dia-sub').textContent = 'Cuota mensual del mes \u00b7 ' + diasMes + ' d\u00edas';
+
+    const alcEl = document.getElementById('acu-alcance-dia');
+    alcEl.textContent = infIndPctStr(totalAlcance);
+    alcEl.className = 'inf-ind-venta-big acu-sem-' + _acuSem(totalAlcance);
+
+    const faltEl = document.getElementById('acu-faltante-dia');
+    faltEl.className = 'inf-ind-venta-big ' + (faltanteDia <= 0 ? 'acu-var-ok' : 'acu-var-bad');
+    faltEl.textContent = faltanteDia <= 0 ? '\u2713 0' : infIndMoneda(faltanteDia);
+
+    const ayer = new Date(anio, mes - 1, fecha.getDate() - 1);
+    const ventasAyer = _acuVentasDelDia(tienda, ayer);
+    const ventaAyer = ventasAyer.reduce((s, v) => s + (v.venta || 0), 0);
+    const varPct = ventaAyer > 0 ? ((totalVentaDia - ventaAyer) / ventaAyer) * 100 : (totalVentaDia > 0 ? 100 : 0);
+    document.getElementById('acu-comp-hoy').textContent = infIndMoneda(totalVentaDia);
+    document.getElementById('acu-comp-ayer').textContent = infIndMoneda(ventaAyer);
+    const varEl = document.getElementById('acu-comp-var');
+    varEl.textContent = (varPct >= 0 ? '+' : '') + infIndPctStr(varPct);
+    varEl.className = varPct >= 0 ? 'acu-var-ok' : 'acu-var-bad';
+
+    const tbody = document.getElementById('acu-tabla');
+    if (!tbody) return;
+    const prodRows = rows.map(r => {
+        const sem = _acuSem(r.alcance);
+        const pctStr = r.metaDia > 0 ? infIndPctStr(r.alcance) : '\u2014';
+        return '<tr>' +
+            '<td class="inf-ind-th-left">' + infIndEsc(r.nombre) + '</td>' +
+            '<td class="inf-ind-num ' + (r.ventaDia > 0 ? '' : 'inf-ind-vacio') + '">' + (r.ventaDia > 0 ? infIndMoneda(r.ventaDia) : '\u2014') + '</td>' +
+            '<td class="inf-ind-num">' + (r.metaDia > 0 ? infIndMoneda(r.metaDia) : '\u2014') + '</td>' +
+            '<td class="acu-sem-' + sem + '"><span class="acu-sem-dot"></span>' + pctStr + '</td>' +
+            '</tr>';
+    }).join('');
+
+    const totSem = _acuSem(totalAlcance);
+    const totalRow = '<tr class="acu-total-row">' +
+        '<td class="inf-ind-th-left acu-total-label">TOTAL DEL D\u00cdA</td>' +
+        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totalVentaDia) + '</td>' +
+        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totalMetaDia) + '</td>' +
+        '<td class="acu-sem-' + totSem + '"><span class="acu-sem-dot"></span>' + infIndPctStr(totalAlcance) + '</td>' +
+        '</tr>';
+
+    tbody.innerHTML = prodRows + totalRow;
+}
+
+function cambiarVistaAcumulado(vista) {
+    acuVista = (vista === 'zona') ? 'zona' : 'tienda';
+    renderizarAcumuladoDiario();
+}
+
+function syncVistaAcuUI() {
+    const tabs = document.getElementById('acu-view-tabs');
+    if (tabs) {
+        tabs.style.display = 'flex';
+        tabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.vista === acuVista));
+    }
+}
+
+function renderAcumuladoZona(fecha, tienda) {
+    const tbody = document.getElementById('acu-zona-tabla');
+    if (!tbody) return;
+    const zonaPDVs = _pdvsDeZonaDeTienda(tienda);
+    if (!zonaPDVs.length) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><p>No se pudo identificar los puntos de venta de tu zona.</p></div></td></tr>';
+        return;
+    }
+
+    const anio = fecha.getFullYear();
+    const mes = fecha.getMonth() + 1;
+    const dia = fecha.getDate();
+    const ventas = (typeof DataStore !== 'undefined' && typeof DataStore.getVentasActivas === 'function') ? DataStore.getVentasActivas() : [];
+    const ADn = _acuNorm('Apuestas Deportivas');
+    const JVn = _acuNorm('Juegos Virtuales');
+
+    const ventasDia = ventas.filter(v => {
+        if (!v || !v.punto_venta) return false;
+        const f = v.fecha ? new Date(v.fecha) : null;
+        if (f && !isNaN(f.getTime())) {
+            return f.getFullYear() === anio && f.getMonth() + 1 === mes && f.getDate() === dia;
+        }
+        return v.dia === dia && (v.mes || mes) === mes && (v.anio || anio) === anio;
+    });
+
+    let rowsHtml = '';
+    let totAD = 0, totJV = 0;
+    for (const pdv of zonaPDVs) {
+        let ad = 0, jv = 0;
+        ventasDia.forEach(v => {
+            if (v.punto_venta !== pdv) return;
+            const n = _acuNorm(v.producto);
+            if (n === ADn) ad += (v.venta || 0);
+            else if (n === JVn) jv += (v.venta || 0);
+        });
+        const total = ad + jv;
+        totAD += ad; totJV += jv;
+        rowsHtml += '<tr>' +
+            '<td class="inf-ind-th-left">' + infIndEsc(pdv) + '</td>' +
+            '<td class="inf-ind-num ' + (ad > 0 ? '' : 'inf-ind-vacio') + '">' + (ad > 0 ? infIndMoneda(ad) : '\u2014') + '</td>' +
+            '<td class="inf-ind-num ' + (jv > 0 ? '' : 'inf-ind-vacio') + '">' + (jv > 0 ? infIndMoneda(jv) : '\u2014') + '</td>' +
+            '<td class="inf-ind-num ' + (total > 0 ? '' : 'inf-ind-vacio') + '">' + (total > 0 ? infIndMoneda(total) : '\u2014') + '</td>' +
+            '</tr>';
+    }
+
+    const totTotal = totAD + totJV;
+    const totalRow = '<tr class="acu-total-row">' +
+        '<td class="inf-ind-th-left acu-total-label">TOTAL ZONA</td>' +
+        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totAD) + '</td>' +
+        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totJV) + '</td>' +
+        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totTotal) + '</td>' +
+        '</tr>';
+
+    tbody.innerHTML = rowsHtml + totalRow;
 }
 
 function renderHeroUsuarioInforme(promotor) {

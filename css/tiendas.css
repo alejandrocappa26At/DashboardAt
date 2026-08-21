@@ -371,6 +371,36 @@
     animation: tiendasPulse 1.2s ease-in-out infinite;
 }
 
+/* ---------- Filtro por zona / chips informativos ---------- */
+.tiendas-summary-chip,
+.tiendas-summary-cant {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.tiendas-summary-chip {
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.25);
+    color: #38BDF8;
+}
+
+.tiendas-summary-cant {
+    background: rgba(29,185,84,0.1);
+    border: 1px solid rgba(29,185,84,0.25);
+    color: #1DB954;
+}
+
+.tiendas-summary-chip strong,
+.tiendas-summary-cant strong {
+    color: var(--t-text);
+}
+
 /* ---------- Tabla ---------- */
 .tiendas-table-scroll-area {
     border: 1px solid var(--t-w04);

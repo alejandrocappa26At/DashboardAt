@@ -1357,7 +1357,7 @@ body.rol-jefe .nav-supervisor-toggle {
 /* ===== AVANCE SIMPLIFIED FILTERS (Tienda · Mes/Año · Tipo) ===== */
 .avance-filtros {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto auto;
     gap: 12px;
     align-items: end;
     margin-bottom: 24px;
@@ -8272,6 +8272,252 @@ select.jefe-form-input {
         width: 100%;
     }
     .jefe-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =============================================
+   ACUMULADO DIARIO
+   ============================================= */
+.acu-fecha-input {
+    background: transparent;
+    border: none;
+    color: var(--t-text);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    padding: 0;
+}
+
+.acu-fecha-input::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+}
+
+.acu-fecha-input::-webkit-datetime-edit {
+    color: var(--t-text);
+}
+
+.date-filter-main:has(.acu-fecha-input)::after {
+    display: none;
+}
+
+.acu-meta-card .inf-ind-venta-big {
+    color: #3B82F6;
+}
+
+.acu-alcance-card .inf-ind-venta-big {
+    font-size: 32px;
+}
+
+.acu-faltante-card .inf-ind-venta-big {
+    font-size: 30px;
+}
+
+.acu-sem-ok {
+    color: #1DB954;
+}
+
+.acu-sem-mid {
+    color: #FBBF24;
+}
+
+.acu-sem-low {
+    color: #F87171;
+}
+
+.acu-sem-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.acu-var-ok {
+    color: #1DB954;
+}
+
+.acu-var-bad {
+    color: #F87171;
+}
+
+.acu-comparativo-card {
+    margin-bottom: 16px;
+}
+
+.acu-comparativo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+.acu-comp-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    background: var(--t-w03);
+    border: 1px solid var(--t-w05);
+    border-radius: 12px;
+}
+
+.acu-comp-item span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--t-dim2);
+}
+
+.acu-comp-item strong {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--t-text);
+    font-family: 'Inter', 'Segoe UI', monospace;
+    letter-spacing: -0.5px;
+}
+
+.acu-total-row td {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    border-bottom: none;
+    background: rgba(29, 185, 84, 0.05);
+    font-weight: 800;
+}
+
+.acu-total-row:hover {
+    background: rgba(29, 185, 84, 0.08) !important;
+}
+
+.acu-total-label {
+    font-weight: 800;
+    color: var(--t-text) !important;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+}
+
+.acu-total-val {
+    font-weight: 800;
+    color: var(--t-text);
+}
+
+@media (max-width: 768px) {
+    .acu-comparativo-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mi Zona: franja resumen del avance por PDV */
+.acu-zona-resumen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(29, 185, 84, 0.25);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(29, 185, 84, 0.10), rgba(29, 185, 84, 0.03));
+}
+
+.acu-zona-resumen-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 130px;
+    flex: 1 1 150px;
+}
+
+.acu-zona-resumen-item span {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t-dim2);
+}
+
+.acu-zona-resumen-item strong {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--t-text);
+    font-family: 'Inter', 'Segoe UI', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Resumen Zonal: KPIs superiores (Supervisor / Jefe Comercial) */
+.zonal-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.zonal-kpi {
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w06);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.zonal-kpi-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--t-dim2);
+}
+
+.zonal-kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--t-text);
+    font-family: 'Inter', 'Segoe UI', monospace;
+    letter-spacing: -0.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+}
+
+.zonal-kpi-value.zonal-ok { color: #1DB954; }
+.zonal-kpi-value.zonal-mid { color: #F59E0B; }
+.zonal-kpi-value.zonal-low { color: #EF4444; }
+
+.zonal-kpi-sub {
+    font-size: 11px;
+    color: var(--t-dim);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.zonal-kpi-mejor { color: #1DB954; font-weight: 800; }
+.zonal-kpi-riesgo { color: #EF4444; font-weight: 800; }
+
+/* Semáforos zonal: 🟢 >=100 · 🟡 70-99 · 🔴 <70 */
+.zonal-sem-ok { color: #1DB954; font-weight: 700; }
+.zonal-sem-mid { color: #F59E0B; font-weight: 700; }
+.zonal-sem-low { color: #EF4444; font-weight: 700; }
+
+@media (max-width: 900px) {
+    .zonal-kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .zonal-kpis {
         grid-template-columns: 1fr;
     }
 }

@@ -360,6 +360,31 @@ function _tiendasEscAttr(str) {
     return _tiendasEsc(str).replace(/"/g, '&quot;');
 }
 
+/* ---------- Filtro por zona ---------- */
+const ZONAS_FILTRO_TIENDAS = ['AREQUIPA SUR', 'CUSCO SUR', 'PUNO SUR', 'APURIMAC SUR', 'TACNA SUR'];
+let filtroZonaTiendas = '';
+
+function _tiendasNormZona(str) {
+    return String(str == null ? '' : str).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function _tiendasZonasFiltro(tiendas) {
+    const lista = [...ZONAS_FILTRO_TIENDAS];
+    const visto = new Set(lista.map(z => _tiendasNormZona(z)));
+    (tiendas || []).forEach(t => {
+        const z = String(t.cadena || '').trim();
+        if (!z) return;
+        const key = _tiendasNormZona(z);
+        if (!visto.has(key)) { visto.add(key); lista.push(z); }
+    });
+    return lista;
+}
+
+function cambiarFiltroZonaTiendas(valor) {
+    filtroZonaTiendas = String(valor == null ? '' : valor).trim();
+    renderGestionTiendas();
+}
+
 function initGestionTiendas() {
     TiendasStore.init(function () {
         renderGestionTiendas();
@@ -384,9 +409,31 @@ function renderGestionTiendas() {
     if (!container) return;
     if (typeof TiendasStore === 'undefined') return;
 
-    const tiendas = TiendasStore.getTiendas();
+    const todas = TiendasStore.getTiendas();
+    const filtroNorm = _tiendasNormZona(filtroZonaTiendas);
+    const tiendas = filtroNorm
+        ? todas.filter(t => _tiendasNormZona(t.cadena) === filtroNorm)
+        : todas;
     const activas = tiendas.filter(t => t.estado === 'Activa').length;
     const rows = tiendas.map(renderFilaTienda).join('');
+
+    const opcionesZona = '<option value="">Todas las Zonas</option>' +
+        _tiendasZonasFiltro(todas).map(z => {
+            const sel = _tiendasNormZona(z) === filtroNorm ? ' selected' : '';
+            return '<option value="' + _tiendasEscAttr(z) + '"' + sel + '>' + _tiendasEsc(z) + '</option>';
+        }).join('');
+
+    const filtroBar = '<div class="promo-filtro-bar">' +
+        '<span class="promo-filtro-label">&#127758; Zona:</span>' +
+        '<select class="promo-filtro-select" onchange="cambiarFiltroZonaTiendas(this.value)">' + opcionesZona + '</select>' +
+        (filtroZonaTiendas ? '<button type="button" class="promo-filtro-clear" onclick="cambiarFiltroZonaTiendas(\'\')">Limpiar</button>' : '') +
+        '</div>';
+
+    const zonaInfo = filtroZonaTiendas
+        ? '<span class="tiendas-summary-chip">&#127758; Zona Seleccionada: <strong>' + _tiendasEsc(filtroZonaTiendas) + '</strong></span>' +
+          '<span class="tiendas-summary-cant">&#127979; Cantidad de Tiendas: <strong>' + tiendas.length + '</strong></span>' +
+          '<span class="tiendas-summary-dot">&middot;</span>'
+        : '';
 
     container.innerHTML = `
         <div class="tiendas-header">
@@ -414,8 +461,11 @@ function renderGestionTiendas() {
             </div>
         </div>
 
+        ${filtroBar}
+
         <div class="gestion-tiendas-body">
             <div class="tiendas-summary">
+                ${zonaInfo}
                 <span>${tiendas.length} tienda${tiendas.length !== 1 ? 's' : ''} registrada${tiendas.length !== 1 ? 's' : ''}</span>
                 <span class="tiendas-summary-dot">&middot;</span>
                 <span class="tiendas-summary-activas">${activas} activas</span>
