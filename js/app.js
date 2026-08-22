@@ -61,6 +61,7 @@ function reRenderCurrentPage() {
     else if (id === 'page-jefe-ranking') renderJefeRanking();
     else if (id === 'page-jefe-supervisores') renderJefeSupervisores();
     else if (id === 'page-jefe-zonas') renderJefeZonas();
+    else if (id === 'page-jefe-informe-supervisor') renderJefeInformeSupervisor();
 }
 
 function _promoPct(parte, total) {
@@ -632,7 +633,21 @@ function inicializarRegistroVentas() {
     // Update date badge
     const periodoHeader = DataStore.getInfoPeriodo();
     const datePeriodo = document.getElementById('reg-ventas-date-periodo');
-    if (datePeriodo) datePeriodo.textContent = periodoHeader.mes + ' ' + periodoHeader.anio;
+    if (datePeriodo) {
+        let label = '';
+        if (periodoHeader.activo && periodoHeader.fechaDesde) {
+            const fd = new Date(periodoHeader.fechaDesde + 'T00:00:00');
+            const mes = fd.toLocaleDateString('es-PE', { month: 'long' });
+            const anio = fd.getFullYear();
+            label = mes.charAt(0).toUpperCase() + mes.slice(1) + ' ' + anio;
+        } else {
+            const hoy = new Date();
+            const mes = hoy.toLocaleDateString('es-PE', { month: 'long' });
+            const anio = hoy.getFullYear();
+            label = mes.charAt(0).toUpperCase() + mes.slice(1) + ' ' + anio;
+        }
+        datePeriodo.textContent = label;
+    }
 
     // Initialize session bar and filters
     abrirPanelVentasConSesion();
@@ -2323,7 +2338,7 @@ function poblarSelectMes(modulo) {
 
 function sincronizarInputsFecha() {
     const filtros = DataStore.getFiltrosFecha();
-['resumen', 'avance', 'ranking', 'informe', 'vista-ejecutiva', 'individual', 'jefe', 'jefe-ranking'].forEach(modulo => {
+    ['resumen', 'avance', 'ranking', 'informe', 'vista-ejecutiva', 'individual', 'jefe', 'jefe-ranking', 'jefe-informe'].forEach(modulo => {
         const desde = document.getElementById('filtro-' + modulo + '-desde');
         const hasta = document.getElementById('filtro-' + modulo + '-hasta');
         const mesSel = document.getElementById('filtro-' + modulo + '-mes');
@@ -2362,11 +2377,12 @@ function actualizarDatosPorSeccion(seccion) {
     else if (seccion === 'informe') recargarInformeSiAplica();
     else if (seccion === 'individual') renderizarInformeIndividual();
     else if (seccion === 'vista-ejecutiva') renderizarVistaEjecutiva();
-    else if (seccion === 'jefe' || seccion === 'jefe-ranking') {
+    else if (seccion === 'jefe' || seccion === 'jefe-ranking' || seccion === 'jefe-informe') {
         const active = document.querySelector('.page.active');
         const id = active ? active.id : '';
         if (id === 'page-jefe-dashboard') renderJefeDashboard();
         else if (id === 'page-jefe-ranking') renderJefeRanking();
+        else if (id === 'page-jefe-informe-supervisor') renderJefeInformeSupervisor();
         else if (id === 'page-jefe-supervisores') renderJefeSupervisores();
         else if (id === 'page-jefe-zonas') renderJefeZonas();
     }
@@ -2383,7 +2399,7 @@ const RANGOS_ETIQUETA = {
 };
 
 function _convContainerRango(modulo) {
-    const mapa = { informe: 'page-informe-promotor', individual: 'page-informe-individual', jefe: 'page-jefe-dashboard' };
+    const mapa = { informe: 'page-informe-promotor', individual: 'page-informe-individual', jefe: 'page-jefe-dashboard', 'jefe-informe': 'page-jefe-informe-supervisor' };
     const pageId = mapa[modulo] || 'page-' + modulo;
     const page = document.getElementById(pageId);
     return page ? page.querySelector('.date-filter-fastrow') : null;

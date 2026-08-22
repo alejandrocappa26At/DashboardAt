@@ -7,6 +7,28 @@ const ESTADO_PROMOTOR_OPCIONES = [
     { value: 'Inactivo', label: '🔴 Inactivo' }
 ];
 
+const ROL_PROMOTOR_OPCIONES = [
+    { value: 'fijo', label: 'Fijo', color: '🟢' },
+    { value: 'volante', label: 'Volante', color: '🔵' },
+    { value: 'vacacionero', label: 'Vacacionero', color: '🟡' },
+    { value: 'experto', label: 'Experto', color: '🟣' }
+];
+
+function _rolBadgeClass(rol) {
+    switch (rol) {
+        case 'fijo': return 'promotor-rol-fijo';
+        case 'volante': return 'promotor-rol-volante';
+        case 'vacacionero': return 'promotor-rol-vacacionero';
+        case 'experto': return 'promotor-rol-experto';
+        default: return '';
+    }
+}
+
+function _rolLabel(rol) {
+    const r = ROL_PROMOTOR_OPCIONES.find(o => o.value === rol);
+    return r ? r.label : rol;
+}
+
 function _nombreTiendaPromotor(zonaId, zonas) {
     if (!zonaId) return '';
     const zona = (zonas || []).find(z => z.id === zonaId);
@@ -38,6 +60,19 @@ function _normalizarZonaGestion(str) {
 function _cadenaTiendaGestion(tiendaId, zonas) {
     const zona = (zonas || []).find(z => z.id === tiendaId);
     return zona && zona.cadena ? String(zona.cadena) : '';
+}
+
+function _getZonasUnicas(zonas) {
+    const cadenas = new Set();
+    (zonas || []).forEach(z => {
+        if (z.cadena) cadenas.add(z.cadena);
+    });
+    return Array.from(cadenas).sort();
+}
+
+function _getPromotorZona(p, zonas) {
+    if (!p || !p.zona_principal_id) return '';
+    return _cadenaTiendaGestion(p.zona_principal_id, zonas);
 }
 
 function _tiendasZonaGestion(zonas) {
@@ -90,6 +125,13 @@ function _promoFilaHtml(p, numero, zonas, restringido) {
         estadoActual === 'Licencia' ? 'promotor-estado-licencia' :
         estadoActual === 'Vacaciones' ? 'promotor-estado-vacaciones' :
         'promotor-estado-inactivo';
+    
+    const rolActual = p.tipo || 'fijo';
+    const rolOptionsHtml = ROL_PROMOTOR_OPCIONES.map(ro =>
+        '<option value="' + ro.value + '" ' + (rolActual === ro.value ? 'selected' : '') + '>' + ro.label + '</option>'
+    ).join('');
+    const rolBadgeClass = _rolBadgeClass(rolActual);
+    
     const showReactivar = estadoActual !== 'Activo';
     const fechaRegistro = p.fecha_creacion
         ? new Date(p.fecha_creacion).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -141,6 +183,11 @@ function _promoFilaHtml(p, numero, zonas, restringido) {
                 <td>
                     <select class="promotor-select-estado ${estadoBadgeClass}" data-id="${escHtml(p.id)}" onchange="aplicarCambiosPromotor('${escHtml(p.id)}')">
                         ${estadoOptionsHtml}
+                    </select>
+                </td>
+                <td>
+                    <select class="promotor-select-tipo ${rolBadgeClass}" data-id="${escHtml(p.id)}" onchange="aplicarCambiosPromotor('${escHtml(p.id)}')">
+                        ${rolOptionsHtml}
                     </select>
                 </td>
                 <td>
@@ -256,6 +303,16 @@ function renderGestionPromotores() {
         console.log('[AUDITORIA][PROMOTORES] Zona activa del supervisor:', zonaActiva, '| Tiendas visibles:', zonasVisibles.length, '| Promotores visibles:', promotoresVisibles.length);
     }
 
+    // Resumen por rol
+    const totalPromotores = promotoresVisibles.length;
+    const fijos = promotoresVisibles.filter(p => (p.tipo || 'fijo') === 'fijo').length;
+    const volantes = promotoresVisibles.filter(p => (p.tipo || 'fijo') === 'volante').length;
+    const vacacioneros = promotoresVisibles.filter(p => (p.tipo || 'fijo') === 'vacacionero').length;
+    const expertos = promotoresVisibles.filter(p => (p.tipo || 'fijo') === 'experto').length;
+
+    // Zonas únicas para el filtro (solo para Jefe Comercial)
+    const zonasUnicas = _getZonasUnicas(zonas);
+
     const rowsHtml = _promoRowsHtml(promotoresVisibles, zonasVisibles, restringido);
 
     const zonaBar = zonaActiva && !esJefe
@@ -303,6 +360,60 @@ function renderGestionPromotores() {
         ${zonaBar}
 
         <div class="gestion-promotores-body">
+            <!-- Resumen por rol -->
+            <div class="promotores-rol-summary">
+                <div class="rol-summary-item total">
+                    <span class="rol-summary-count">${totalPromotores}</span>
+                    <span class="rol-summary-label">Total Promotores</span>
+                </div>
+                <div class="rol-summary-item fijo">
+                    <span class="rol-summary-count">${fijos}</span>
+                    <span class="rol-summary-label">🟢 Fijos</span>
+                </div>
+                <div class="rol-summary-item volante">
+                    <span class="rol-summary-count">${volantes}</span>
+                    <span class="rol-summary-label">🔵 Volantes</span>
+                </div>
+                <div class="rol-summary-item vacacionero">
+                    <span class="rol-summary-count">${vacacioneros}</span>
+                    <span class="rol-summary-label">🟡 Vacacioneros</span>
+                </div>
+                <div class="rol-summary-item experto">
+                    <span class="rol-summary-count">${expertos}</span>
+                    <span class="rol-summary-label">🟣 Expertos</span>
+                </div>
+            </div>
+
+            <!-- Buscador y filtros -->
+            <div class="promotores-filtros">
+                <div class="promotores-busqueda-wrapper">
+                    <svg class="promotores-busqueda-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="promotores-busqueda" class="promotores-busqueda-input" placeholder="🔍 Buscar Promotor..." oninput="filtrarPromotores()" autocomplete="off">
+                </div>
+                ${esJefe ? `
+                <div class="promotores-filtro-zona-wrapper">
+                    <label for="promotores-filtro-zona" class="promotores-filtro-label">Zona</label>
+                    <select id="promotores-filtro-zona" class="promotores-filtro-select" onchange="filtrarPromotores()">
+                        <option value="">Todas las Zonas</option>
+                        ${zonasUnicas.map(z => `<option value="${escHtml(z)}">🌎 ${escHtml(z)}</option>`).join('')}
+                    </select>
+                </div>
+                ` : ''}
+                <div class="promotores-filtro-rol-wrapper">
+                    <label for="promotores-filtro-rol" class="promotores-filtro-label">Rol</label>
+                    <select id="promotores-filtro-rol" class="promotores-filtro-select" onchange="filtrarPromotores()">
+                        <option value="">Todos</option>
+                        <option value="fijo">🟢 Fijo</option>
+                        <option value="volante">🔵 Volante</option>
+                        <option value="vacacionero">🟡 Vacacionero</option>
+                        <option value="experto">🟣 Experto</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="promotores-summary">
                 <span>${promotoresVisibles.length} promotor${promotoresVisibles.length !== 1 ? 'es' : ''} registrados</span>
                 <span>· ${zonasVisibles.length} tiendas disponibles</span>
@@ -321,13 +432,14 @@ function renderGestionPromotores() {
                                 <th>Correo</th>
                                 <th>Contraseña</th>
                                 <th>Estado</th>
+                                <th>Rol</th>
                                 <th>Tienda Asignada</th>
                                 <th>Fecha de Registro</th>
                                 <th style="width:120px;">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            ${rowsHtml || '<tr><td colspan="9" class="promotores-empty">No hay promotores registrados.</td></tr>'}
+                        <tbody id="promotores-tbody">
+                            ${rowsHtml || '<tr><td colspan="10" class="promotores-empty">No hay promotores registrados.</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -340,6 +452,133 @@ function renderGestionPromotores() {
 
 function refrescarVistaPromotores() {
     renderGestionPromotores();
+}
+
+function filtrarPromotores() {
+    const searchInput = document.getElementById('promotores-busqueda');
+    const filtroRol = document.getElementById('promotores-filtro-rol');
+    const filtroZona = document.getElementById('promotores-filtro-zona');
+    const tbody = document.getElementById('promotores-tbody');
+    if (!tbody) return;
+
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const rolSeleccionado = filtroRol ? filtroRol.value : '';
+    const zonaSeleccionada = filtroZona ? filtroZona.value : '';
+
+    const filas = tbody.querySelectorAll('.promotor-row');
+    let visibles = 0;
+
+    filas.forEach(fila => {
+        const id = fila.dataset.id;
+        const promotor = HorariosDataStore.promotores.find(p => p.id === id);
+        if (!promotor) {
+            fila.style.display = 'none';
+            return;
+        }
+
+        const nombre = (promotor.nombre || '').toLowerCase();
+        const dni = (promotor.dni || '').toLowerCase();
+        const email = (promotor.email || '').toLowerCase();
+        const rol = (promotor.tipo || 'fijo').toLowerCase();
+        const zonaPromotor = _getPromotorZona(promotor, HorariosDataStore.zonas);
+
+        const coincideBusqueda = !searchTerm ||
+            nombre.includes(searchTerm) ||
+            dni.includes(searchTerm) ||
+            email.includes(searchTerm);
+
+        const coincideRol = !rolSeleccionado || rol === rolSeleccionado;
+        const coincideZona = !zonaSeleccionada || zonaPromotor === zonaSeleccionada;
+
+        if (coincideBusqueda && coincideRol && coincideZona) {
+            fila.style.display = '';
+            visibles++;
+        } else {
+            fila.style.display = 'none';
+        }
+    });
+
+    // Actualizar grupos de tienda (tienda-group-header)
+    const grupos = tbody.querySelectorAll('.tienda-group-header');
+    grupos.forEach(grupo => {
+        let tieneVisibles = false;
+        let siguiente = grupo.nextElementSibling;
+        while (siguiente && !siguiente.classList.contains('tienda-group-header')) {
+            if (siguiente.classList.contains('promotor-row') && siguiente.style.display !== 'none') {
+                tieneVisibles = true;
+                break;
+            }
+            siguiente = siguiente.nextElementSibling;
+        }
+        grupo.style.display = tieneVisibles ? '' : 'none';
+    });
+
+    // Actualizar contador en el resumen
+    const summaryEl = document.querySelector('.promotores-summary');
+    if (summaryEl) {
+        const total = HorariosDataStore.promotores.length;
+        const zonas = HorariosDataStore.zonas;
+        const zonaActiva = _zonaGestionSesion();
+        const zonasVisibles = zonaActiva ? _tiendasZonaGestion(zonas) : zonas;
+        summaryEl.innerHTML = `<span>${visibles} promotor${visibles !== 1 ? 'es' : ''} encontrados</span><span>· ${zonasVisibles.length} tiendas disponibles</span>`;
+    }
+
+    // Actualizar resumen por rol
+    actualizarResumenRoles(visibles);
+}
+
+function actualizarResumenRoles(visibles) {
+    const searchInput = document.getElementById('promotores-busqueda');
+    const filtroRol = document.getElementById('promotores-filtro-rol');
+    const filtroZona = document.getElementById('promotores-filtro-zona');
+    if (!searchInput || !filtroRol) return;
+
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const rolSeleccionado = filtroRol.value;
+    const zonaSeleccionada = filtroZona ? filtroZona.value : '';
+
+    const promotores = HorariosDataStore.promotores;
+    const zonaActiva = _zonaGestionSesion();
+    const promotoresVisibles = zonaActiva
+        ? promotores.filter(p => _promotorEnZonaGestion(p))
+        : promotores;
+
+    let fijos = 0, volantes = 0, vacacioneros = 0, expertos = 0;
+
+    promotoresVisibles.forEach(p => {
+        const nombre = (p.nombre || '').toLowerCase();
+        const dni = (p.dni || '').toLowerCase();
+        const email = (p.email || '').toLowerCase();
+        const rol = (p.tipo || 'fijo').toLowerCase();
+        const zonaPromotor = _getPromotorZona(p, HorariosDataStore.zonas);
+
+        const coincideBusqueda = !searchTerm ||
+            nombre.includes(searchTerm) ||
+            dni.includes(searchTerm) ||
+            email.includes(searchTerm);
+
+        const coincideRol = !rolSeleccionado || rol === rolSeleccionado;
+        const coincideZona = !zonaSeleccionada || zonaPromotor === zonaSeleccionada;
+
+        if (coincideBusqueda && coincideRol && coincideZona) {
+            if (rol === 'fijo') fijos++;
+            else if (rol === 'volante') volantes++;
+            else if (rol === 'vacacionero') vacacioneros++;
+            else if (rol === 'experto') expertos++;
+        }
+    });
+
+    const totalEl = document.querySelector('.rol-summary-item.total .rol-summary-count');
+    const fijoEl = document.querySelector('.rol-summary-item.fijo .rol-summary-count');
+    const volanteEl = document.querySelector('.rol-summary-item.volante .rol-summary-count');
+    const vacacioneroEl = document.querySelector('.rol-summary-item.vacacionero .rol-summary-count');
+    const expertoEl = document.querySelector('.rol-summary-item.experto .rol-summary-count');
+
+    if (totalEl) totalEl.textContent = visibles;
+    if (fijoEl) fijoEl.textContent = fijos;
+    if (volanteEl) volanteEl.textContent = volantes;
+    if (vacacioneroEl) vacacioneroEl.textContent = vacacioneros;
+    if (expertoEl) expertoEl.textContent = expertos;
 }
 
 function mostrarHorariosToast(mensaje) {
@@ -525,6 +764,9 @@ function aplicarCambiosPromotor(promotorId) {
 
     if (estadoSelect) {
         estadoSelect.className = 'promotor-select-estado promotor-estado-' + estado.toLowerCase();
+    }
+    if (tipoSelect) {
+        tipoSelect.className = 'promotor-select-tipo ' + _rolBadgeClass(tipo);
     }
 }
 

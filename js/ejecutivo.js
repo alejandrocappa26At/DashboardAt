@@ -65,11 +65,11 @@ function renderizarVistaEjecutiva() {
         return;
     }
 
-    /* ---- Tabla consolidada (todas las tiendas) ---- */
+    /* ---- Tabla consolidada (todas las tiendas) + Promociones Destacadas ---- */
     main.innerHTML = buildCtlTablaPDVsWrapper() + buildCtlPromocionesWrapper();
 
-    /* ---- Ranking + Alertas ---- */
-    side.innerHTML = buildCtlRanking() + buildCtlAlertas();
+    /* ---- Panel lateral vacío (eliminado Ranking y Alertas) ---- */
+    side.innerHTML = '';
 }
 
 function buildCtlPromociones() {
@@ -77,33 +77,8 @@ function buildCtlPromociones() {
     const p = PromocionesStore._periodoEfectivo();
     const registros = PromocionesStore.getRegistrosEnRango(p.desde, p.hasta);
     const ranking = PromocionesStore.getRankingPromociones(p.desde, p.hasta);
-    const tiendas = PromocionesStore.getRankingTiendas(p.desde, p.hasta);
     const total = PromocionesStore.getTotalCantidad(p.desde, p.hasta);
     if (ranking.length === 0 || total === 0) return '';
-
-    const tiendaTop = tiendas[0];
-    const promoTop = ranking[0];
-
-    const topCards = '<div class="resumen-promo-cards">' +
-        '<div class="resumen-promo-card">' +
-            '<span class="resumen-promo-card-icon">\ud83c\udfc6</span>' +
-            '<span class="resumen-promo-card-label">Tienda con m\u00e1s promociones</span>' +
-            '<span class="resumen-promo-card-value">' + ctlEsc(tiendaTop.tienda) + '</span>' +
-            '<span class="resumen-promo-card-sub">' + tiendaTop.cantidad + ' registros</span>' +
-        '</div>' +
-        '<div class="resumen-promo-card">' +
-            '<span class="resumen-promo-card-icon">\ud83c\udf81</span>' +
-            '<span class="resumen-promo-card-label">Promoci\u00f3n m\u00e1s utilizada</span>' +
-            '<span class="resumen-promo-card-value">' + ctlEsc(promoTop.promocion) + '</span>' +
-            '<span class="resumen-promo-card-sub">' + promoTop.cantidad + ' registros</span>' +
-        '</div>' +
-        '<div class="resumen-promo-card">' +
-            '<span class="resumen-promo-card-icon">\ud83d\udce6</span>' +
-            '<span class="resumen-promo-card-label">Total registrado</span>' +
-            '<span class="resumen-promo-card-value">' + total + '</span>' +
-            '<span class="resumen-promo-card-sub">' + registros.length + ' registros</span>' +
-        '</div>' +
-    '</div>';
 
     const items = ranking.slice(0, 5).map((r, i) => {
         const pct = total > 0 ? Math.min((r.cantidad / total) * 100, 100) : 0;
@@ -148,8 +123,7 @@ function buildCtlPromociones() {
         '</table></div>' +
         '</div>';
 
-    return topCards +
-        '<div class="ctl-card">' +
+    return '<div class="ctl-card">' +
         '<div class="ctl-card-header">' +
         '<span class="ctl-card-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="8" rx="1"/><path d="M12 8V5"/><path d="M7 8V6"/><path d="M17 8V6"/></svg>Promociones Destacadas</span>' +
         '<span class="ctl-card-count">' + total + ' cantidades</span>' +
@@ -289,62 +263,4 @@ function buildCtlTablaPDVs() {
         '<th>Venta</th><th>Cuota</th><th>Cumplimiento</th><th>Proyecci\u00f3n</th><th>Faltante</th><th>Estado</th>' +
         '</tr></thead><tbody>' + rows + '</tbody>' +
         '</table></div></div>';
-}
-
-function buildCtlRanking() {
-    const ranking = DataStore.getRanking();
-    const top = ranking.slice(0, 8);
-
-    const items = top.map((r, i) => {
-        const s = ctlSemaforo(r.cumplimiento);
-        return '<div class="ctl-rank-item">' +
-            '<div class="ctl-rank-pos ' + (i < 3 ? 'top-' + (i + 1) : '') + '">' + (i + 1) + '</div>' +
-            '<div class="ctl-rank-info">' +
-            '<div class="ctl-rank-name">' + ctlNombreCorto(r.punto_venta) + '</div>' +
-            '<div class="ctl-rank-bar"><div class="ctl-rank-bar-fill" style="width:' + Math.min(r.cumplimiento, 100) + '%;background:' + (r.cumplimiento >= 100 ? '#1DB954' : r.cumplimiento >= 80 ? '#F59E0B' : '#EF4444') + ';"></div></div>' +
-            '</div>' +
-            '<div><div class="ctl-rank-value" style="color:' + (r.cumplimiento >= 100 ? '#1DB954' : r.cumplimiento >= 80 ? '#F59E0B' : '#EF4444') + ';">' + formatPercent(r.cumplimiento) + '</div>' +
-            '<div class="ctl-rank-sub">' + formatCurrency(r.venta_total) + '</div></div>' +
-            '</div>';
-    }).join('');
-
-    return '<div class="ctl-panel">' +
-        '<div class="ctl-panel-header"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7"/><path d="M4 22h16"/><path d="M10 22V12"/><path d="M14 22V12"/><path d="M12 22V2"/></svg>Ranking de Tiendas</div>' +
-        '<div class="ctl-rank-list">' + items + '</div>' +
-        '</div>';
-}
-
-function buildCtlAlertas() {
-    const ranking = DataStore.getRanking();
-    const enRiesgo = ranking.filter(r => r.cumplimiento < 80);
-    const enSeguimiento = ranking.filter(r => r.cumplimiento >= 80 && r.cumplimiento < 100);
-
-    const list = ranking.filter(r => r.cumplimiento < 100).map(r => {
-        const critico = r.cumplimiento < 80;
-        const entries = DataStore.getCumplimientoPorPDV();
-        const d = entries[r.punto_venta] || {};
-        const dif = d.diferencia || 0;
-        return '<div class="ctl-alert-item ' + (critico ? '' : 'warn') + '">' +
-            '<div class="ctl-alert-icon">' +
-            (critico
-                ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-                : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>') +
-            '</div>' +
-            '<div class="ctl-alert-info">' +
-            '<div class="ctl-alert-name">' + ctlNombreCorto(r.punto_venta) + '</div>' +
-            '<div class="ctl-alert-sub">' + (critico ? 'Cr\u00edtico' : 'En seguimiento') + ' \u00b7 ' + formatPercent(r.cumplimiento) + '</div>' +
-            '</div>' +
-            '<div class="ctl-alert-value">-' + formatCurrency(Math.abs(dif)) + '</div>' +
-            '</div>';
-    }).join('');
-
-    const sinAlerta = ranking.length - enRiesgo.length - enSeguimiento.length;
-
-    return '<div class="ctl-panel">' +
-        '<div class="ctl-panel-header"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Alertas de Cumplimiento</div>' +
-        '<div class="ctl-alert-list">' +
-        (list || '<div class="empty-state" style="padding:20px;"><p>Todas las tiendas cumplen la meta.</p></div>') +
-        '</div>' +
-        '<div class="ctl-panel-header" style="border-top:1px solid rgba(255,255,255,0.06);border-bottom:none;"><span style="flex:1;">Resumen</span><span style="color:#1DB954;">' + sinAlerta + ' OK</span><span style="color:#F59E0B;">' + enSeguimiento + ' riesgo</span><span style="color:#EF4444;">' + enRiesgo.length + ' cr\u00edtico</span></div>' +
-        '</div>';
 }

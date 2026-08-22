@@ -1671,6 +1671,198 @@
     color: var(--text-subdued);
     margin-bottom: 16px;
     font-weight: 500;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.promotores-summary span {
+    white-space: nowrap;
+}
+
+/* Resumen por rol - tarjetas superiores */
+.promotores-rol-summary {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.rol-summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w06);
+    border-radius: 10px;
+    min-width: 100px;
+    transition: all 0.2s ease;
+}
+
+.rol-summary-item:hover {
+    border-color: var(--t-w12);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.rol-summary-count {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--t-text);
+}
+
+.rol-summary-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+/* Colores por rol en el resumen */
+.rol-summary-item.total .rol-summary-count { color: var(--t-text); }
+.rol-summary-item.fijo .rol-summary-count { color: #1DB954; }
+.rol-summary-item.volante .rol-summary-count { color: #3B82F6; }
+.rol-summary-item.vacacionero .rol-summary-count { color: #F59E0B; }
+.rol-summary-item.experto .rol-summary-count { color: #A855F7; }
+
+/* Buscador y filtros */
+.promotores-filtros {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--t-bg3);
+    border: 1px solid var(--t-w06);
+    border-radius: 10px;
+}
+
+.promotores-busqueda-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+    max-width: 400px;
+}
+
+.promotores-busqueda-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-subdued);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.promotores-busqueda-input {
+    width: 100%;
+    padding: 10px 12px 10px 44px;
+    border-radius: 8px;
+    border: 1px solid var(--t-w06);
+    background: var(--t-w03);
+    color: var(--t-text);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.promotores-busqueda-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+    background: rgba(29,185,84,0.04);
+}
+
+.promotores-busqueda-input::placeholder {
+    color: var(--text-subdued);
+    font-weight: 400;
+}
+
+.promotores-filtro-rol-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.promotores-filtro-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.promotores-filtro-select {
+    padding: 10px 36px 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--t-w06);
+    background: var(--t-w03);
+    color: var(--t-text);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' width='12' height='12' fill='none' stroke='%23b3b3b3' stroke-width='2' stroke-linecap='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    min-width: 160px;
+}
+
+.promotores-filtro-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
+}
+
+.promotores-filtro-select option {
+    background: var(--t-bgS);
+    color: var(--t-text);
+}
+
+/* Select de tipo/rol en la tabla */
+.promotor-select-tipo {
+    min-width: 110px;
+}
+
+/* Badges de rol en la tabla */
+.promotor-rol-fijo {
+    border-color: rgba(29,185,84,0.3);
+    background: rgba(29,185,84,0.08);
+    color: #1DB954;
+}
+
+.promotor-rol-volante {
+    border-color: rgba(59,130,246,0.3);
+    background: rgba(59,130,246,0.08);
+    color: #3B82F6;
+}
+
+.promotor-rol-vacacionero {
+    border-color: rgba(245,158,11,0.3);
+    background: rgba(245,158,11,0.08);
+    color: #F59E0B;
+}
+
+.promotor-rol-experto {
+    border-color: rgba(168,85,247,0.3);
+    background: rgba(168,85,247,0.08);
+    color: #A855F7;
+}
+
+.promotor-select-tipo:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.1);
 }
 
 .promotores-zona-activa {

@@ -18,7 +18,7 @@
             try {
                 var guardado = localStorage.getItem('dashboard_tema');
                 if (guardado === 'light' || guardado === 'dark') tema = guardado;
-            } catch (e) {}
+            } catch (e) { }
             document.documentElement.dataset.theme = tema;
         })();
     </script>
@@ -54,7 +54,8 @@
                 </div>
             </header>
 
-            <p class="lgx-note">📌 Informaci&oacute;n referencial: los resultados pueden variar respecto al consolidado oficial del &Aacute;rea de Retail.</p>
+            <p class="lgx-note">📌 Informaci&oacute;n referencial: los resultados pueden variar respecto al consolidado
+                oficial del &Aacute;rea de Retail.</p>
 
             <form class="lgx-form" onsubmit="event.preventDefault(); ingresarAcceso();">
                 <label class="lgx-label" id="perfil-label">Perfil</label>
@@ -63,8 +64,8 @@
                         aria-haspopup="listbox" aria-expanded="false" aria-labelledby="perfil-label">
                         <span class="lgx-perfil-icono" id="perfil-icono" aria-hidden="true">&#128100;</span>
                         <span class="lgx-perfil-nombre" id="perfil-nombre">Promotor</span>
-                        <svg class="lgx-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="lgx-chev" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="6 9 12 15 18 9" />
                         </svg>
                     </button>
@@ -99,31 +100,33 @@
                     </ul>
                 </div>
 
-                <label class="lgx-label" for="login-acceso-correo" id="login-etiqueta-correo">&#128231; Correo Electr&oacute;nico</label>
+                <label class="lgx-label" for="login-acceso-correo" id="login-etiqueta-correo">&#128231; Correo
+                    Electr&oacute;nico</label>
                 <div class="lgx-field">
-                    <svg class="lgx-field-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
-                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="lgx-field-icon" viewBox="0 0 24 24" width="17" height="17" fill="none"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                         <polyline points="22,6 12,13 2,6" />
                     </svg>
-                    <input type="text" id="login-acceso-correo" placeholder="correo@empresa.com"
-                        autocomplete="username" inputmode="email">
+                    <input type="text" id="login-acceso-correo" placeholder="correo@empresa.com" autocomplete="username"
+                        inputmode="email">
                 </div>
 
                 <label class="lgx-label" for="login-acceso-password">&#128274; Contrase&ntilde;a</label>
                 <div class="lgx-field">
-                    <svg class="lgx-field-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
-                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="lgx-field-icon" viewBox="0 0 24 24" width="17" height="17" fill="none"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
-                    <input type="password" id="login-acceso-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
-                        autocomplete="current-password" class="has-toggle">
+                    <input type="password" id="login-acceso-password"
+                        placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password"
+                        class="has-toggle">
                     <button type="button" class="lgx-toggle" id="login-acceso-toggle"
                         onclick="toggleLoginField('login-acceso-password','login-acceso-toggle')"
                         aria-label="Mostrar contrase&ntilde;a">
-                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                             <circle cx="12" cy="12" r="3" />
                         </svg>
@@ -271,7 +274,8 @@
             </div>
 
             <!-- ─── SUPERVISOR ─── (visible solo con supervisor desbloqueado) -->
-            <div class="nav-section-divider supervisor-divider" data-role="supervisor jefe"><span>SUPERVISOR</span></div>
+            <div class="nav-section-divider supervisor-divider" data-role="supervisor jefe"><span>SUPERVISOR</span>
+            </div>
 
             <div class="nav-item supervisor-only" data-role="supervisor jefe" data-page="vista-ejecutiva">
                 <div class="nav-indicator"></div>
@@ -359,7 +363,8 @@
             </div>
 
             <!-- ─── GESTIÓN ─── (visible solo con supervisor desbloqueado) -->
-            <div class="nav-section-divider gestion-divider" data-role="supervisor jefe"><span>GESTI&Oacute;N</span></div>
+            <div class="nav-section-divider gestion-divider" data-role="supervisor jefe"><span>GESTI&Oacute;N</span>
+            </div>
 
             <div class="nav-item gestion-only" data-role="supervisor jefe" onclick="navegarACuotas()">
                 <div class="nav-indicator"></div>
@@ -442,6 +447,13 @@
                 </span>
                 <span class="nav-label">Gesti&oacute;n de Supervisores</span>
                 <div class="nav-equalizer" id="eq-jefe-supervisores"><span></span><span></span><span></span></div>
+            </div>
+
+            <div class="nav-item jefe-only" data-role="jefe" data-page="jefe-informe-supervisor">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">👨‍💼</span>
+                <span class="nav-label">Informe por Supervisor</span>
+                <div class="nav-equalizer" id="eq-jefe-informe-supervisor"><span></span><span></span><span></span></div>
             </div>
 
             <div class="nav-item jefe-only" data-role="jefe" data-page="jefe-zonas">
@@ -765,8 +777,8 @@
                         <span id="pdv-date-periodo">-</span> &middot; D&iacute;a <strong
                             id="pdv-dia-actual"></strong><span id="pdv-dia-total">/-</span>
                     </span>
-                    <button type="button" class="date-btn-excel" id="btn-exportar-excel-avance" onclick="exportarAvancePDVExcel()"
-                        title="Descargar informe en Excel" style="display:none;">
+                    <button type="button" class="date-btn-excel" id="btn-exportar-excel-avance"
+                        onclick="exportarAvancePDVExcel()" title="Descargar informe en Excel" style="display:none;">
                         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -782,16 +794,21 @@
 
             <!-- Vista: Mi Tienda / Mi Zona (promotor) -->
             <div class="inf-ind-tabs acu-view-tabs" id="avance-view-tabs" style="display:none;">
-                <button type="button" class="active" data-vista="tienda" onclick="cambiarVistaAvance('tienda')">&#x1F3EA; Mi Tienda</button>
+                <button type="button" class="active" data-vista="tienda"
+                    onclick="cambiarVistaAvance('tienda')">&#x1F3EA; Mi Tienda</button>
                 <button type="button" data-vista="zona" onclick="cambiarVistaAvance('zona')">&#x1F30E; Mi Zona</button>
             </div>
 
             <!-- Vista Zonal: Supervisor / Jefe Comercial -->
             <div class="inf-ind-tabs acu-view-tabs" id="avance-zonal-tabs" style="display:none;">
-                <button type="button" class="active" data-vista="tienda" onclick="cambiarVistaZonal('tienda')">&#x1F3EA; Punto de Venta</button>
-                <button type="button" data-vista="zonasur" onclick="cambiarVistaZonal('zonasur')" id="btn-avance-zonasur" style="display:none;">&#x1F30E; Resumen Zona Sur</button>
-                <button type="button" data-vista="diario" onclick="cambiarVistaZonal('diario')">&#x1F30E; Resumen Zonal Diario</button>
-                <button type="button" data-vista="acumulado" onclick="cambiarVistaZonal('acumulado')">&#x1F4CA; Resumen Zonal Acumulado</button>
+                <button type="button" class="active" data-vista="tienda" onclick="cambiarVistaZonal('tienda')">&#x1F3EA;
+                    Punto de Venta</button>
+                <button type="button" data-vista="zonasur" onclick="cambiarVistaZonal('zonasur')"
+                    id="btn-avance-zonasur" style="display:none;">&#x1F30E; Resumen Zona Sur</button>
+                <button type="button" data-vista="diario" onclick="cambiarVistaZonal('diario')">&#x1F30E; Resumen Zonal
+                    Diario</button>
+                <button type="button" data-vista="acumulado" onclick="cambiarVistaZonal('acumulado')">&#x1F4CA; Resumen
+                    Zonal Acumulado</button>
             </div>
 
             <!-- Filtros simplificados: Tienda · Mes/Año · Tipo de Información -->
@@ -854,7 +871,8 @@
                             <line x1="8" y1="2" x2="8" y2="6" />
                             <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        <input type="date" class="acu-fecha-input" id="zonal-fecha" onchange="renderizarAvancePDV()" style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--t-text);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;height:100%;">
+                        <input type="date" class="acu-fecha-input" id="zonal-fecha" onchange="renderizarAvancePDV()"
+                            style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--t-text);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;height:100%;">
                     </div>
                 </div>
 
@@ -986,8 +1004,8 @@
                     style="display:none;"></select>
 
                 <div class="ventas-progress-badge" id="ventas-progress-badge">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -996,16 +1014,16 @@
                 </div>
                 <button class="ventas-expand-btn" id="ventas-expand-btn" onclick="toggleVentasFullscreen()"
                     title="Pantalla completa">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <polyline points="9 21 3 21 3 15"></polyline>
                         <line x1="21" y1="3" x2="14" y2="10"></line>
                         <line x1="3" y1="21" x2="10" y2="14"></line>
                     </svg>
                 </button>
-                <button type="button" class="btn btn-primary btn-save-ventas btn-save-ventas-top" id="btn-guardar-ventas"
-                    onclick="guardarVentasCalendario()">
+                <button type="button" class="btn btn-primary btn-save-ventas btn-save-ventas-top"
+                    id="btn-guardar-ventas" onclick="guardarVentasCalendario()">
                     <span class="btn-save-content" id="btn-save-content">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1127,8 +1145,8 @@
                 <button type="button" class="btn btn-secondary" onclick="cerrarPanelPromociones()">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="btn-guardar-promociones"
                     onclick="guardarRegistroPromociones()">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                     Guardar Promociones
@@ -1369,19 +1387,27 @@
                         <circle cx="9" cy="7" r="4" />
                     </svg>
                     <div class="inf-promotor-search-wrapper">
-                        <input type="text" id="inf-promotor-search" class="inf-promotor-search-input" placeholder="Buscar promotor..." autocomplete="off" aria-label="Buscar promotor por nombre o apellido" aria-expanded="false" aria-controls="inf-promotor-suggestions">
-                        <button type="button" class="inf-promotor-search-clear" id="inf-promotor-search-clear" aria-label="Limpiar búsqueda" style="display:none;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <input type="text" id="inf-promotor-search" class="inf-promotor-search-input"
+                            placeholder="Buscar promotor..." autocomplete="off"
+                            aria-label="Buscar promotor por nombre o apellido" aria-expanded="false"
+                            aria-controls="inf-promotor-suggestions">
+                        <button type="button" class="inf-promotor-search-clear" id="inf-promotor-search-clear"
+                            aria-label="Limpiar búsqueda" style="display:none;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
                         </button>
-                        <svg class="inf-promotor-search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg class="inf-promotor-search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            aria-hidden="true">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </div>
-                    <div class="inf-promotor-suggestions" id="inf-promotor-suggestions" role="listbox" aria-label="Sugerencias de promotores"></div>
+                    <div class="inf-promotor-suggestions" id="inf-promotor-suggestions" role="listbox"
+                        aria-label="Sugerencias de promotores"></div>
                     <input type="hidden" id="inf-promotor-select" value="">
                 </div>
                 <div class="inf-promotor-filter-group">
@@ -1504,7 +1530,8 @@
                         onclick="aplicarRangoRapido('individual','mes-actual')">Mes</button>
                     <button type="button" class="date-btn-quick"
                         onclick="aplicarRangoRapido('individual','mes-anterior')">Mes Anterior</button>
-                    <button type="button" class="date-btn-quick" onclick="aplicarRangoRapido('individual','ultimos-3')">3
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('individual','ultimos-3')">3
                         Meses</button>
                     <button type="button" class="date-btn-quick"
                         onclick="aplicarRangoRapido('individual','anio-actual')">A&ntilde;o</button>
@@ -1544,7 +1571,8 @@
                     <div class="inf-ind-card inf-ind-aporte-card">
                         <div class="inf-ind-card-title">&#127978; Aporte a la Tienda</div>
                         <div class="inf-ind-aporte-big" id="inf-ind-aporte-pct">0%</div>
-                        <div class="inf-ind-venta-sub inf-ind-aporte-nombre" id="inf-ind-aporte-tienda">del total de la tienda</div>
+                        <div class="inf-ind-venta-sub inf-ind-aporte-nombre" id="inf-ind-aporte-tienda">del total de la
+                            tienda</div>
                     </div>
                 </div>
 
@@ -1559,7 +1587,8 @@
                         </svg>
                         Mi Desempe&ntilde;o
                     </button>
-                    <button type="button" data-indtab="promociones" onclick="cambiarTabInformeIndividual('promociones')">
+                    <button type="button" data-indtab="promociones"
+                        onclick="cambiarTabInformeIndividual('promociones')">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="8" width="18" height="4" rx="1" />
@@ -1574,16 +1603,19 @@
                     <div class="inf-ind-charts-grid">
                         <div class="inf-ind-card inf-ind-chart-card inf-ind-chart-wide">
                             <div class="inf-ind-card-title">
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"
-                                    stroke="none"><path d="M3 3v18h18v-2H5V3H3zm16.7 4.3-1-1L12 13 8.3 9.3l-1 1L12 15l7.7-7.7z" /></svg>
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none">
+                                    <path d="M3 3v18h18v-2H5V3H3zm16.7 4.3-1-1L12 13 8.3 9.3l-1 1L12 15l7.7-7.7z" />
+                                </svg>
                                 Evoluci&oacute;n de Ventas
                             </div>
                             <div class="inf-ind-chart-body"><canvas id="infIndChartEvolucion"></canvas></div>
                         </div>
                         <div class="inf-ind-card inf-ind-chart-card">
                             <div class="inf-ind-card-title">
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"
-                                    stroke="none"><path d="M5 3v18H3V3h2zm16 0v18h-2V3h2zm-3 2v14h-2V5h2zM8 5v14H6V5h2zm5 0v14h-2V5h2z" /></svg>
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none">
+                                    <path
+                                        d="M5 3v18H3V3h2zm16 0v18h-2V3h2zm-3 2v14h-2V5h2zM8 5v14H6V5h2zm5 0v14h-2V5h2z" />
+                                </svg>
                                 Ventas por Producto
                             </div>
                             <div class="inf-ind-chart-body"><canvas id="infIndChartProductos"></canvas></div>
@@ -1653,8 +1685,10 @@
 
             <!-- Vista: Mi Tienda / Mi Zona -->
             <div class="inf-ind-tabs acu-view-tabs" id="acu-view-tabs" style="display:none;">
-                <button type="button" class="active" data-vista="tienda" onclick="cambiarVistaAcumulado('tienda')">&#128197; Mi Tienda</button>
-                <button type="button" data-vista="zona" onclick="cambiarVistaAcumulado('zona')">&#127758; Mi Zona</button>
+                <button type="button" class="active" data-vista="tienda"
+                    onclick="cambiarVistaAcumulado('tienda')">&#128197; Mi Tienda</button>
+                <button type="button" data-vista="zona" onclick="cambiarVistaAcumulado('zona')">&#127758; Mi
+                    Zona</button>
             </div>
 
             <div class="date-filters">
@@ -1677,8 +1711,8 @@
                             <line x1="8" y1="2" x2="8" y2="6" />
                             <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        <input type="date" class="acu-fecha-input" id="acu-fecha"
-                            onchange="renderizarAcumuladoDiario()" max="">
+                        <input type="date" class="acu-fecha-input" id="acu-fecha" onchange="renderizarAcumuladoDiario()"
+                            max="">
                     </div>
                 </div>
             </div>
@@ -1697,7 +1731,8 @@
                     <div class="inf-ind-card acu-meta-card">
                         <div class="inf-ind-card-title">&#127919; Meta del D&iacute;a</div>
                         <div class="inf-ind-venta-big" id="acu-meta-dia">S/ 0</div>
-                        <div class="inf-ind-venta-sub" id="acu-meta-dia-sub">Cuota mensual &divide; d&iacute;as del mes</div>
+                        <div class="inf-ind-venta-sub" id="acu-meta-dia-sub">Cuota mensual &divide; d&iacute;as del mes
+                        </div>
                     </div>
 
                     <div class="inf-ind-card acu-alcance-card">
@@ -1715,7 +1750,9 @@
 
                 <div class="inf-ind-card acu-comparativo-card">
                     <div class="inf-ind-card-title">
-                        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none"><path d="M3 3v18h18v-2H5V3H3zm16.7 4.3-1-1L12 13 8.3 9.3l-1 1L12 15l7.7-7.7z" /></svg>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none">
+                            <path d="M3 3v18h18v-2H5V3H3zm16.7 4.3-1-1L12 13 8.3 9.3l-1 1L12 15l7.7-7.7z" />
+                        </svg>
                         Comparativo
                     </div>
                     <div class="acu-comparativo-grid">
@@ -1756,7 +1793,8 @@
             <!-- Mi Zona: ventas del día de toda la zona -->
             <div class="inf-ind-dashboard" id="acu-zona" style="display:none;">
                 <div class="inf-ind-card inf-ind-table-card">
-                    <div class="inf-ind-card-title">&#127758; Mi Zona &middot; Ventas del D&iacute;a por Punto de Venta</div>
+                    <div class="inf-ind-card-title">&#127758; Mi Zona &middot; Ventas del D&iacute;a por Punto de Venta
+                    </div>
                     <div class="inf-ind-table-wrap">
                         <table class="inf-ind-table acu-table acu-zona-table">
                             <thead>
@@ -1882,7 +1920,8 @@
                 <div class="cc-hero-icon" aria-hidden="true">⏱️</div>
                 <div>
                     <div class="cc-hero-title">Corte Comercial</div>
-                    <div class="cc-hero-sub">Seguimiento diario por punto de venta y producto &middot; cortes acumulativos de 06:00 AM</div>
+                    <div class="cc-hero-sub">Seguimiento diario por punto de venta y producto &middot; cortes
+                        acumulativos de 06:00 AM</div>
                 </div>
             </div>
 
@@ -1894,9 +1933,12 @@
                 <div class="cc-control-group">
                     <span class="cc-control-label">Corte</span>
                     <div class="cc-chips" id="cc-chips">
-                        <button type="button" class="cc-chip" data-corte="1130" onclick="corteSeleccionar('1130')">🌅 11:30 AM</button>
-                        <button type="button" class="cc-chip" data-corte="1530" onclick="corteSeleccionar('1530')">☀️ 3:30 PM</button>
-                        <button type="button" class="cc-chip" data-corte="1830" onclick="corteSeleccionar('1830')">🌆 6:30 PM</button>
+                        <button type="button" class="cc-chip" data-corte="1130" onclick="corteSeleccionar('1130')">🌅
+                            11:30 AM</button>
+                        <button type="button" class="cc-chip" data-corte="1530" onclick="corteSeleccionar('1530')">☀️
+                            3:30 PM</button>
+                        <button type="button" class="cc-chip" data-corte="1830" onclick="corteSeleccionar('1830')">🌆
+                            6:30 PM</button>
                     </div>
                 </div>
                 <div class="cc-control-info">
@@ -1971,8 +2013,8 @@
                         onclick="aplicarRangoRapido('jefe','esta-semana')">Semana</button>
                     <button type="button" class="date-btn-quick"
                         onclick="aplicarRangoRapido('jefe','mes-actual')">Mes</button>
-                    <button type="button" class="date-btn-quick"
-                        onclick="aplicarRangoRapido('jefe','mes-anterior')">Mes Anterior</button>
+                    <button type="button" class="date-btn-quick" onclick="aplicarRangoRapido('jefe','mes-anterior')">Mes
+                        Anterior</button>
                     <button type="button" class="date-btn-quick" onclick="aplicarRangoRapido('jefe','ultimos-3')">3
                         Meses</button>
                     <button type="button" class="date-btn-quick"
@@ -2102,7 +2144,8 @@
                 </div>
                 <div>
                     <div class="ranking-hero-title">Gesti&oacute;n de Supervisores</div>
-                    <div class="ranking-hero-sub">Crear, editar, cambiar contrase&ntilde;a, activar, desactivar y eliminar supervisores</div>
+                    <div class="ranking-hero-sub">Crear, editar, cambiar contrase&ntilde;a, activar, desactivar y
+                        eliminar supervisores</div>
                 </div>
                 <div class="jefe-actions-row">
                     <button type="button" class="btn btn-primary" onclick="jefeAbrirModalSupervisor(null)">
@@ -2130,6 +2173,129 @@
                             </tr>
                         </thead>
                         <tbody id="jefe-tabla-supervisores"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA: INFORME POR SUPERVISOR (JEFE COMERCIAL) ===== -->
+        <section class="page" id="page-jefe-informe-supervisor">
+            <div class="ranking-hero">
+                <div class="ranking-hero-icon">👨‍💼</div>
+                <div>
+                    <div class="ranking-hero-title">Informe por Supervisor</div>
+                    <div class="ranking-hero-sub">Desempeño consolidado por supervisor de la Zona Sur · Ventas, cuotas,
+                        faltantes y porcentajes</div>
+                </div>
+            </div>
+
+            <div class="date-filters">
+                <div class="date-filter-bar">
+                    <span class="date-filters-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Periodo
+                    </span>
+                    <div class="date-filter-main">
+                        <svg class="date-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <select id="filtro-jefe-informe-mes" onchange="cambiarMesFecha('jefe-informe')">
+                            <option value="">Seleccionar periodo...</option>
+                        </select>
+                    </div>
+                    <div class="date-filter-custom" id="custom-jefe-informe">
+                        <div class="date-filter-field">
+                            <label for="filtro-jefe-informe-desde">Desde</label>
+                            <input type="date" id="filtro-jefe-informe-desde"
+                                onchange="aplicarFiltrosFecha('jefe-informe',true)">
+                        </div>
+                        <div class="date-filter-field">
+                            <label for="filtro-jefe-informe-hasta">Hasta</label>
+                            <input type="date" id="filtro-jefe-informe-hasta"
+                                onchange="aplicarFiltrosFecha('jefe-informe',true)">
+                        </div>
+                    </div>
+                    <button class="date-btn-limpiar" onclick="limpiarFiltrosFecha('jefe-informe')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        Limpiar
+                    </button>
+                </div>
+                <div class="date-filter-fastrow">
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-informe','hoy')">Hoy</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-informe','esta-semana')">Semana</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-informe','mes-actual')">Mes</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-informe','mes-anterior')">Mes Anterior</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-informe','ultimos-3')">3
+                        Meses</button>
+                    <button type="button" class="date-btn-quick"
+                        onclick="aplicarRangoRapido('jefe-informe','anio-actual')">A&ntilde;o</button>
+                </div>
+            </div>
+            <div class="periodo-analizado" id="periodo-analizado-jefe-informe"></div>
+
+            <!-- KPIs Superiores -->
+            <div class="ctl-kpis" id="jefe-informe-kpis"></div>
+
+            <!-- Tabla Principal -->
+            <div class="ctl-card jefe-informe-table-card">
+                <div class="ctl-table-wrap" id="jefe-informe-table-wrapper">
+                    <table class="ctl-table jefe-informe-table">
+                        <thead>
+                            <tr>
+                                <th class="ctl-th-left" rowspan="2">SUPERVISOR</th>
+                                <!-- Apuestas Deportivas -->
+                                <th colspan="4">APUESTAS DEPORTIVAS</th>
+                                <!-- Juegos Virtuales -->
+                                <th colspan="4">JUEGOS VIRTUALES</th>
+                                <!-- Lottingo -->
+                                <th colspan="4">LOTTINGO</th>
+                                <!-- Mi Billetera -->
+                                <th>MI BILLETERA</th>
+                                <!-- Lotobola -->
+                                <th>LOTOBOLA</th>
+                                <!-- VLT -->
+                                <th>VLT</th>
+                                <!-- Torito -->
+                                <th>TORITO</th>
+                            </tr>
+                            <tr>
+                                <!-- AD -->
+                                <th>VENTA</th>
+                                <th>CUOTA</th>
+                                <th>FALTANTE</th>
+                                <th>%</th>
+                                <!-- JV -->
+                                <th>VENTA</th>
+                                <th>CUOTA</th>
+                                <th>FALTANTE</th>
+                                <th>%</th>
+                                <!-- Lottingo -->
+                                <th>VENTA</th>
+                                <th>CUOTA</th>
+                                <th>FALTANTE</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jefe-informe-tbody"></tbody>
                     </table>
                 </div>
             </div>
@@ -2462,7 +2628,8 @@
                 </select>
             </div>
             <div class="cuotas-info-zona" id="cuotas-info-zona">
-                <span class="cuotas-info-item">&#127758; Zona Seleccionada: <strong id="cuotas-zona-nombre">Todas las Zonas</strong></span>
+                <span class="cuotas-info-item">&#127758; Zona Seleccionada: <strong id="cuotas-zona-nombre">Todas las
+                        Zonas</strong></span>
                 <span class="cuotas-info-divider">&middot;</span>
                 <span class="cuotas-info-item">&#127981; Tiendas: <strong id="cuotas-zona-tiendas">0</strong></span>
             </div>
@@ -2493,10 +2660,10 @@
     <script src="js/horarios-data.js?v=4"></script>
     <script src="js/horarios.js?v=6"></script>
     <script src="js/tiendas.js?v=4"></script>
-<script src="js/ejecutivo.js?v=2"></script>
-<script src="js/corte-comercial.js?v=1"></script>
-<script src="js/jefe-comercial.js?v=3"></script>
-<script src="js/mobile.js?v=1"></script>
+    <script src="js/ejecutivo.js?v=2"></script>
+    <script src="js/corte-comercial.js?v=1"></script>
+    <script src="js/jefe-comercial.js?v=3"></script>
+    <script src="js/mobile.js?v=1"></script>
     <script src="js/theme.js?v=1"></script>
     <script src="js/app.js?v=21"></script>
     <script src="js/respaldo.js?v=1"></script>

@@ -9113,6 +9113,194 @@ select.jefe-form-input {
     }
 }
 
+/* =============================================
+   INFORME POR SUPERVISOR (JEFE COMERCIAL)
+   ============================================= */
+
+.jefe-informe-table-card {
+    overflow: hidden;
+}
+
+.jefe-informe-table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
+}
+
+.jefe-informe-table {
+    border-collapse: collapse;
+    font-size: 11.5px;
+    min-width: 1400px;
+    width: 100%;
+}
+
+.jefe-informe-table thead th {
+    background: var(--t-bg3);
+    color: var(--t-soft2);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 6px;
+    text-align: center;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--t-w08);
+    border-right: 1px solid var(--t-w04);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.jefe-informe-table thead th:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    z-index: 12;
+    background: var(--t-bg3) !important;
+    border-left: none;
+}
+
+.jefe-informe-table thead th[ rowspan="2"] {
+    vertical-align: middle;
+}
+
+.jefe-informe-table thead th[colspan="4"] {
+    background: linear-gradient(90deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+    color: #3B82F6;
+    border-bottom: 2px solid #3B82F6;
+}
+
+.jefe-informe-table thead th[colspan="4"]:nth-child(5) {
+    background: linear-gradient(90deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05));
+    color: #A855F7;
+    border-bottom: 2px solid #A855F7;
+}
+
+.jefe-informe-table thead th[colspan="4"]:nth-child(9) {
+    background: linear-gradient(90deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+    color: #F59E0B;
+    border-bottom: 2px solid #F59E0B;
+}
+
+.jefe-informe-table thead th:nth-child(13) {
+    background: linear-gradient(90deg, rgba(29,185,84,0.15), rgba(29,185,84,0.05));
+    color: #1DB954;
+    border-bottom: 2px solid #1DB954;
+}
+
+.jefe-informe-table thead th:nth-child(14) {
+    background: linear-gradient(90deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+    color: #F59E0B;
+    border-bottom: 2px solid #F59E0B;
+}
+
+.jefe-informe-table thead th:nth-child(15) {
+    background: linear-gradient(90deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+    color: #3B82F6;
+    border-bottom: 2px solid #3B82F6;
+}
+
+.jefe-informe-table thead th:nth-child(16) {
+    background: linear-gradient(90deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05));
+    color: #A855F7;
+    border-bottom: 2px solid #A855F7;
+}
+
+.jefe-informe-table tbody td {
+    padding: 7px 6px;
+    border-bottom: 1px solid var(--t-w03);
+    border-right: 1px solid var(--t-w03);
+    text-align: center;
+    vertical-align: middle;
+    color: var(--t-soft);
+    font-variant-numeric: tabular-nums;
+}
+
+.jefe-informe-table tbody td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: var(--t-bg2) !important;
+    border-left: none;
+    font-weight: 600;
+}
+
+.jefe-informe-table tbody td.jefe-informe-venta {
+    color: var(--t-text);
+    font-weight: 600;
+}
+
+.jefe-informe-table tbody td.jefe-informe-cuota {
+    color: var(--t-textSub);
+    font-weight: 500;
+}
+
+.jefe-informe-table tbody td.jefe-informe-faltante {
+    font-weight: 700;
+}
+
+.jefe-informe-table tbody td.jefe-informe-faltante.negativo {
+    color: #EF4444;
+}
+
+.jefe-informe-table tbody td.jefe-informe-pct {
+    font-weight: 600;
+}
+
+.jefe-informe-table tbody td.jefe-informe-acumulado {
+    color: var(--t-text);
+    font-weight: 600;
+    background: rgba(29,185,84,0.03);
+}
+
+.jefe-informe-table tbody tr:hover td {
+    background: var(--t-w02);
+}
+
+.jefe-informe-table tbody tr:hover td:first-child {
+    background: var(--t-bg2) !important;
+}
+
+.jefe-informe-total-row {
+    background: var(--t-w04) !important;
+    font-weight: 800;
+}
+
+.jefe-informe-total-row td {
+    background: var(--t-w04) !important;
+    border-top: 2px solid var(--t-w10);
+    border-bottom: 2px solid var(--t-w10);
+    color: var(--t-text) !important;
+    font-weight: 800;
+}
+
+.jefe-informe-total-row td:first-child {
+    background: var(--t-w04) !important;
+    border-left: none;
+}
+
+.jefe-informe-total-row td.jefe-informe-acumulado {
+    background: var(--t-w04) !important;
+}
+
+.jefe-informe-supervisor-cell {
+    min-width: 180px;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.jefe-informe-table thead th {
+    min-width: 70px;
+}
+
+.jefe-informe-table thead th:first-child {
+    min-width: 180px;
+    max-width: 220px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     #login-screen .lgx-card {
         animation: none;
