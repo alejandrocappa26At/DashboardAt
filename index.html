@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive AT Sur - Dashboard de Ventas</title>
-    <link rel="stylesheet" href="css/styles.css?v=108">
+    <link rel="stylesheet" href="css/styles.css?v=109">
     <link rel="stylesheet" href="css/horarios.css?v=3">
     <link rel="stylesheet" href="css/tiendas.css?v=3">
     <link rel="stylesheet" href="css/ejecutivo.css?v=4">
@@ -38,278 +38,111 @@
         <div class="login-glow-orb login-glow-orb-3"></div>
         <div class="login-bg-vignette"></div>
 
-        <div class="login-card-luxury" id="login-card">
-            <!-- Brand / Logo -->
-            <div class="login-luxury-brand">
-                <div class="login-luxury-logo" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7"
+        <main class="lgx-card" id="login-card">
+            <header class="lgx-brand">
+                <div class="lgx-logo" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
                         stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         <circle cx="12" cy="16.5" r="1.4" fill="currentColor" stroke="none" />
                     </svg>
                 </div>
-                <div class="login-luxury-brand-text">
-                    <h1 class="login-title">Dashboard Comercial</h1>
-                    <p class="login-subtitle">Drive AT Sur</p>
+                <div class="lgx-brand-text">
+                    <h1 class="lgx-title">Dashboard Comercial</h1>
+                    <p class="lgx-subtitle">Drive AT Sur</p>
                 </div>
-            </div>
+            </header>
 
-            <p class="login-tagline">Control y seguimiento comercial de puntos de venta y promociones.</p>
+            <p class="lgx-note">📌 Informaci&oacute;n referencial: los resultados pueden variar respecto al consolidado oficial del &Aacute;rea de Retail.</p>
 
-            <div class="login-reference">
-                <span class="login-reference-icon">📌</span>
-                <span class="login-reference-text"><strong>Información Referencial:</strong> Los resultados mostrados en
-                    este dashboard tienen fines de seguimiento comercial y pueden presentar variaciones respecto a la
-                    información oficial consolidada por el Área de Retail.</span>
-            </div>
-
-            <!-- Paso 1: elegir rol -->
-            <div class="login-step login-step-roles" id="login-step-roles">
-                <div class="login-role-grid">
-                    <button type="button" class="login-role-box login-role-box-promotor" data-role="promotor"
-                        onclick="mostrarFormularioLogin('promotor')">
-                        <span class="login-role-emoji" aria-hidden="true">👤</span>
-                        <span class="login-role-name">Promotor</span>
-                        <span class="login-role-hint">Registro de ventas y promociones.</span>
-                        <span class="login-role-action">Ingresar como Promotor
-                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                                <polyline points="12 5 19 12 12 19" />
-                            </svg>
-                        </span>
-                    </button>
-                    <button type="button" class="login-role-box login-role-box-supervisor" data-role="supervisor"
-                        onclick="mostrarFormularioLogin('supervisor')">
-                        <span class="login-role-emoji" aria-hidden="true">👨‍💼</span>
-                        <span class="login-role-name">Supervisor</span>
-                        <span class="login-role-hint">Análisis, indicadores y gestión comercial.</span>
-                        <span class="login-role-action">Ingresar como <strong>Supervisor</strong>
-                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                                <polyline points="12 5 19 12 12 19" />
-                            </svg>
-                        </span>
-                    </button>
-                    <button type="button" class="login-role-box login-role-box-jefe login-role-full" data-role="jefe"
-                        onclick="mostrarFormularioLogin('jefe')">
-                        <span class="login-role-emoji" aria-hidden="true">🏢</span>
-                        <span class="login-role-name">Jefe Comercial</span>
-                        <span class="login-role-hint">Administra supervisores, zonas e indicadores consolidados.</span>
-                        <span class="login-role-action">Ingresar como <strong>Jefe Comercial</strong>
-                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                                <polyline points="12 5 19 12 12 19" />
-                            </svg>
-                        </span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Formulario promotor -->
-            <div class="login-step login-form" id="login-step-promotor" style="display:none;">
-                <div class="login-form-header">
-                    <button type="button" class="login-back" onclick="mostrarFormularioLogin('roles')"
-                        aria-label="Volver">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+            <form class="lgx-form" onsubmit="event.preventDefault(); ingresarAcceso();">
+                <label class="lgx-label" id="perfil-label">Perfil</label>
+                <div class="lgx-dropdown" id="lgx-perfil-dropdown">
+                    <button type="button" class="lgx-perfil-btn" id="perfil-btn" onclick="alternarMenuPerfiles()"
+                        aria-haspopup="listbox" aria-expanded="false" aria-labelledby="perfil-label">
+                        <span class="lgx-perfil-icono" id="perfil-icono" aria-hidden="true">&#128100;</span>
+                        <span class="lgx-perfil-nombre" id="perfil-nombre">Promotor</span>
+                        <svg class="lgx-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="19" y1="12" x2="5" y2="12" />
-                            <polyline points="12 19 5 12 12 5" />
+                            <polyline points="6 9 12 15 18 9" />
                         </svg>
                     </button>
-                    <div class="login-form-badge" aria-hidden="true">👤</div>
-                    <div>
-                        <h2 class="login-form-title">Acceso Promotor</h2>
-                        <p class="login-form-subtitle">Ingresa con tu correo corporativo y contraseña.</p>
-                    </div>
-                </div>
-                <div class="login-field-group">
-                    <label class="login-label" for="login-promotor-email">📧 Correo Electr&oacute;nico</label>
-                    <div class="login-field">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                        <input type="email" id="login-promotor-email" placeholder="correo@empresa.com"
-                            autocomplete="email"
-                            onkeydown="if(event.key==='Enter')document.getElementById('login-promotor-password').focus()">
-                    </div>
-                </div>
-                <div class="login-field-group">
-                    <label class="login-label" for="login-promotor-password">🔒 Contrase&ntilde;a</label>
-                    <div class="login-field">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                        <input type="password" id="login-promotor-password" placeholder="Contrase&ntilde;a"
-                            autocomplete="current-password" class="has-toggle"
-                            onkeydown="if(event.key==='Enter')ingresarPromotor()">
-                        <button type="button" class="login-toggle-btn" id="login-promotor-toggle"
-                            onclick="toggleLoginField('login-promotor-password','login-promotor-toggle')"
-                            aria-label="Mostrar contraseña">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
+                    <ul class="lgx-menu" id="perfil-menu" role="listbox" aria-labelledby="perfil-label">
+                        <li class="lgx-option seleccionado" data-perfil="promotor" role="option" aria-selected="true"
+                            onclick="seleccionarPerfil('promotor')">
+                            <span class="lgx-op-icono" aria-hidden="true">&#128100;</span>
+                            <span class="lgx-op-nombre">Promotor</span>
+                            <svg class="lgx-op-check" viewBox="0 0 24 24" width="15" height="15" fill="none"
+                                stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
                             </svg>
-                        </button>
-                    </div>
+                        </li>
+                        <li class="lgx-option" data-perfil="supervisor" role="option" aria-selected="false"
+                            onclick="seleccionarPerfil('supervisor')">
+                            <span class="lgx-op-icono" aria-hidden="true">&#128104;&#8205;&#128188;</span>
+                            <span class="lgx-op-nombre">Supervisor</span>
+                            <svg class="lgx-op-check" viewBox="0 0 24 24" width="15" height="15" fill="none"
+                                stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </li>
+                        <li class="lgx-option" data-perfil="jefe" role="option" aria-selected="false"
+                            onclick="seleccionarPerfil('jefe')">
+                            <span class="lgx-op-icono" aria-hidden="true">&#127970;</span>
+                            <span class="lgx-op-nombre">Jefe Comercial</span>
+                            <svg class="lgx-op-check" viewBox="0 0 24 24" width="15" height="15" fill="none"
+                                stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </li>
+                    </ul>
                 </div>
-                <div class="login-error-text" id="login-promotor-error"></div>
-                <button type="button" class="login-submit" onclick="ingresarPromotor()" id="login-promotor-btn">
-                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" class="login-submit-icon">
-                        <path d="M22 2 11 13" />
-                        <path d="M22 2 15 22l-4-9-9-4z" />
-                    </svg>
-                    <span class="login-submit-label">Ingresar</span>
-                    <span class="login-submit-spinner"></span>
-                </button>
-            </div>
 
-            <!-- Formulario supervisor -->
-            <div class="login-step login-form" id="login-step-supervisor" style="display:none;">
-                <div class="login-form-header">
-                    <button type="button" class="login-back" onclick="mostrarFormularioLogin('roles')"
-                        aria-label="Volver">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="19" y1="12" x2="5" y2="12" />
-                            <polyline points="12 19 5 12 12 5" />
+                <label class="lgx-label" for="login-acceso-correo" id="login-etiqueta-correo">&#128231; Correo Electr&oacute;nico</label>
+                <div class="lgx-field">
+                    <svg class="lgx-field-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    <input type="text" id="login-acceso-correo" placeholder="correo@empresa.com"
+                        autocomplete="username" inputmode="email">
+                </div>
+
+                <label class="lgx-label" for="login-acceso-password">&#128274; Contrase&ntilde;a</label>
+                <div class="lgx-field">
+                    <svg class="lgx-field-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <input type="password" id="login-acceso-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                        autocomplete="current-password" class="has-toggle">
+                    <button type="button" class="lgx-toggle" id="login-acceso-toggle"
+                        onclick="toggleLoginField('login-acceso-password','login-acceso-toggle')"
+                        aria-label="Mostrar contrase&ntilde;a">
+                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
                         </svg>
                     </button>
-                    <div class="login-form-badge login-form-badge-supervisor" aria-hidden="true">👨‍💼</div>
-                    <div>
-                        <h2 class="login-form-title">Acceso Supervisor</h2>
-                        <p class="login-form-subtitle">Ingresa tu correo electrónico y contraseña de supervisor.</p>
-                    </div>
                 </div>
-                <div class="login-field-group">
-                    <label class="login-label" for="login-supervisor-email">📧 Correo Electr&oacute;nico</label>
-                    <div class="login-field">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                        <input type="email" id="login-supervisor-email" placeholder="correo@empresa.com"
-                            autocomplete="email"
-                            onkeydown="if(event.key==='Enter')document.getElementById('login-supervisor-password').focus()">
-                    </div>
-                </div>
-                <div class="login-field-group">
-                    <label class="login-label" for="login-supervisor-password">🔒 Contrase&ntilde;a</label>
-                    <div class="login-field">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                        <input type="password" id="login-supervisor-password"
-                            placeholder="Contrase&ntilde;a" autocomplete="current-password"
-                            class="has-toggle" onkeydown="if(event.key==='Enter')ingresarSupervisor()">
-                        <button type="button" class="login-toggle-btn" id="login-supervisor-toggle"
-                            onclick="toggleLoginField('login-supervisor-password','login-supervisor-toggle')"
-                            aria-label="Mostrar contraseña">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="login-error-text" id="login-supervisor-error"></div>
-                <button type="button" class="login-submit login-submit-supervisor" onclick="ingresarSupervisor()"
-                    id="login-supervisor-submit">
-                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" class="login-submit-icon">
-                        <path d="M22 2 11 13" />
-                        <path d="M22 2 15 22l-4-9-9-4z" />
-                    </svg>
-                    <span class="login-submit-label">Ingresar</span>
-                    <span class="login-submit-spinner"></span>
-                </button>
-            </div>
 
-            <!-- Formulario jefe comercial -->
-            <div class="login-step login-form" id="login-step-jefe" style="display:none;">
-                <div class="login-form-header">
-                    <button type="button" class="login-back" onclick="mostrarFormularioLogin('roles')"
-                        aria-label="Volver">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="19" y1="12" x2="5" y2="12" />
-                            <polyline points="12 19 5 12 12 5" />
-                        </svg>
-                    </button>
-                    <div class="login-form-badge login-form-badge-jefe" aria-hidden="true">🏢</div>
-                    <div>
-                        <h2 class="login-form-title">Acceso Jefe Comercial</h2>
-                        <p class="login-form-subtitle">Ingresa tu usuario y contraseña de acceso independiente.</p>
-                    </div>
-                </div>
-                <div class="login-field-group">
-                    <label class="login-label" for="login-jefe-usuario">👤 Usuario</label>
-                    <div class="login-field">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                        <input type="text" id="login-jefe-usuario" placeholder="Usuario" autocomplete="username"
-                            onkeydown="if(event.key==='Enter')document.getElementById('login-jefe-password').focus()">
-                    </div>
-                </div>
-                <div class="login-field-group">
-                    <label class="login-label" for="login-jefe-password">🔒 Contrase&ntilde;a</label>
-                    <div class="login-field">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-field-icon">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                        <input type="password" id="login-jefe-password" placeholder="Contrase&ntilde;a"
-                            autocomplete="current-password" class="has-toggle"
-                            onkeydown="if(event.key==='Enter')ingresarJefeComercial()">
-                        <button type="button" class="login-toggle-btn" id="login-jefe-toggle"
-                            onclick="toggleLoginField('login-jefe-password','login-jefe-toggle')"
-                            aria-label="Mostrar contraseña">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="login-error-text" id="login-jefe-error"></div>
-                <button type="button" class="login-submit login-submit-jefe" onclick="ingresarJefeComercial()"
-                    id="login-jefe-submit">
-                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" class="login-submit-icon">
-                        <path d="M22 2 11 13" />
-                        <path d="M22 2 15 22l-4-9-9-4z" />
-                    </svg>
-                    <span class="login-submit-label">Ingresar</span>
-                    <span class="login-submit-spinner"></span>
-                </button>
-            </div>
+                <div class="lgx-error" id="login-acceso-error"></div>
 
-            <footer class="login-footer">
-                <span>Drive AT Sur</span>
-                <span class="login-footer-dot">·</span>
-                <span>Dashboard Comercial</span>
-                <span class="login-footer-dot">·</span>
-                <span>Versión 1.0</span>
+                <button type="submit" class="lgx-submit" id="login-acceso-btn">
+                    <span class="lgx-submit-icon" aria-hidden="true">&#9989;</span>
+                    <span class="lgx-submit-label">Ingresar</span>
+                    <span class="lgx-spinner" aria-hidden="true"></span>
+                </button>
+            </form>
+
+            <footer class="lgx-footer">
+                Drive AT Sur &middot; Dashboard Comercial &middot; Versi&oacute;n 1.0
             </footer>
-        </div>
+        </main>
     </div>
 
     <aside class="sidebar" id="sidebar">
@@ -337,7 +170,7 @@
             <!-- ─── PROMOTOR ─── -->
             <div class="nav-section-divider promo-only promo-divider" data-role="promotor"><span>PROMOTOR</span></div>
 
-            <div class="nav-item promo-only" data-role="promotor" onclick="navegarRegistrarVentas()">
+            <div class="nav-item promo-only" data-role="promotor" data-page="registrar-ventas">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -350,7 +183,7 @@
                 <div class="nav-equalizer" id="eq-registrar-ventas"><span></span><span></span><span></span></div>
             </div>
 
-            <div class="nav-item promo-only" data-role="promotor" onclick="navegarRegistrarPromociones()">
+            <div class="nav-item promo-only" data-role="promotor" data-page="registrar-promociones">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -932,8 +765,8 @@
                         <span id="pdv-date-periodo">-</span> &middot; D&iacute;a <strong
                             id="pdv-dia-actual"></strong><span id="pdv-dia-total">/-</span>
                     </span>
-                    <button type="button" class="date-btn-excel" onclick="exportarAvancePDVExcel()"
-                        title="Descargar informe en Excel">
+                    <button type="button" class="date-btn-excel" id="btn-exportar-excel-avance" onclick="exportarAvancePDVExcel()"
+                        title="Descargar informe en Excel" style="display:none;">
                         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -959,247 +792,6 @@
                 <button type="button" data-vista="zonasur" onclick="cambiarVistaZonal('zonasur')" id="btn-avance-zonasur" style="display:none;">&#x1F30E; Resumen Zona Sur</button>
                 <button type="button" data-vista="diario" onclick="cambiarVistaZonal('diario')">&#x1F30E; Resumen Zonal Diario</button>
                 <button type="button" data-vista="acumulado" onclick="cambiarVistaZonal('acumulado')">&#x1F4CA; Resumen Zonal Acumulado</button>
-            </div>
-
-            <!-- Panel expandible: Registrar Ventas -->
-            <div class="avance-panel" id="avance-panel-ventas" style="display:none;">
-                <div class="avance-panel-header">
-                    <div class="avance-panel-header-left">
-                        <svg class="avance-panel-header-icon" viewBox="0 0 24 24" width="20" height="20" fill="none"
-                            stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"></path>
-                        </svg>
-                        <h3 class="avance-panel-title">Registro de Ventas por D&iacute;a</h3>
-                    </div>
-                    <button class="avance-panel-close" onclick="cerrarPanelVentas()" aria-label="Cerrar">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 6 6 18" />
-                            <path d="m6 6 12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div id="ventas-session-bar" class="ventas-session-bar" style="display:none;"></div>
-
-                <div class="ventas-filters">
-                    <div class="ventas-filter-group">
-                        <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <select id="modal-pdv" onchange="cargarVentasCalendario()" required></select>
-                    </div>
-                    <div class="ventas-filter-group">
-                        <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <select id="venta-mes" onchange="cargarVentasCalendario()">
-                            <option value="1">Enero</option>
-                            <option value="2">Febrero</option>
-                            <option value="3">Marzo</option>
-                            <option value="4">Abril</option>
-                            <option value="5">Mayo</option>
-                            <option value="6">Junio</option>
-                            <option value="7">Julio</option>
-                            <option value="8">Agosto</option>
-                            <option value="9">Setiembre</option>
-                            <option value="10">Octubre</option>
-                            <option value="11">Noviembre</option>
-                            <option value="12">Diciembre</option>
-                        </select>
-                    </div>
-                    <div class="ventas-filter-group">
-                        <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                        </svg>
-                        <select id="venta-anio" onchange="cargarVentasCalendario()">
-                            <option value="2026">2026</option>
-                            <option value="2027">2027</option>
-                        </select>
-                    </div>
-
-                    <div class="ventas-view-toggle" id="ventas-view-toggle">
-                        <button class="ventas-toggle-btn active" data-view="mes" onclick="cambiarModoVista('mes')"
-                            title="Vista mes completo">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                                <line x1="16" y1="2" x2="16" y2="6" />
-                                <line x1="8" y1="2" x2="8" y2="6" />
-                                <line x1="3" y1="10" x2="21" y2="10" />
-                                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
-                            </svg>
-                            Mes
-                        </button>
-                        <button class="ventas-toggle-btn" data-view="dia" onclick="cambiarModoVista('dia')"
-                            title="Vista por día">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <polyline points="12 6 12 12 16 14" />
-                            </svg>
-                            Día
-                        </button>
-                    </div>
-                    <select id="ventas-dia-select" class="ventas-dia-select" onchange="cambiarDiaSeleccionado(this.value)"
-                        style="display:none;"></select>
-
-                    <div class="ventas-progress-badge" id="ventas-progress-badge">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                        </svg>
-                        <span id="ventas-progress-text">0 / 0</span>
-                    </div>
-                    <button class="ventas-expand-btn" id="ventas-expand-btn" onclick="toggleVentasFullscreen()"
-                        title="Pantalla completa">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="15 3 21 3 21 9"></polyline>
-                            <polyline points="9 21 3 21 3 15"></polyline>
-                            <line x1="21" y1="3" x2="14" y2="10"></line>
-                            <line x1="3" y1="21" x2="10" y2="14"></line>
-                        </svg>
-                    </button>
-                    <button type="button" class="btn btn-primary btn-save-ventas btn-save-ventas-top" id="btn-guardar-ventas"
-                        onclick="guardarVentasCalendario()">
-                        <span class="btn-save-content" id="btn-save-content">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                            Guardar Ventas
-                        </span>
-                        <span class="btn-spinner" id="btn-save-spinner">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"
-                                    stroke-linecap="round">
-                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12"
-                                        dur="1s" repeatCount="indefinite" />
-                                    <animate attributeName="stroke-dashoffset" values="32;0;32" dur="1.5s"
-                                        repeatCount="indefinite" />
-                                </circle>
-                            </svg>
-                        </span>
-                    </button>
-                </div>
-
-                <div class="calendario-wrapper" id="calendario-wrapper">
-                    <table class="calendario-tabla" id="tabla-calendario">
-                        <thead>
-                            <tr>
-                                <th class="calendario-th-producto">Producto</th>
-                                <th class="calendario-th-dia">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-calendario"></tbody>
-                    </table>
-                </div>
-
-                <div class="ventas-unsaved-bar" id="ventas-unsaved-bar">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                    </svg>
-                    <span>Tienes cambios sin guardar</span>
-                </div>
-            </div>
-
-            <!-- Panel expandible: Registrar Promociones -->
-            <div class="avance-panel" id="avance-panel-promociones" style="display:none;">
-                <div class="avance-panel-header">
-                    <div class="avance-panel-header-left">
-                        <svg class="avance-panel-header-icon" viewBox="0 0 24 24" width="20" height="20" fill="none"
-                            stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="8" width="18" height="4" rx="1"></rect>
-                            <rect x="5" y="12" width="14" height="8" rx="1"></rect>
-                            <path d="M12 8V5"></path>
-                            <path d="M7 8V6"></path>
-                            <path d="M17 8V6"></path>
-                        </svg>
-                        <h3 class="avance-panel-title">Registro de Promociones</h3>
-                    </div>
-                    <button class="avance-panel-close" onclick="cerrarPanelPromociones()" aria-label="Cerrar">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 6 6 18" />
-                            <path d="m6 6 12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="promo-session-bar" id="promo-session-bar" style="display:none;"></div>
-
-                <div class="promo-filters">
-                    <div class="promo-filter-group">
-                        <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <select id="promo-tienda" onchange="cargarPromocionesTabla()"></select>
-                    </div>
-                    <div class="promo-filter-group">
-                        <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <input type="date" id="promo-fecha" onchange="cargarPromocionesTabla()">
-                    </div>
-                    <div class="promo-filter-group">
-                        <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                        </svg>
-                        <select id="promo-promotor" onchange="cargarPromocionesTabla()"></select>
-                    </div>
-                </div>
-
-                <div class="promo-registro-wrap">
-                    <table class="promo-registro-table" id="tabla-registro-promociones">
-                        <thead>
-                            <tr>
-                                <th class="promo-th-nombre">Promoci&oacute;n</th>
-                                <th class="promo-th-cant">Cantidad</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-registro-promociones"></tbody>
-                    </table>
-                </div>
-
-                <div class="promo-registro-total" id="promo-registro-total">0 registros</div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="cerrarPanelPromociones()">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btn-guardar-promociones"
-                        onclick="guardarRegistroPromociones()">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Guardar Promociones
-                    </button>
-                </div>
             </div>
 
             <!-- Filtros simplificados: Tienda · Mes/Año · Tipo de Información -->
@@ -1294,6 +886,256 @@
 
             <div class="pdv-content" id="pdv-content"></div>
         </section>
+
+        <!-- ===== PAGINA: REGISTRAR VENTAS (PROMOTOR) ===== -->
+        <section class="page" id="page-registrar-ventas">
+            <div class="pdv-header">
+                <div class="pdv-header-left">
+                    <svg class="pdv-header-icon" viewBox="0 0 24 24" width="24" height="24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"></path>
+                    </svg>
+                    <h2 class="pdv-header-title">Registro de Ventas por D&iacute;a</h2>
+                </div>
+                <div class="pdv-header-right">
+                    <span class="pdv-date-badge" id="reg-ventas-date-badge">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                        </svg>
+                        <span id="reg-ventas-date-periodo">-</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="ventas-session-bar" id="ventas-session-bar" style="display:none;"></div>
+
+            <div class="ventas-filters">
+                <div class="ventas-filter-group">
+                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <select id="modal-pdv" onchange="cargarVentasCalendario()" required></select>
+                </div>
+                <div class="ventas-filter-group">
+                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <select id="venta-mes" onchange="cargarVentasCalendario()">
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </div>
+                <div class="ventas-filter-group">
+                    <svg class="ventas-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                    </svg>
+                    <select id="venta-anio" onchange="cargarVentasCalendario()">
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                    </select>
+                </div>
+
+                <div class="ventas-view-toggle" id="ventas-view-toggle">
+                    <button class="ventas-toggle-btn active" data-view="mes" onclick="cambiarModoVista('mes')"
+                        title="Vista mes completo">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
+                        </svg>
+                        Mes
+                    </button>
+                    <button class="ventas-toggle-btn" data-view="dia" onclick="cambiarModoVista('dia')"
+                        title="Vista por d&iacute;a">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        D&iacute;a
+                    </button>
+                </div>
+                <select id="ventas-dia-select" class="ventas-dia-select" onchange="cambiarDiaSeleccionado(this.value)"
+                    style="display:none;"></select>
+
+                <div class="ventas-progress-badge" id="ventas-progress-badge">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                    </svg>
+                    <span id="ventas-progress-text">0 / 0</span>
+                </div>
+                <button class="ventas-expand-btn" id="ventas-expand-btn" onclick="toggleVentasFullscreen()"
+                    title="Pantalla completa">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                </button>
+                <button type="button" class="btn btn-primary btn-save-ventas btn-save-ventas-top" id="btn-guardar-ventas"
+                    onclick="guardarVentasCalendario()">
+                    <span class="btn-save-content" id="btn-save-content">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Guardar Ventas
+                    </span>
+                    <span class="btn-spinner" id="btn-save-spinner">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"
+                                stroke-linecap="round">
+                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12"
+                                    dur="1s" repeatCount="indefinite" />
+                                <animate attributeName="stroke-dashoffset" values="32;0;32" dur="1.5s"
+                                    repeatCount="indefinite" />
+                            </circle>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+
+            <div class="calendario-wrapper" id="calendario-wrapper">
+                <table class="calendario-tabla" id="tabla-calendario">
+                    <thead>
+                        <tr>
+                            <th class="calendario-th-producto">Producto</th>
+                            <th class="calendario-th-dia">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-calendario"></tbody>
+                </table>
+            </div>
+
+            <div class="ventas-unsaved-bar" id="ventas-unsaved-bar">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>Tienes cambios sin guardar</span>
+            </div>
+        </section>
+
+        <!-- ===== PAGINA: REGISTRAR PROMOCIONES (PROMOTOR) ===== -->
+        <section class="page" id="page-registrar-promociones">
+            <div class="pdv-header">
+                <div class="pdv-header-left">
+                    <svg class="pdv-header-icon" viewBox="0 0 24 24" width="24" height="24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="8" width="18" height="4" rx="1"></rect>
+                        <rect x="5" y="12" width="14" height="8" rx="1"></rect>
+                        <path d="M12 8V5"></path>
+                        <path d="M7 8V6"></path>
+                        <path d="M17 8V6"></path>
+                    </svg>
+                    <h2 class="pdv-header-title">Registro de Promociones</h2>
+                </div>
+                <div class="pdv-header-right">
+                    <span class="pdv-date-badge" id="reg-promo-date-badge">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                        </svg>
+                        <span id="reg-promo-date-periodo">-</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="promo-session-bar" id="promo-session-bar" style="display:none;"></div>
+
+            <div class="promo-filters">
+                <div class="promo-filter-group">
+                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <select id="promo-tienda" onchange="cargarPromocionesTabla()"></select>
+                </div>
+                <div class="promo-filter-group">
+                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <input type="date" id="promo-fecha" onchange="cargarPromocionesTabla()">
+                </div>
+                <div class="promo-filter-group">
+                    <svg class="promo-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                    </svg>
+                    <select id="promo-promotor" onchange="cargarPromocionesTabla()"></select>
+                </div>
+            </div>
+
+            <div class="promo-registro-wrap">
+                <table class="promo-registro-table" id="tabla-registro-promociones">
+                    <thead>
+                        <tr>
+                            <th class="promo-th-nombre">Promoci&oacute;n</th>
+                            <th class="promo-th-cant">Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-registro-promociones"></tbody>
+                </table>
+            </div>
+
+            <div class="promo-registro-total" id="promo-registro-total">0 registros</div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarPanelPromociones()">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-guardar-promociones"
+                    onclick="guardarRegistroPromociones()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Guardar Promociones
+                </button>
+            </div>
+        </section>
+
         <section class="page" id="page-ranking">
             <div class="ranking-hero">
                 <div class="ranking-hero-icon">
@@ -1520,15 +1362,27 @@
             </div>
 
             <div class="inf-promotor-filters" id="inf-promotor-filters">
-                <div class="inf-promotor-filter-group">
+                <div class="inf-promotor-filter-group inf-promotor-search-group" id="inf-promotor-search-group">
                     <svg class="inf-promotor-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
                     </svg>
-                    <select id="inf-promotor-select">
-                        <option value="">Seleccionar promotor...</option>
-                    </select>
+                    <div class="inf-promotor-search-wrapper">
+                        <input type="text" id="inf-promotor-search" class="inf-promotor-search-input" placeholder="Buscar promotor..." autocomplete="off" aria-label="Buscar promotor por nombre o apellido" aria-expanded="false" aria-controls="inf-promotor-suggestions">
+                        <button type="button" class="inf-promotor-search-clear" id="inf-promotor-search-clear" aria-label="Limpiar búsqueda" style="display:none;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                        <svg class="inf-promotor-search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                    <div class="inf-promotor-suggestions" id="inf-promotor-suggestions" role="listbox" aria-label="Sugerencias de promotores"></div>
+                    <input type="hidden" id="inf-promotor-select" value="">
                 </div>
                 <div class="inf-promotor-filter-group">
                     <svg class="inf-promotor-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
@@ -1536,7 +1390,7 @@
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                         <circle cx="12" cy="10" r="3" />
                     </svg>
-                    <select id="inf-promotor-tienda">
+                    <select id="inf-promotor-tienda" onchange="aplicarFiltrosInformePromotor()">
                         <option value="">Todas las tiendas</option>
                     </select>
                 </div>
@@ -1546,18 +1400,18 @@
                         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
                         <line x1="7" y1="7" x2="7.01" y2="7" />
                     </svg>
-                    <select id="inf-promotor-producto">
+                    <select id="inf-promotor-producto" onchange="aplicarFiltrosInformePromotor()">
                         <option value="">Todos los productos</option>
                     </select>
                 </div>
-                <button class="inf-promotor-btn-aplicar" id="inf-promotor-btn-aplicar"
-                    onclick="aplicarFiltrosInformePromotor()">
+                <button class="inf-promotor-btn-limpiar" id="inf-promotor-btn-limpiar"
+                    onclick="limpiarFiltrosInformePromotor()" title="Limpiar todos los filtros">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
                         stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
-                    Aplicar filtros
+                    Limpiar
                 </button>
             </div>
 
@@ -1570,7 +1424,7 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
-                    <p>Selecciona un promotor y aplica los filtros para visualizar su informe.</p>
+                    <p>Selecciona un promotor para visualizar su informe. Los filtros se aplican en tiempo real.</p>
                 </div>
             </div>
         </section>
@@ -2641,10 +2495,10 @@
     <script src="js/tiendas.js?v=4"></script>
 <script src="js/ejecutivo.js?v=2"></script>
 <script src="js/corte-comercial.js?v=1"></script>
-<script src="js/jefe-comercial.js?v=2"></script>
+<script src="js/jefe-comercial.js?v=3"></script>
 <script src="js/mobile.js?v=1"></script>
     <script src="js/theme.js?v=1"></script>
-    <script src="js/app.js?v=20"></script>
+    <script src="js/app.js?v=21"></script>
     <script src="js/respaldo.js?v=1"></script>
 </body>
 

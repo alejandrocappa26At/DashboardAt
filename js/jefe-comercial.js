@@ -168,12 +168,12 @@ const JefeComercialStore = {
    ============================================= */
 
 async function ingresarJefeComercial() {
-    const usuario = document.getElementById('login-jefe-usuario').value.trim().toLowerCase();
-    const password = document.getElementById('login-jefe-password').value;
-    const btn = document.getElementById('login-jefe-submit');
+    const usuario = document.getElementById('login-acceso-correo').value.trim().toLowerCase();
+    const password = document.getElementById('login-acceso-password').value;
+    const btn = document.getElementById('login-acceso-btn');
 
-    if (!usuario) { setErrorLogin('login-jefe-error', 'Ingresa tu usuario.'); return; }
-    if (!password) { setErrorLogin('login-jefe-error', 'Ingresa tu contraseña.'); return; }
+    if (!usuario) { setErrorLogin('login-acceso-error', 'Ingresa tu usuario.'); return; }
+    if (!password) { setErrorLogin('login-acceso-error', 'Ingresa tu contraseña.'); return; }
 
     btn.classList.add('loading');
 
@@ -204,7 +204,7 @@ async function ingresarJefeComercial() {
     btn.classList.remove('loading');
 
     if (!usuarioOk || !passwordOk) {
-        setErrorLogin('login-jefe-error', 'Usuario o contraseña incorrectos.');
+        setErrorLogin('login-acceso-error', 'Usuario o contraseña incorrectos.');
         return;
     }
 

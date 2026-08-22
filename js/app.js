@@ -50,6 +50,8 @@ function reRenderCurrentPage() {
     if (id === 'page-resumen') renderizarResumenEjecutivo();
     else if (id === 'page-ranking') renderizarRanking();
     else if (id === 'page-avance') renderizarAvancePDV();
+    else if (id === 'page-registrar-ventas') inicializarRegistroVentas();
+    else if (id === 'page-registrar-promociones') inicializarRegistroPromociones();
     else if (id === 'page-informe-promotor') recargarInformeSiAplica();
     else if (id === 'page-informe-individual') renderizarInformeIndividual();
     else if (id === 'page-acumulado-diario') renderizarAcumuladoDiario();
@@ -584,58 +586,19 @@ function renderEncabezadoPromocionesPromotor(promotor, registros, fechaDesde, fe
     }
 }
 
-/* ===== PANEL EXPANDIBLE: REGISTRO DE VENTAS ===== */
+/* ===== PÁGINA: REGISTRAR VENTAS (PROMOTOR) ===== */
 function navegarRegistrarVentas() {
     initPromotorSession();
     if (!estaSupervisorDesbloqueado() && !promotorSession) {
         mostrarModalLogin();
         return;
     }
-    cambiarPagina('avance');
-    abrirPanelVentas();
+    cambiarPagina('registrar-ventas');
+    inicializarRegistroVentas();
 }
 
-function abrirPanelVentas() {
-    initPromotorSession();
-    if (!estaSupervisorDesbloqueado() && !promotorSession) {
-        mostrarModalLogin();
-        return;
-    }
-    if (document.getElementById('page-avance')) {
-        document.getElementById('page-avance').classList.add('active');
-        document.getElementById('page-title').textContent = 'Avance por Punto de Venta';
-    }
-    const promoPanel = document.getElementById('avance-panel-promociones');
-    if (promoPanel) promoPanel.style.display = 'none';
-    const panel = document.getElementById('avance-panel-ventas');
-    if (!panel) return;
-    panel.style.display = 'block';
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    abrirPanelVentasConSesion();
-}
-
-function cerrarPanelVentas() {
-    const panel = document.getElementById('avance-panel-ventas');
-    if (panel) panel.style.display = 'none';
-}
-
-function cerrarPanelPromociones() {
-    const panel = document.getElementById('avance-panel-promociones');
-    if (panel) panel.style.display = 'none';
-}
-
-/* ===== PANEL EXPANDIBLE: REGISTRO DE PROMOCIONES ===== */
+/* ===== PÁGINA: REGISTRAR PROMOCIONES (PROMOTOR) ===== */
 function navegarRegistrarPromociones() {
-    initPromotorSession();
-    if (!estaSupervisorDesbloqueado() && !promotorSession) {
-        mostrarModalLogin();
-        return;
-    }
-    cambiarPagina('avance');
-    abrirPanelPromociones();
-}
-
-function abrirPanelPromociones() {
     initPromotorSession();
     if (!estaSupervisorDesbloqueado() && !promotorSession) {
         mostrarModalLogin();
@@ -645,16 +608,48 @@ function abrirPanelPromociones() {
         mostrarNotificacion('Las promociones a\u00fan se est\u00e1n cargando. Intenta en unos segundos.', 'warning');
         return;
     }
-    if (document.getElementById('page-avance')) {
-        document.getElementById('page-avance').classList.add('active');
-        document.getElementById('page-title').textContent = 'Avance por Punto de Venta';
-    }
-    const ventasPanel = document.getElementById('avance-panel-ventas');
-    if (ventasPanel) ventasPanel.style.display = 'none';
-    const panel = document.getElementById('avance-panel-promociones');
-    if (!panel) return;
-    panel.style.display = 'block';
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    cambiarPagina('registrar-promociones');
+    inicializarRegistroPromociones();
+}
+
+function cerrarPanelVentas() {
+    // Legacy function kept for compatibility
+    cambiarPagina('avance');
+}
+
+function cerrarPanelPromociones() {
+    // Legacy function kept for compatibility
+    cambiarPagina('avance');
+}
+
+/* ===== INICIALIZACIÓN DE PÁGINAS INDEPENDIENTES ===== */
+function inicializarRegistroVentas() {
+    const page = document.getElementById('page-registrar-ventas');
+    if (!page || !page.classList.contains('active')) return;
+
+    document.getElementById('page-title').textContent = 'Registro de Ventas';
+
+    // Update date badge
+    const periodoHeader = DataStore.getInfoPeriodo();
+    const datePeriodo = document.getElementById('reg-ventas-date-periodo');
+    if (datePeriodo) datePeriodo.textContent = periodoHeader.mes + ' ' + periodoHeader.anio;
+
+    // Initialize session bar and filters
+    abrirPanelVentasConSesion();
+}
+
+function inicializarRegistroPromociones() {
+    const page = document.getElementById('page-registrar-promociones');
+    if (!page || !page.classList.contains('active')) return;
+
+    document.getElementById('page-title').textContent = 'Registro de Promociones';
+
+    // Update date badge
+    const hoy = new Date();
+    const datePeriodo = document.getElementById('reg-promo-date-periodo');
+    if (datePeriodo) datePeriodo.textContent = hoy.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' });
+
+    // Initialize session bar and filters
     abrirPanelPromocionesConSesion();
 }
 
@@ -1096,6 +1091,10 @@ function renderizarAvancePDV(pdvSeleccionado) {
         avanceZonalVista = 'tienda';
     }
     syncVistaZonalUI(zonal);
+
+    // Controlar visibilidad del botón de exportar Excel
+    actualizarVisibilidadBotonExportar();
+
     if (zonal) {
         if (avanceZonalVista === 'zonasur') {
             renderResumenZonaSur();
@@ -1243,7 +1242,18 @@ function syncVistaAvanceUI() {
     }
 }
 
+// Helper para controlar visibilidad del botón exportar Excel
+function actualizarVisibilidadBotonExportar() {
+    const btnExportarExcel = document.getElementById('btn-exportar-excel-avance');
+    if (btnExportarExcel) {
+        const puedeExportar = estaSupervisorDesbloqueado() || esJefeComercial();
+        btnExportarExcel.style.display = puedeExportar ? '' : 'none';
+    }
+}
+
 function renderAvanceZona() {
+    // Ocultar botón exportar para Promotor (Mi Zona)
+    actualizarVisibilidadBotonExportar();
     renderAvisoOficial();
     renderPeriodoAnalizado('periodo-analizado-avance');
     const periodoHeader = DataStore.getInfoPeriodo();
@@ -1636,6 +1646,7 @@ function syncVistaZonalUI(zonal) {
 }
 
 function renderResumenZonalDiario() {
+    actualizarVisibilidadBotonExportar();
     renderAvisoOficial();
     const periodoHeader = DataStore.getInfoPeriodo();
     const diaActualEl = document.getElementById('pdv-dia-actual');
@@ -1713,6 +1724,7 @@ function renderResumenZonalDiario() {
 }
 
 function renderResumenZonalAcumulado() {
+    actualizarVisibilidadBotonExportar();
     renderAvisoOficial();
     const periodoHeader = DataStore.getInfoPeriodo();
     const diaActualEl = document.getElementById('pdv-dia-actual');
@@ -1781,6 +1793,7 @@ function renderResumenZonalAcumulado() {
 }
 
 function renderResumenZonaSur() {
+    actualizarVisibilidadBotonExportar();
     renderAvisoOficial();
     const periodoHeader = DataStore.getInfoPeriodo();
     const diaActualEl = document.getElementById('pdv-dia-actual');
@@ -1848,6 +1861,12 @@ function renderResumenZonaSur() {
 }
 
 function exportarAvancePDVExcel() {
+    // Validación de permisos: solo Supervisor y Jefe Comercial pueden exportar
+    if (!estaSupervisorDesbloqueado() && !esJefeComercial()) {
+        mostrarNotificacion('No tienes permisos para exportar a Excel.', 'error');
+        return;
+    }
+
     try {
         if (typeof ExcelJS === 'undefined' || typeof saveAs === 'undefined') {
             console.error('[EXPORT] ExcelJS o FileSaver no disponibles.');
@@ -2002,6 +2021,12 @@ workbook.xlsx.writeBuffer().then(buffer => {
 }
 
 function exportarZonalExcel() {
+    // Validación de permisos: solo Supervisor y Jefe Comercial pueden exportar
+    if (!estaSupervisorDesbloqueado() && !esJefeComercial()) {
+        mostrarNotificacion('No tienes permisos para exportar a Excel.', 'error');
+        return;
+    }
+
     try {
         if (typeof ExcelJS === 'undefined' || typeof saveAs === 'undefined') return;
         const esDiario = avanceZonalVista === 'diario';
@@ -2733,24 +2758,30 @@ document.getElementById('page-title').textContent =
         pagina === 'resumen' ? 'Resumen Zona' :
             pagina === 'vista-ejecutiva' ? 'Vista Ejecutiva' :
                 pagina === 'avance' ? 'Avance por Punto de Venta' :
+                pagina === 'registrar-ventas' ? 'Registro de Ventas' :
+                pagina === 'registrar-promociones' ? 'Registro de Promociones' :
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
-                    pagina === 'informe-promotor' ? 'Informe por Promotor' :
-                    pagina === 'informe-individual' ? 'Informe Individual' :
-                    pagina === 'acumulado-diario' ? 'Acumulado Diario' :
-                        pagina === 'horarios' ? 'Gestión de Promotores' :
-                    pagina === 'tiendas' ? 'Gestión de Tiendas' :
-                        pagina === 'corte-comercial' ? 'Corte Comercial' :
-                        pagina === 'jefe-dashboard' ? 'Dashboard General' :
-                            pagina === 'jefe-ranking' ? 'Ranking de Supervisores' :
-                            pagina === 'jefe-supervisores' ? 'Gestión de Supervisores' :
-                            pagina === 'jefe-zonas' ? 'Gestión de Zonas' : 'Dashboard';
+                pagina === 'informe-promotor' ? 'Informe por Promotor' :
+                pagina === 'informe-individual' ? 'Informe Individual' :
+                pagina === 'acumulado-diario' ? 'Acumulado Diario' :
+                pagina === 'horarios' ? 'Gestión de Promotores' :
+            pagina === 'tiendas' ? 'Gestión de Tiendas' :
+                pagina === 'corte-comercial' ? 'Corte Comercial' :
+                pagina === 'jefe-dashboard' ? 'Dashboard General' :
+                    pagina === 'jefe-ranking' ? 'Ranking de Supervisores' :
+                    pagina === 'jefe-supervisores' ? 'Gestión de Supervisores' :
+                    pagina === 'jefe-zonas' ? 'Gestión de Zonas' : 'Dashboard';
 
     if (pagina === 'resumen') {
         renderizarResumenEjecutivo();
     } else if (pagina === 'vista-ejecutiva') {
         renderizarVistaEjecutiva();
-    } else if (pagina === 'avance') {
+} else if (pagina === 'avance') {
         renderizarAvancePDV();
+    } else if (pagina === 'registrar-ventas') {
+        inicializarRegistroVentas();
+    } else if (pagina === 'registrar-promociones') {
+        inicializarRegistroPromociones();
     } else if (pagina === 'ranking') {
         renderizarRanking();
 } else if (pagina === 'informe-promotor') {
@@ -3057,8 +3088,10 @@ function cerrarModalVenta() {
 
 function toggleVentasFullscreen() {
     ventasFullscreen = !ventasFullscreen;
+    const pageVentas = document.getElementById('page-registrar-ventas');
     const panelEl = document.getElementById('avance-panel-ventas');
-    if (panelEl) panelEl.classList.toggle('ventas-fullscreen', ventasFullscreen);
+    const target = pageVentas || panelEl;
+    if (target) target.classList.toggle('ventas-fullscreen', ventasFullscreen);
     const btn = document.getElementById('ventas-expand-btn');
     if (ventasFullscreen) {
         btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 4 20 10 20"></polyline><polyline points="20 10 20 4 14 4"></polyline><line x1="14" y1="10" x2="20" y2="4"></line><line x1="4" y1="20" x2="10" y2="14"></line></svg>`;
@@ -3173,7 +3206,7 @@ const productos = DataStore.getProductos();
     document.addEventListener('input', function(e) {
         const inp = e.target.closest('.calendario-input');
         if (!inp) return;
-        if (!inp.closest('#avance-panel-ventas')) return;
+        if (!inp.closest('#page-registrar-ventas') && !inp.closest('#avance-panel-ventas')) return;
         if (inp.readOnly) return;
 
         ventasModificadas = true;
@@ -3200,8 +3233,10 @@ function cambiarModoVista(modo) {
     if (toggleDia) toggleDia.classList.toggle('active', modo === 'dia');
     const diaSelect = document.getElementById('ventas-dia-select');
     if (diaSelect) diaSelect.style.display = modo === 'dia' ? '' : 'none';
+    const pageVentas = document.getElementById('page-registrar-ventas');
     const panelEl = document.getElementById('avance-panel-ventas');
-    if (panelEl) panelEl.classList.toggle('vista-dia', modo === 'dia');
+    const target = pageVentas || panelEl;
+    if (target) target.classList.toggle('vista-dia', modo === 'dia');
     aplicarFiltroVistaVentas();
 }
 
@@ -3688,13 +3723,19 @@ function abrirPanelVentasConSesion() {
     if (toggleDia) toggleDia.classList.remove('active');
     const diaSelect = document.getElementById('ventas-dia-select');
     if (diaSelect) diaSelect.style.display = 'none';
+    const pageVentas = document.getElementById('page-registrar-ventas');
     const panelEl = document.getElementById('avance-panel-ventas');
-    if (panelEl) panelEl.classList.remove('vista-dia');
+    const target = pageVentas || panelEl;
+    if (target) target.classList.remove('vista-dia');
     sincronizarSelectsPeriodo();
     cargarVentasCalendario();
 }
 
 /* ===== INFORME POR PROMOTOR ===== */
+
+// Store active promoters for intelligent search
+let infPromotorPromotoresActivos = [];
+
 function poblarFiltrosInformePromotor() {
     const promotorSelect = document.getElementById('inf-promotor-select');
     const tiendaSelect = document.getElementById('inf-promotor-tienda');
@@ -3709,8 +3750,21 @@ function poblarFiltrosInformePromotor() {
         zonasActivas.some(z => z.id === p.zona_principal_id) &&
         _promotorEnZonaSesion(p)
     );
-    promotorSelect.innerHTML = '<option value="">Seleccionar promotor...</option>' +
-        activos.map(p => '<option value="' + p.id + '">' + escHtml(p.nombre) + (p.dni ? ' · ' + escHtml(p.dni) : '') + '</option>').join('');
+
+    // Store for intelligent search
+    infPromotorPromotoresActivos = activos.map(p => {
+        const zona = zonasActivas.find(z => z.id === p.zona_principal_id);
+        return {
+            id: p.id,
+            nombre: p.nombre,
+            dni: p.dni,
+            tienda: zona ? zona.nombre : 'Sin tienda asignada',
+            email: p.email
+        };
+    });
+
+    // Keep hidden select for compatibility (empty, will be set by autocomplete)
+    promotorSelect.innerHTML = '<option value="">Seleccionar promotor...</option>';
 
     if (tiendaSelect) {
         const pdvs = DataStore.getPDVs();
@@ -3726,7 +3780,190 @@ function poblarFiltrosInformePromotor() {
             prods.map(p => '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>').join('');
     }
 
+    // Initialize intelligent search
+    initInfPromotorSearch();
+
     sincronizarInputsFecha();
+}
+
+/* ===== INTELLIGENT PROMOTER SEARCH (Informe por Promotor) ===== */
+function initInfPromotorSearch() {
+    const searchInput = document.getElementById('inf-promotor-search');
+    const searchClear = document.getElementById('inf-promotor-search-clear');
+    const suggestionsBox = document.getElementById('inf-promotor-suggestions');
+    const hiddenSelect = document.getElementById('inf-promotor-select');
+    const searchGroup = document.getElementById('inf-promotor-search-group');
+
+    if (!searchInput || !suggestionsBox || !hiddenSelect || !searchGroup) return;
+
+    let highlightedIndex = -1;
+    let searchDebounce = null;
+
+    // Helper: get initials for avatar
+    function getInitials(nombre) {
+        const partes = nombre.trim().split(/\s+/);
+        if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+        return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+    }
+
+    // Helper: find store name for promoter
+    function getTiendaNombre(promotor) {
+        return promotor.tienda || 'Sin tienda asignada';
+    }
+
+    // Filter promoters based on query
+    function filtrarPromotores(query) {
+        if (!query || !query.trim()) return infPromotorPromotoresActivos;
+
+        const q = query.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return infPromotorPromotoresActivos.filter(p => {
+            const nombre = p.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const dni = p.dni ? p.dni.toLowerCase() : '';
+            return nombre.includes(q) || dni.includes(q);
+        });
+    }
+
+    // Render suggestions
+    function renderSuggestions(results) {
+        highlightedIndex = -1;
+        if (results.length === 0) {
+            suggestionsBox.innerHTML = '<div class="inf-promotor-suggestions-empty">No se encontraron promotores</div>';
+            suggestionsBox.classList.add('open');
+            return;
+        }
+
+        suggestionsBox.innerHTML = results.map((p, idx) => `
+            <div class="inf-promotor-suggestion-item" data-id="${escHtml(p.id)}" data-index="${idx}" role="option" tabindex="-1">
+                <div class="inf-promotor-suggestion-avatar">${escHtml(getInitials(p.nombre))}</div>
+                <div class="inf-promotor-suggestion-info">
+                    <div class="inf-promotor-suggestion-name">${escHtml(p.nombre)}${p.dni ? ' · ' + escHtml(p.dni) : ''}</div>
+                    <div class="inf-promotor-suggestion-tienda">${escHtml(getTiendaNombre(p))}</div>
+                </div>
+            </div>
+        `).join('');
+        suggestionsBox.classList.add('open');
+    }
+
+    // Clear suggestions
+    function clearSuggestions() {
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.classList.remove('open');
+        highlightedIndex = -1;
+    }
+
+    // Select a promoter
+    function selectPromotor(promotor) {
+        searchInput.value = promotor.nombre;
+        hiddenSelect.value = promotor.id;
+        searchGroup.classList.add('has-value');
+        searchClear.style.display = 'flex';
+        clearSuggestions();
+        searchInput.blur();
+
+        // Trigger real-time filtering
+        if (typeof aplicarFiltrosInformePromotor === 'function') {
+            aplicarFiltrosInformePromotor();
+        }
+    }
+
+    // Clear search
+    function clearSearch() {
+        searchInput.value = '';
+        hiddenSelect.value = '';
+        searchGroup.classList.remove('has-value');
+        searchClear.style.display = 'none';
+        clearSuggestions();
+        searchInput.focus();
+    }
+
+    // Handle input
+    searchInput.addEventListener('input', function () {
+        const query = this.value;
+        if (query.trim()) {
+            searchGroup.classList.add('has-value');
+            searchClear.style.display = 'flex';
+        } else {
+            searchGroup.classList.remove('has-value');
+            searchClear.style.display = 'none';
+        }
+
+        // Debounce
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            const results = filtrarPromotores(query);
+            renderSuggestions(results);
+        }, 80);
+    });
+
+    // Handle focus - show all if empty
+    searchInput.addEventListener('focus', function () {
+        const query = this.value.trim();
+        if (!query) {
+            const results = filtrarPromotores('');
+            renderSuggestions(results);
+        }
+    });
+
+    // Handle click outside
+    document.addEventListener('click', function (e) {
+        if (!searchGroup.contains(e.target)) {
+            clearSuggestions();
+        }
+    });
+
+    // Clear button
+    searchClear.addEventListener('click', function (e) {
+        e.stopPropagation();
+        clearSearch();
+    });
+
+    // Keyboard navigation
+    searchInput.addEventListener('keydown', function (e) {
+        const items = suggestionsBox.querySelectorAll('.inf-promotor-suggestion-item');
+        if (!items.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+            items.forEach((item, i) => item.classList.toggle('highlighted', i === highlightedIndex));
+            if (highlightedIndex >= 0) items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            highlightedIndex = Math.max(highlightedIndex - 1, -1);
+            items.forEach((item, i) => item.classList.toggle('highlighted', i === highlightedIndex));
+            if (highlightedIndex >= 0) items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightedIndex >= 0 && items[highlightedIndex]) {
+                const id = items[highlightedIndex].dataset.id;
+                const promotor = infPromotorPromotoresActivos.find(p => p.id === id);
+                if (promotor) selectPromotor(promotor);
+            }
+        } else if (e.key === 'Escape') {
+            clearSuggestions();
+            searchInput.blur();
+        }
+    });
+
+    // Click on suggestion
+    suggestionsBox.addEventListener('click', function (e) {
+        const item = e.target.closest('.inf-promotor-suggestion-item');
+        if (item) {
+            const id = item.dataset.id;
+            const promotor = infPromotorPromotoresActivos.find(p => p.id === id);
+            if (promotor) selectPromotor(promotor);
+        }
+    });
+
+    // Initialize clear button state
+    if (hiddenSelect.value) {
+        const promotor = infPromotorPromotoresActivos.find(p => p.id === hiddenSelect.value);
+        if (promotor) {
+            searchInput.value = promotor.nombre;
+            searchGroup.classList.add('has-value');
+            searchClear.style.display = 'flex';
+        }
+    }
 }
 
 function fechasEfectivasInforme() {
@@ -3931,10 +4168,51 @@ function aplicarFiltrosInformePromotor() {
         ventasFiltradas = ventasFiltradas.filter(v => new Date(v.fecha) <= fh);
     }
 
-    renderEncabezadoPromotor(promotor, ventasFiltradas, fechaDesde, fechaHasta);
+renderEncabezadoPromotor(promotor, ventasFiltradas, fechaDesde, fechaHasta);
     const kpis = calcularKPIsPromotor(promotor, ventasFiltradas, fechaDesde, fechaHasta);
     renderHeroKPIsPromotor(kpis);
     renderTablaProductosPromotor(promotor, ventasFiltradas, fechaDesde, fechaHasta, tiendaFiltro, productFiltro);
+}
+
+/* ===== LIMPIAR FILTROS INFORME PROMOTOR ===== */
+function limpiarFiltrosInformePromotor() {
+    const searchInput = document.getElementById('inf-promotor-search');
+    const hiddenSelect = document.getElementById('inf-promotor-select');
+    const searchGroup = document.getElementById('inf-promotor-search-group');
+    const searchClear = document.getElementById('inf-promotor-search-clear');
+    const suggestionsBox = document.getElementById('inf-promotor-suggestions');
+    const tiendaSelect = document.getElementById('inf-promotor-tienda');
+    const productoSelect = document.getElementById('inf-promotor-producto');
+    const desdeInput = document.getElementById('filtro-informe-desde');
+    const hastaInput = document.getElementById('filtro-informe-hasta');
+    const mesSelect = document.getElementById('filtro-informe-mes');
+
+    if (searchInput) searchInput.value = '';
+    if (hiddenSelect) hiddenSelect.value = '';
+    if (searchGroup) searchGroup.classList.remove('has-value');
+    if (searchClear) searchClear.style.display = 'none';
+    if (suggestionsBox) {
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.classList.remove('open');
+    }
+    if (tiendaSelect) tiendaSelect.value = '';
+    if (productoSelect) productoSelect.value = '';
+    if (desdeInput) desdeInput.value = '';
+    if (hastaInput) hastaInput.value = '';
+    if (mesSelect) mesSelect.value = '';
+
+    limpiarFiltrosFecha('informe');
+
+    if (infPromTab === 'promociones') {
+        const heroKpis = document.getElementById('inf-promotor-hero-kpis');
+        if (heroKpis) heroKpis.innerHTML = '';
+        const content = document.getElementById('inf-promotor-content');
+        if (content) content.innerHTML = '<div class="empty-state"><p>Selecciona un promotor para ver sus promociones.</p></div>';
+    } else {
+        renderizarTablaPromotores();
+    }
+
+    mostrarNotificacion('Filtros limpiados', 'success');
 }
 
 function renderEncabezadoPromotor(promotor, ventas, fechaDesde, fechaHasta) {
@@ -4413,41 +4691,81 @@ function guardarSesion(data) {
     }
 }
 
-function mostrarFormularioLogin(step) {
-    const roles = document.getElementById('login-step-roles');
-    const promo = document.getElementById('login-step-promotor');
-    const sup = document.getElementById('login-step-supervisor');
-    const jefe = document.getElementById('login-step-jefe');
-    [[roles, step === 'roles'], [promo, step === 'promotor'], [sup, step === 'supervisor'], [jefe, step === 'jefe']].forEach(([el, on]) => {
-        if (!el) return;
-        if (on) {
-            el.style.display = 'block';
-            requestAnimationFrame(() => {
-                el.classList.add('login-step-enter');
-                setTimeout(() => el.classList.remove('login-step-enter'), 500);
-            });
-        } else {
-            el.style.display = 'none';
-        }
+const LOGIN_PERFILES = {
+    promotor: { nombre: 'Promotor', icono: '\u{1F464}', placeholder: 'correo@empresa.com', etiqueta: '\u{1F4E7} Correo Electr&oacute;nico' },
+    supervisor: { nombre: 'Supervisor', icono: '\u{1F464}\u200D\u{1F4BC}', placeholder: 'correo@empresa.com', etiqueta: '\u{1F4E7} Correo Electr&oacute;nico' },
+    jefe: { nombre: 'Jefe Comercial', icono: '\u{1F3E2}', placeholder: 'Usuario', etiqueta: '\u{1F464} Usuario' }
+};
+let perfilLoginActual = 'promotor';
+
+function _sincronizarPerfilUI(perfil) {
+    const conf = LOGIN_PERFILES[perfil] || LOGIN_PERFILES.promotor;
+    const icono = document.getElementById('perfil-icono');
+    const nombre = document.getElementById('perfil-nombre');
+    const etiqueta = document.getElementById('login-etiqueta-correo');
+    const input = document.getElementById('login-acceso-correo');
+    if (icono) icono.textContent = conf.icono;
+    if (nombre) nombre.textContent = conf.nombre;
+    if (etiqueta) etiqueta.innerHTML = conf.etiqueta;
+    if (input) input.placeholder = conf.placeholder;
+    document.querySelectorAll('#perfil-menu .lgx-option').forEach(op => {
+        const sel = op.dataset.perfil === perfil;
+        op.classList.toggle('seleccionado', sel);
+        op.setAttribute('aria-selected', sel ? 'true' : 'false');
     });
-    limpiarErrorLogin();
-    if (step === 'promotor') {
-        setTimeout(() => {
-            const inp = document.getElementById('login-promotor-email');
-            if (inp) inp.focus();
-        }, 140);
-    } else if (step === 'supervisor') {
-        setTimeout(() => {
-            const inp = document.getElementById('login-supervisor-email');
-            if (inp) inp.focus();
-        }, 140);
-    } else if (step === 'jefe') {
-        setTimeout(() => {
-            const inp = document.getElementById('login-jefe-usuario');
-            if (inp) inp.focus();
-        }, 140);
+}
+
+function alternarMenuPerfiles() {
+    const dd = document.getElementById('lgx-perfil-dropdown');
+    if (!dd) return;
+    const abierto = dd.classList.toggle('abierto');
+    const btn = document.getElementById('perfil-btn');
+    if (btn) btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+}
+
+function cerrarMenuPerfiles() {
+    const dd = document.getElementById('lgx-perfil-dropdown');
+    if (dd && dd.classList.contains('abierto')) {
+        dd.classList.remove('abierto');
+        const btn = document.getElementById('perfil-btn');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
     }
 }
+
+function seleccionarPerfil(perfil) {
+    perfilLoginActual = LOGIN_PERFILES[perfil] ? perfil : 'promotor';
+    _sincronizarPerfilUI(perfilLoginActual);
+    cerrarMenuPerfiles();
+    limpiarErrorLogin();
+    setTimeout(() => {
+        const inp = document.getElementById('login-acceso-correo');
+        const scr = document.getElementById('login-screen');
+        if (inp && scr && scr.classList.contains('activo')) inp.focus();
+    }, 80);
+}
+
+function ingresarAcceso() {
+    cerrarMenuPerfiles();
+    if (perfilLoginActual === 'supervisor') return ingresarSupervisor();
+    if (perfilLoginActual === 'jefe') return ingresarJefeComercial();
+    return ingresarPromotor();
+}
+
+function mostrarFormularioLogin() {
+    perfilLoginActual = 'promotor';
+    _sincronizarPerfilUI('promotor');
+    cerrarMenuPerfiles();
+    limpiarErrorLogin();
+}
+
+document.addEventListener('click', e => {
+    const dd = document.getElementById('lgx-perfil-dropdown');
+    if (dd && dd.classList.contains('abierto') && !dd.contains(e.target)) cerrarMenuPerfiles();
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') cerrarMenuPerfiles();
+});
 
 function toggleLoginField(inputId, toggleId) {
     const input = document.getElementById(inputId);
@@ -4463,7 +4781,7 @@ function toggleLoginField(inputId, toggleId) {
 }
 
 function limpiarErrorLogin() {
-    const errs = document.querySelectorAll('.login-error-text');
+    const errs = document.querySelectorAll('.login-error-text, .lgx-error');
     errs.forEach(el => {
         el.textContent = '';
         el.style.display = 'none';
@@ -4478,15 +4796,15 @@ function setErrorLogin(selector, mensaje) {
 }
 
 async function ingresarPromotor() {
-    const email = document.getElementById('login-promotor-email').value.trim().toLowerCase();
-    const password = document.getElementById('login-promotor-password').value;
-    const btn = document.getElementById('login-promotor-btn');
+    const email = document.getElementById('login-acceso-correo').value.trim().toLowerCase();
+    const password = document.getElementById('login-acceso-password').value;
+    const btn = document.getElementById('login-acceso-btn');
 
     console.log('[LOGIN] 1. Inicio de login (pantalla Promotor).');
     console.log('[LOGIN] 2. Correo ingresado:', email);
 
-    if (!email) { setErrorLogin('login-promotor-error', 'Ingresa tu correo electrónico.'); return; }
-    if (!password) { setErrorLogin('login-promotor-error', 'Ingresa tu contraseña.'); return; }
+    if (!email) { setErrorLogin('login-acceso-error', 'Ingresa tu correo electrónico.'); return; }
+    if (!password) { setErrorLogin('login-acceso-error', 'Ingresa tu contraseña.'); return; }
 
     btn.classList.add('loading');
 
@@ -4516,7 +4834,7 @@ async function ingresarPromotor() {
 
         if (!promotor) {
             btn.classList.remove('loading');
-            setErrorLogin('login-promotor-error', 'El correo ingresado no se encuentra registrado.');
+            setErrorLogin('login-acceso-error', 'El correo ingresado no se encuentra registrado.');
             return;
         }
 
@@ -4541,19 +4859,19 @@ async function ingresarPromotor() {
 
         if (!passwordValida) {
             btn.classList.remove('loading');
-            setErrorLogin('login-promotor-error', 'Contraseña incorrecta.');
+            setErrorLogin('login-acceso-error', 'Contraseña incorrecta.');
             return;
         }
 
         if (estado !== 'Activo') {
             btn.classList.remove('loading');
-            setErrorLogin('login-promotor-error', 'Su cuenta se encuentra temporalmente inhabilitada. Comuníquese con su supervisor.');
+            setErrorLogin('login-acceso-error', 'Su cuenta se encuentra temporalmente inhabilitada. Comuníquese con su supervisor.');
             return;
         }
 
         if (!promotor.zona_principal_id) {
             btn.classList.remove('loading');
-            setErrorLogin('login-promotor-error', 'No tiene una tienda asignada. Comuníquese con su supervisor.');
+            setErrorLogin('login-acceso-error', 'No tiene una tienda asignada. Comuníquese con su supervisor.');
             return;
         }
 
@@ -4564,17 +4882,17 @@ async function ingresarPromotor() {
     } catch (err) {
         console.error('[LOGIN][ERROR] Excepción completa en ingresarPromotor:', err);
         btn.classList.remove('loading');
-        setErrorLogin('login-promotor-error', 'Error inesperado al iniciar sesión. Intenta nuevamente.');
+        setErrorLogin('login-acceso-error', 'Error inesperado al iniciar sesión. Intenta nuevamente.');
     }
 }
 
 async function ingresarSupervisor() {
-    const email = document.getElementById('login-supervisor-email').value.trim().toLowerCase();
-    const password = document.getElementById('login-supervisor-password').value;
-    const btn = document.getElementById('login-supervisor-submit');
+    const email = document.getElementById('login-acceso-correo').value.trim().toLowerCase();
+    const password = document.getElementById('login-acceso-password').value;
+    const btn = document.getElementById('login-acceso-btn');
 
-    if (!email) { setErrorLogin('login-supervisor-error', 'Ingresa tu correo electrónico.'); return; }
-    if (!password) { setErrorLogin('login-supervisor-error', 'Ingresa tu contraseña.'); return; }
+    if (!email) { setErrorLogin('login-acceso-error', 'Ingresa tu correo electrónico.'); return; }
+    if (!password) { setErrorLogin('login-acceso-error', 'Ingresa tu contraseña.'); return; }
 
     btn.classList.add('loading');
 
@@ -4582,14 +4900,14 @@ async function ingresarSupervisor() {
         const res = await autenticarSupervisor(email, password);
         btn.classList.remove('loading');
         if (!res.ok) {
-            setErrorLogin('login-supervisor-error', res.error);
+            setErrorLogin('login-acceso-error', res.error);
             return;
         }
         finishSupervisorLogin(res.sup);
     } catch (err) {
         console.error('[LOGIN][ERROR] Error en ingresarSupervisor:', err);
         btn.classList.remove('loading');
-        setErrorLogin('login-supervisor-error', 'Error inesperado al iniciar sesión. Intenta nuevamente.');
+        setErrorLogin('login-acceso-error', 'Error inesperado al iniciar sesión. Intenta nuevamente.');
     }
 }
 
@@ -4823,18 +5141,10 @@ function cerrarSesionGlobal() {
 }
 
 function limpiarCamposLogin() {
-    const email = document.getElementById('login-promotor-email');
-    const pw = document.getElementById('login-promotor-password');
-    const supE = document.getElementById('login-supervisor-email');
-    const sup = document.getElementById('login-supervisor-password');
-    const jefeU = document.getElementById('login-jefe-usuario');
-    const jefeP = document.getElementById('login-jefe-password');
-    if (email) email.value = '';
-    if (pw) pw.value = '';
-    if (supE) supE.value = '';
-    if (sup) sup.value = '';
-    if (jefeU) jefeU.value = '';
-    if (jefeP) jefeP.value = '';
+    const correo = document.getElementById('login-acceso-correo');
+    const pass = document.getElementById('login-acceso-password');
+    if (correo) correo.value = '';
+    if (pass) pass.value = '';
     const pwdEmail = document.getElementById('password-email');
     if (pwdEmail) pwdEmail.value = '';
     const suBtn = document.querySelector('.sidebar .btn-sidebar-logout');
