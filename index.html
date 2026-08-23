@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive AT Sur - Dashboard de Ventas</title>
-    <link rel="stylesheet" href="css/styles.css?v=109">
+    <link rel="stylesheet" href="css/styles.css?v=110">
     <link rel="stylesheet" href="css/horarios.css?v=3">
     <link rel="stylesheet" href="css/tiendas.css?v=3">
-    <link rel="stylesheet" href="css/ejecutivo.css?v=4">
+    <link rel="stylesheet" href="css/ejecutivo.css?v=7">
     <link rel="stylesheet" href="css/corte-comercial.css?v=1">
     <link rel="stylesheet" href="css/mobile.css?v=4">
     <link rel="stylesheet" href="css/themes.css?v=3">
@@ -799,6 +799,13 @@
                 <button type="button" data-vista="zona" onclick="cambiarVistaAvance('zona')">&#x1F30E; Mi Zona</button>
             </div>
 
+            <!-- Sub-tabs para Mi Zona: Ventas / Promociones -->
+            <div class="inf-ind-tabs acu-view-tabs" id="avance-zona-subtabs" style="display:none;">
+                <button type="button" class="active" data-subvista="ventas"
+                    onclick="cambiarSubVistaZona('ventas')">&#x1F4CA; Ventas Zona</button>
+                <button type="button" data-subvista="promociones" onclick="cambiarSubVistaZona('promociones')">&#x1F381; Promociones Zona</button>
+            </div>
+
             <!-- Vista Zonal: Supervisor / Jefe Comercial -->
             <div class="inf-ind-tabs acu-view-tabs" id="avance-zonal-tabs" style="display:none;">
                 <button type="button" class="active" data-vista="tienda" onclick="cambiarVistaZonal('tienda')">&#x1F3EA;
@@ -824,6 +831,7 @@
                         <select id="pdv-select">
                             <option value="">Seleccionar punto de venta...</option>
                         </select>
+                        <div class="pdv-selector-readonly" id="pdv-selector-readonly" style="display:none;"></div>
                         <span class="pdv-selector-label" id="pdv-selector-label">Punto de Venta</span>
                     </div>
                     <div class="pdv-selector-arrow">
@@ -2665,7 +2673,7 @@
     <script src="js/jefe-comercial.js?v=3"></script>
     <script src="js/mobile.js?v=1"></script>
     <script src="js/theme.js?v=1"></script>
-    <script src="js/app.js?v=21"></script>
+    <script src="js/app.js?v=27"></script>
     <script src="js/respaldo.js?v=1"></script>
 </body>
 

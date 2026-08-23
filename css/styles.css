@@ -1213,6 +1213,33 @@ body.rol-jefe .nav-supervisor-toggle {
     cursor: default;
 }
 
+.pdv-selector-readonly {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--t-w02);
+    border: 1px solid var(--t-w08);
+    border-radius: 8px;
+    color: var(--t-text);
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 200px;
+}
+
+.pdv-selector-readonly::before {
+    content: "🏪";
+    font-size: 14px;
+}
+
+.pdv-selector-wrapper.is-readonly .pdv-selector-readonly {
+    display: flex;
+}
+
+.pdv-selector-wrapper.is-readonly .pdv-selector-field select {
+    display: none;
+}
+
 .pdv-content {
     display: flex;
     flex-direction: column;

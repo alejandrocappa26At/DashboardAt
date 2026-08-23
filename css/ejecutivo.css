@@ -710,3 +710,274 @@ table.ctl-table.ctl-table-exec {
 .ctl-table.ctl-table-exec tbody tr.ctl-total-row td.ctl-total-val {
     font-size: 13px;
 }
+
+/* =============================================
+   AVANCE PDV — Mi Zona Compacta
+   Tabla compacta para vista de promotor (Mi Zona)
+   ============================================= */
+
+.zona-avance-card {
+    overflow-x: auto;
+}
+
+.zona-compact-table {
+    border: 1px solid var(--t-w10);
+    min-width: 1100px;
+}
+
+.zona-compact-table thead {
+    background: var(--t-bg);
+}
+
+.zona-header-group {
+    background: linear-gradient(180deg, var(--t-bg2) 0%, var(--t-bg) 100%);
+    border-bottom: 2px solid var(--t-w15);
+}
+
+.zona-header-group th {
+    background: transparent !important;
+    color: var(--t-dim);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 8px 6px;
+    text-transform: uppercase;
+    border-right: 1px solid var(--t-w08);
+    border-bottom: none;
+    text-align: center;
+}
+
+.zona-header-group th.zona-pdv-col {
+    text-align: left;
+    font-size: 11px;
+    padding: 8px 10px;
+    background: var(--t-bg2) !important;
+}
+
+.zona-header-group th.zona-total-col {
+    background: var(--t-accent) !important;
+    color: #fff !important;
+    font-weight: 800;
+    font-size: 10px;
+}
+
+.zona-group-header {
+    background: var(--t-accent);
+    color: #fff;
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.zona-group-header:nth-of-type(2) {
+    background: var(--warning);
+}
+
+.zona-group-header:nth-of-type(3) {
+    background: var(--purple);
+}
+
+.zona-header-metrics th {
+    background: var(--t-bg) !important;
+    color: var(--t-text);
+    font-weight: 700;
+    font-size: 10px;
+    padding: 6px 6px;
+    border-right: 1px solid var(--t-w06);
+    border-bottom: 1px solid var(--t-w10);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.zona-header-metrics th:last-child {
+    border-right: none;
+}
+
+.zona-compact-table tbody td {
+    padding: 6px 8px;
+    font-size: 11.5px;
+    border-right: 1px solid var(--t-w06);
+    border-bottom: 1px solid var(--t-w04);
+    text-align: center;
+    vertical-align: middle;
+}
+
+.zona-compact-table tbody td.zona-pdv-name {
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 8px 10px;
+    background: var(--t-w02);
+    border-right: 1px solid var(--t-w10);
+}
+
+.zona-compact-table tbody td.zona-venta-only {
+    font-weight: 600;
+    color: var(--t-text);
+    background: var(--t-w015);
+}
+
+.zona-compact-table tbody tr:nth-child(even) td.zona-venta-only {
+    background: var(--t-w03);
+}
+
+.zona-compact-table tbody tr:nth-child(even) td {
+    background: var(--t-w025);
+}
+
+.zona-compact-table tbody tr:nth-child(even) td.zona-pdv-name {
+    background: var(--t-w03);
+}
+
+.zona-total-row td {
+    font-size: 12px !important;
+    font-weight: 700;
+}
+
+.zona-total-row td.zona-total-label {
+    background: var(--t-bg2) !important;
+    color: var(--t-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+}
+
+.zona-total-row td.zona-total-val {
+    background: var(--t-w06) !important;
+    color: var(--t-text);
+}
+
+.zona-total-row td.zona-venta-only {
+    background: var(--accent) !important;
+    color: #fff;
+    font-weight: 800;
+}
+
+.zona-total-row td.zona-total-general {
+    background: var(--t-bg2) !important;
+    color: var(--accent);
+    font-weight: 900;
+    font-size: 13px !important;
+    border-left: 3px solid var(--accent);
+}
+
+@media (max-width: 1200px) {
+    .zona-compact-table {
+        min-width: 1100px;
+    }
+}
+
+/* =============================================
+   Porcentaje compacto con semáforo (sin barra)
+   ============================================= */
+
+.zona-pct-cell {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 11.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 55px;
+    text-align: center;
+}
+
+.zona-pct-cell.zona-pct-green {
+    color: #1DB954;
+    background: rgba(29, 185, 84, 0.12);
+}
+
+.zona-pct-cell.zona-pct-yellow {
+    color: #FFB800;
+    background: rgba(255, 184, 0, 0.12);
+}
+
+.zona-pct-cell.zona-pct-red {
+    color: #E02424;
+    background: rgba(224, 36, 36, 0.12);
+}
+
+/* Para la fila total */
+.zona-total-row .zona-pct-cell {
+    font-size: 12px;
+    font-weight: 800;
+    padding: 3px 10px;
+}
+
+/* =============================================
+   PROMOCIONES ZONA — Tabla compacta
+   ============================================= */
+
+.zona-promo-table {
+    min-width: 700px;
+}
+
+.zona-promo-table .zona-group-header {
+    background: var(--purple);
+}
+
+.zona-promo-table .zona-header-metrics th {
+    background: var(--t-bg) !important;
+    color: var(--t-text);
+    font-weight: 700;
+    font-size: 10px;
+    padding: 6px 8px;
+    border-right: 1px solid var(--t-w06);
+    border-bottom: 1px solid var(--t-w10);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.zona-promo-table .zona-header-metrics th:last-child {
+    border-right: none;
+}
+
+.zona-promo-table tbody td.zona-promo-cant {
+    text-align: center;
+    font-weight: 600;
+    font-size: 11.5px;
+    padding: 6px 10px;
+    border-right: 1px solid var(--t-w06);
+    border-bottom: 1px solid var(--t-w04);
+    color: var(--t-text);
+}
+
+.zona-promo-table tbody td.zona-promo-total {
+    text-align: center;
+    font-weight: 700;
+    font-size: 11.5px;
+    padding: 6px 10px;
+    border-right: 1px solid var(--t-w06);
+    border-bottom: 1px solid var(--t-w04);
+    color: var(--accent);
+    background: var(--t-w015);
+}
+
+.zona-promo-table tbody tr:nth-child(even) td.zona-promo-cant,
+.zona-promo-table tbody tr:nth-child(even) td.zona-promo-total {
+    background: var(--t-w025);
+}
+
+.zona-promo-table tbody tr:nth-child(even) td.zona-promo-total {
+    background: var(--t-w03);
+}
+
+.zona-promo-table .zona-total-row td.zona-promo-cant,
+.zona-promo-table .zona-total-row td.zona-promo-total {
+    background: var(--purple) !important;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.zona-promo-table .zona-total-row td.zona-total-label {
+    background: var(--t-bg2) !important;
+    color: var(--t-dim);
+}
+
+@media (max-width: 1200px) {
+    .zona-promo-table {
+        min-width: 700px;
+    }
+}
