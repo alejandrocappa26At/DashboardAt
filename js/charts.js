@@ -4,8 +4,25 @@ function formatCurrency(value) {
     return 'S/ ' + value.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
+function formatCurrencyCompact(value) {
+    const abs = Math.abs(value);
+    if (abs >= 1000000) {
+        return 'S/ ' + (value / 1000000).toFixed(1).replace('.0', '') + 'M';
+    }
+    if (abs >= 1000) {
+        return 'S/ ' + (value / 1000).toFixed(1).replace('.0', '') + 'K';
+    }
+    return 'S/ ' + value.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 function formatPercent(value) {
     return value.toFixed(1) + '%';
+}
+
+function formatPctIndicator(pct) {
+    if (pct >= 100) return '<span class="pct-indicator pct-green">🟢 ' + pct.toFixed(0) + '%</span>';
+    if (pct >= 70) return '<span class="pct-indicator pct-yellow">🟡 ' + pct.toFixed(0) + '%</span>';
+    return '<span class="pct-indicator pct-red">🔴 ' + pct.toFixed(0) + '%</span>';
 }
 
 function destroyChart(id) {

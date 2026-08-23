@@ -7844,15 +7844,15 @@ body[data-sb] {
 .inf-ind-top-grid {
     display: grid;
     grid-template-columns: 1.2fr 1fr 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .inf-ind-card {
     background: linear-gradient(180deg, var(--t-w035), rgba(255, 255, 255, 0.015));
     border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 16px;
-    padding: 18px 20px;
+    border-radius: 14px;
+    padding: 14px 16px;
     position: relative;
     overflow: hidden;
     transition: border-color 0.25s ease, box-shadow 0.25s ease;
@@ -7878,10 +7878,10 @@ body[data-sb] {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: #e0e0e0;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
     letter-spacing: 0.2px;
 }
 
@@ -7899,7 +7899,7 @@ body[data-sb] {
 }
 
 .inf-ind-venta-big {
-    font-size: 30px;
+    font-size: 26px;
     font-weight: 800;
     color: #1DB954;
     font-family: 'Inter', 'Segoe UI', monospace;
@@ -7908,7 +7908,7 @@ body[data-sb] {
 }
 
 .inf-ind-venta-sub {
-    font-size: 11.5px;
+    font-size: 10.5px;
     color: var(--t-dim2);
     font-weight: 600;
     margin-top: 4px;
@@ -7916,11 +7916,11 @@ body[data-sb] {
 
 .inf-ind-promedio-card .inf-ind-venta-big {
     color: #3ECF8E;
-    font-size: 28px;
+    font-size: 24px;
 }
 
 .inf-ind-aporte-card .inf-ind-aporte-big {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 800;
     color: #FBBF24;
     font-family: 'Inter', 'Segoe UI', monospace;
@@ -7934,21 +7934,140 @@ body[data-sb] {
     text-overflow: ellipsis;
 }
 
-/* Posición */
+/* KPI Aporte a la Tienda - Compact */
+.inf-ind-aporte-kpi-card {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), var(--t-w035));
+    border-color: rgba(59, 130, 246, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: auto;
+    padding: 16px 18px;
+}
+
+.inf-ind-aporte-kpi-main {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.inf-ind-aporte-kpi-pct {
+    font-size: 30px;
+    font-weight: 800;
+    font-family: 'Inter', 'Segoe UI', monospace;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: var(--t-text);
+}
+
+.inf-ind-aporte-kpi-status {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.inf-ind-aporte-kpi-status.status-red {
+    background: rgba(224, 36, 36, 0.2);
+    color: #E02424;
+}
+
+.inf-ind-aporte-kpi-status.status-yellow {
+    background: rgba(255, 184, 0, 0.2);
+    color: #FFB800;
+}
+
+.inf-ind-aporte-kpi-status.status-green {
+    background: rgba(29, 185, 84, 0.2);
+    color: #1DB954;
+}
+
+.inf-ind-aporte-kpi-bar-wrap {
+    margin: 8px 0 10px;
+}
+
+.inf-ind-aporte-kpi-bar-bg {
+    height: 6px;
+    background: var(--t-bg2);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.inf-ind-aporte-kpi-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
+    min-width: 2%;
+}
+
+.inf-ind-aporte-kpi-bar-fill.bar-red { background: #E02424; }
+.inf-ind-aporte-kpi-bar-fill.bar-yellow { background: #FFB800; }
+.inf-ind-aporte-kpi-bar-fill.bar-green { background: #1DB954; }
+
+.inf-ind-aporte-kpi-thresholds {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--t-dim3);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.inf-ind-aporte-threshold.inf-ind-aporte-red { color: #E02424; }
+.inf-ind-aporte-threshold.inf-ind-aporte-yellow { color: #FFB800; }
+
+.inf-ind-aporte-kpi-details {
+    display: flex;
+    gap: 16px;
+    padding-top: 8px;
+    border-top: 1px solid var(--t-w05);
+}
+
+.inf-ind-aporte-kpi-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.inf-ind-aporte-kpi-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--t-dim2);
+}
+
+.inf-ind-aporte-kpi-value {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--t-text);
+    font-family: 'Inter', 'Segoe UI', monospace;
+}
+
+/* Posición - Compact */
 .inf-ind-pos-card {
     text-align: center;
 }
 
 .inf-ind-pos-card .inf-ind-card-title {
     justify-content: center;
+    margin-bottom: 10px;
 }
 
 .inf-ind-pos-big {
-    margin-bottom: 14px;
+    margin-bottom: 10px;
 }
 
 .inf-ind-pos-big > span:first-child {
-    font-size: 52px;
+    font-size: 40px;
     font-weight: 800;
     line-height: 1;
     background: linear-gradient(135deg, #FBBF24, #F59E0B);
@@ -7959,7 +8078,7 @@ body[data-sb] {
 }
 
 .inf-ind-pos-de {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--t-dim2);
     font-weight: 600;
 }
@@ -7973,20 +8092,20 @@ body[data-sb] {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
+    padding: 8px 10px;
     background: var(--t-w03);
     border: 1px solid var(--t-w05);
-    border-radius: 10px;
-    margin-bottom: 8px;
+    border-radius: 8px;
+    margin-bottom: 6px;
 }
 
 .inf-ind-pos-item span {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--t-dim);
 }
 
 .inf-ind-pos-item strong {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: var(--t-text);
     font-family: 'Inter', 'Segoe UI', monospace;

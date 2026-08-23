@@ -214,6 +214,18 @@
                 <div class="nav-equalizer" id="eq-avance"><span></span><span></span><span></span></div>
             </div>
 
+            <div class="nav-item promo-only" data-role="promotor" data-page="avance-zona">
+                <div class="nav-indicator"></div>
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </span>
+                <span class="nav-label">Avance Zona</span>
+                <div class="nav-equalizer" id="eq-avance-zona"><span></span><span></span><span></span></div>
+            </div>
+
             <div class="nav-item promo-only" data-role="promotor" data-page="acumulado-diario">
                 <div class="nav-indicator"></div>
                 <span class="nav-icon">
@@ -792,18 +804,10 @@
                 </div>
             </div>
 
-            <!-- Vista: Mi Tienda / Mi Zona (promotor) -->
+            <!-- Vista: Solo Mi Tienda (promotor) -->
             <div class="inf-ind-tabs acu-view-tabs" id="avance-view-tabs" style="display:none;">
                 <button type="button" class="active" data-vista="tienda"
                     onclick="cambiarVistaAvance('tienda')">&#x1F3EA; Mi Tienda</button>
-                <button type="button" data-vista="zona" onclick="cambiarVistaAvance('zona')">&#x1F30E; Mi Zona</button>
-            </div>
-
-            <!-- Sub-tabs para Mi Zona: Ventas / Promociones -->
-            <div class="inf-ind-tabs acu-view-tabs" id="avance-zona-subtabs" style="display:none;">
-                <button type="button" class="active" data-subvista="ventas"
-                    onclick="cambiarSubVistaZona('ventas')">&#x1F4CA; Ventas Zona</button>
-                <button type="button" data-subvista="promociones" onclick="cambiarSubVistaZona('promociones')">&#x1F381; Promociones Zona</button>
             </div>
 
             <!-- Vista Zonal: Supervisor / Jefe Comercial -->
@@ -911,6 +915,75 @@
             <div class="zonal-kpis" id="zonal-kpis" style="display:none;"></div>
 
             <div class="pdv-content" id="pdv-content"></div>
+        </section>
+
+        <!-- ===== PAGINA: AVANCE ZONA (PROMOTOR) ===== -->
+        <section class="page" id="page-avance-zona">
+            <div class="pdv-header">
+                <div class="pdv-header-left">
+                    <svg class="pdv-header-icon" viewBox="0 0 24 24" width="24" height="24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <h2 class="pdv-header-title">Avance por Zona</h2>
+                </div>
+                <div class="pdv-header-right">
+                    <span class="pdv-date-badge" id="avance-zona-date-badge">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                        </svg>
+                        <span id="avance-zona-date-periodo">-</span> &middot; D&iacute;a <strong
+                            id="avance-zona-dia-actual"></strong><span id="avance-zona-dia-total">/-</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="avance-filtros">
+                <div class="avance-filtro-mes">
+                    <div class="avance-filtro-mes-inner">
+                        <svg class="date-filter-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <select id="filtro-avance-zona-mes" onchange="cambiarMesFecha('avance-zona')">
+                            <option value="">Seleccionar periodo...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="promo-mode-toggle" id="avance-zona-mode-toggle">
+                    <button type="button" class="active" data-mode="productos"
+                        onclick="cambiarModoAvanceZona('productos')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10" />
+                            <line x1="12" y1="20" x2="12" y2="4" />
+                            <line x1="6" y1="20" x2="6" y2="14" />
+                        </svg>
+                        Productos Oficiales
+                    </button>
+                    <button type="button" data-mode="promociones" onclick="cambiarModoAvanceZona('promociones')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="8" width="18" height="4" rx="1" />
+                            <rect x="5" y="12" width="14" height="8" rx="1" />
+                            <path d="M12 8V5" />
+                        </svg>
+                        Promociones
+                    </button>
+                </div>
+            </div>
+
+            <div class="periodo-analizado" id="periodo-analizado-avance-zona"></div>
+
+            <div class="pdv-content" id="avance-zona-content"></div>
         </section>
 
         <!-- ===== PAGINA: REGISTRAR VENTAS (PROMOTOR) ===== -->
@@ -1552,10 +1625,31 @@
             <div class="inf-ind-dashboard" id="inf-ind-dashboard" style="display:none;">
 
                 <div class="inf-ind-top-grid">
-                    <div class="inf-ind-card inf-ind-venta-card">
-                        <div class="inf-ind-card-title">&#128176; Venta Acumulada</div>
-                        <div class="inf-ind-venta-big" id="inf-ind-venta">S/ 0</div>
-                        <div class="inf-ind-venta-sub">Ventas reales del periodo</div>
+                    <div class="inf-ind-card inf-ind-aporte-kpi-card">
+                        <div class="inf-ind-card-title">&#127919; APORTE A LA TIENDA</div>
+                        <div class="inf-ind-aporte-kpi-main">
+                            <div class="inf-ind-aporte-kpi-pct" id="inf-ind-aporte-kpi-pct">0%</div>
+                            <div class="inf-ind-aporte-kpi-status" id="inf-ind-aporte-kpi-status">—</div>
+                        </div>
+                        <div class="inf-ind-aporte-kpi-bar-wrap">
+                            <div class="inf-ind-aporte-kpi-bar-bg">
+                                <div class="inf-ind-aporte-kpi-bar-fill" id="inf-ind-aporte-kpi-bar-fill"></div>
+                            </div>
+                            <div class="inf-ind-aporte-kpi-thresholds">
+                                <span class="inf-ind-aporte-threshold inf-ind-aporte-red">70%</span>
+                                <span class="inf-ind-aporte-threshold inf-ind-aporte-yellow">100%</span>
+                            </div>
+                        </div>
+                        <div class="inf-ind-aporte-kpi-details">
+                            <div class="inf-ind-aporte-kpi-detail">
+                                <span class="inf-ind-aporte-kpi-label">Venta</span>
+                                <strong class="inf-ind-aporte-kpi-value" id="inf-ind-aporte-kpi-venta">S/ 0</strong>
+                            </div>
+                            <div class="inf-ind-aporte-kpi-detail">
+                                <span class="inf-ind-aporte-kpi-label">Cuota</span>
+                                <strong class="inf-ind-aporte-kpi-value" id="inf-ind-aporte-kpi-cuota">S/ 0</strong>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="inf-ind-card inf-ind-pos-card">
@@ -1574,13 +1668,6 @@
                         <div class="inf-ind-card-title">&#128200; Promedio Diario</div>
                         <div class="inf-ind-venta-big" id="inf-ind-promedio">S/ 0</div>
                         <div class="inf-ind-venta-sub" id="inf-ind-promedio-sub">0 d&iacute;as con ventas</div>
-                    </div>
-
-                    <div class="inf-ind-card inf-ind-aporte-card">
-                        <div class="inf-ind-card-title">&#127978; Aporte a la Tienda</div>
-                        <div class="inf-ind-aporte-big" id="inf-ind-aporte-pct">0%</div>
-                        <div class="inf-ind-venta-sub inf-ind-aporte-nombre" id="inf-ind-aporte-tienda">del total de la
-                            tienda</div>
                     </div>
                 </div>
 
