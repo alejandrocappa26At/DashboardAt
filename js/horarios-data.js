@@ -731,6 +731,7 @@ const HorariosDataStore = {
             }).catch(e => {
                 console.error('[AUDITORIA][PROMOTORES] Error al leer la configuración de Firestore. No se sobrescribirá la base de datos.', e);
                 this._sincronizarZonasConDataStore();
+                this._firestoreLoaded = true;
             });
 
             db.collection(HORARIOS_COLLECTION).doc('semanas').get().then(snap => {

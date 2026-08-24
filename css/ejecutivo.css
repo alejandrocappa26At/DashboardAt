@@ -891,9 +891,108 @@ table.ctl-table.ctl-table-exec {
     border-right: 1px solid var(--t-w08);
 }
 
-@media (max-width: 1200px) {
+.zona-compact-table thead th.zona-venta-col {
+    border-right: 1px solid var(--t-w08);
+}
+
+.zona-compact-table tbody td.zona-venta-only {
+    font-weight: 600;
+    color: var(--t-text);
+    background: var(--t-w015);
+    border-right: 1px solid var(--t-w08);
+}
+
+.zona-compact-table tbody td.zona-venta-only:last-child {
+    border-right: none;
+}
+
+.zona-compact-table tbody tr:nth-child(even) td.zona-venta-only {
+    background: var(--t-w03);
+}
+
+.zona-total-row td.zona-venta-only {
+    background: var(--accent) !important;
+    color: #fff;
+    font-weight: 800;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.zona-total-row td.zona-venta-only:last-child {
+    border-right: none;
+}
+
+/* Compact table styles */
+.zona-compact-table {
+    min-width: 1200px;
+    font-size: 11px;
+}
+
+.zona-compact-table thead th {
+    padding: 8px 10px !important;
+    font-size: 9.5px !important;
+    font-weight: 800;
+}
+
+.zona-compact-table thead th.zona-pdv-col {
+    padding: 8px 12px !important;
+}
+
+.zona-compact-table tbody td {
+    padding: 6px 8px !important;
+    font-size: 11px;
+    vertical-align: middle;
+}
+
+.zona-compact-table tbody td.zona-pdv-name {
+    padding: 6px 12px !important;
+    font-size: 11.5px;
+    font-weight: 600;
+    background: var(--t-w02);
+    border-right: 1px solid var(--t-w10);
+}
+
+.zona-compact-table tbody tr:nth-child(even) td.zona-pdv-name {
+    background: var(--t-w03);
+}
+
+.zona-compact-table tbody tr.acu-total-row td {
+    font-size: 11.5px !important;
+    font-weight: 700;
+    padding: 8px 10px !important;
+}
+
+.zona-compact-table tbody tr.acu-total-row td.acu-total-label {
+    font-size: 9.5px !important;
+    font-weight: 800 !important;
+}
+
+.zona-compact-table .zona-header-group th {
+    padding: 8px 10px !important;
+    font-size: 9.5px !important;
+}
+
+.zona-compact-table .zona-header-metrics th {
+    padding: 6px 8px !important;
+    font-size: 9px !important;
+}
+
+.zona-compact-table .acu-total-val {
+    text-align: center;
+}
+
+.zona-compact-table .acu-total-val.zona-venta-only {
+    text-align: center;
+}
+
+@media (max-width: 1400px) {
     .zona-compact-table {
         min-width: 1100px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .zona-compact-table {
+        min-width: 1000px;
     }
 }
 

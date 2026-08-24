@@ -6,11 +6,15 @@ let filtroPromo = '';
 
 /* ===== VISTA PROMOTOR: Mi Tienda / Mi Zona ===== */
 let avanceVista = 'tienda';
-let acuVista = 'tienda';
 let avanceZonaSubVista = 'ventas';
 
 /* ===== VISTA ZONAL (SUPERVISOR / JEFE COMERCIAL) ===== */
 let avanceZonalVista = 'tienda';
+
+function _acuNorm(s) {
+    if (s == null) return '';
+    return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
 
 function syncTipoInfoUI() {
     const sel = document.getElementById('filtro-tipo-info');
@@ -56,9 +60,7 @@ function reRenderCurrentPage() {
     else if (id === 'page-registrar-promociones') inicializarRegistroPromociones();
     else if (id === 'page-informe-promotor') recargarInformeSiAplica();
     else if (id === 'page-informe-individual') renderizarInformeIndividual();
-    else if (id === 'page-acumulado-diario') renderizarAcumuladoDiario();
     else if (id === 'page-vista-ejecutiva') renderizarVistaEjecutiva();
-    else if (id === 'page-corte-comercial') renderizarCorteComercial();
     else if (id === 'page-jefe-dashboard') renderJefeDashboard();
     else if (id === 'page-jefe-ranking') renderJefeRanking();
     else if (id === 'page-jefe-supervisores') renderJefeSupervisores();
@@ -1456,6 +1458,46 @@ function cambiarModoAvanceZona(mode) {
 }
 
 function renderizarAvanceZonaPromotor() {
+    const startTime = Date.now();
+    
+    if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized && typeof initHorarios === 'function') {
+        initHorarios('promotor');
+        HorariosDataStore.onUpdate = function () { renderizarAvanceZonaPromotor(); };
+    }
+
+    if (!HorariosDataStore._firestoreLoaded || !HorariosDataStore.zonas?.length || !HorariosDataStore.promotores?.length) {
+        const elapsed = Date.now() - startTime;
+        console.log('[AVANCE ZONA] Esperando datos de zona...', {
+            firestoreLoaded: HorariosDataStore._firestoreLoaded,
+            zonas: HorariosDataStore.zonas?.length || 0,
+            promotores: HorariosDataStore.promotores?.length || 0,
+            elapsed: elapsed + 'ms'
+        });
+        
+        // Timeout fallback: after 10 seconds, try to render anyway
+        if (elapsed > 10000) {
+            console.warn('[AVANCE ZONA] Timeout esperando datos de zona, intentando renderizar de todos modos');
+            const container = document.getElementById('avance-zona-content');
+            if (container) {
+                container.innerHTML = '<div class="empty-state"><p>No fue posible cargar los datos de la zona. Intente recargar la página.</p></div>';
+            }
+            return;
+        }
+        
+        const container = document.getElementById('avance-zona-content');
+        if (container) {
+            container.innerHTML = '<div class="empty-state"><p>Cargando datos de la zona...</p></div>';
+        }
+        setTimeout(renderizarAvanceZonaPromotor, 200);
+        return;
+    }
+
+    console.log('[AVANCE ZONA] Datos de zona cargados:', {
+        zonas: HorariosDataStore.zonas?.length || 0,
+        promotores: HorariosDataStore.promotores?.length || 0,
+        firestoreLoaded: HorariosDataStore._firestoreLoaded
+    });
+
     if (avanceZonaMode === 'promociones') {
         renderAvanceZonaPromociones();
         return;
@@ -1501,31 +1543,138 @@ function renderAvanceZonaVentasPromotor() {
 
     const tienda = _tiendaPromotorSesion();
     const zonaPDVs = _pdvsDeZonaDeTienda(tienda);
-    if (!zonaPDVs.length) {
-        container.innerHTML = '<div class="empty-state"><p>No se pudo identificar los puntos de venta de tu zona.</p></div>';
-        return;
-    }
 
     const infoPeriodo = DataStore.getInfoPeriodo();
     const ventasEnRango = DataStore.getVentasEnRango();
-    if (infoPeriodo.activo && !ventasEnRango.length) {
-        container.innerHTML = '<div class="empty-state"><p>No existen registros de ventas para el periodo seleccionado.</p></div>';
-        return;
-    }
-
     const cuotasEnRango = DataStore.getCuotasEnRango();
 
     // Console validation logging as requested
     const mesAnio = infoPeriodo.activo && infoPeriodo.fechaDesde
         ? `${MESES.find(m => m.valor === new Date(infoPeriodo.fechaDesde).getMonth() + 1)?.nombre || ''} ${new Date(infoPeriodo.fechaDesde).getFullYear()}`
         : 'Actual';
+    
+    const promotor = obtenerPromotorSesionInforme();
     console.log('=== AVANCE ZONA - VALIDACIÓN PERIODO ===');
-    console.log('Periodo seleccionado:', mesAnio);
+    console.log('Promotor:', promotor?.nombre || 'desconocido');
+    console.log('Zona:', tienda);
+    console.log('Periodo:', mesAnio);
+    console.log('Pestaña:', 'ventas');
+    console.log('PDVs encontrados:', zonaPDVs.length);
     console.log('Ventas encontradas:', ventasEnRango.length);
     console.log('Cuotas encontradas:', cuotasEnRango.length);
-    console.log('Zona:', tienda);
-    console.log('Filtros fecha (DataStore):', DataStore.getFiltrosFecha());
-    console.log('PDVs en zona:', zonaPDVs.length);
+    console.log('Filtros fecha DataStore:', DataStore.getFiltrosFecha());
+    
+    // Debug: show raw sales data for this zone
+    const ventasTodas = DataStore.getVentasActivas();
+    const ventasZona = ventasTodas.filter(v => zonaPDVs.includes(v.punto_venta));
+    console.log('Todas las ventas zona (sin filtro fecha):', ventasZona.length);
+    if (ventasZona.length > 0) {
+        console.log('Ejemplo fecha venta:', ventasZona[0].fecha);
+        console.log('Fechas únicas:', [...new Set(ventasZona.map(v => v.fecha))].slice(0, 10));
+    }
+    
+    if (ventasEnRango.length === 0 && infoPeriodo.activo) {
+        console.warn('No se encontraron ventas para el filtro aplicado', {
+            zona: tienda,
+            mes: new Date(infoPeriodo.fechaDesde).getMonth() + 1,
+            anio: new Date(infoPeriodo.fechaDesde).getFullYear()
+        });
+    }
+
+    // If no zona PDVs, render empty table with message
+    if (!zonaPDVs.length) {
+        container.innerHTML = '' +
+            '<div class="ctl-card zona-avance-card">' +
+            '<div class="ctl-card-header">' +
+            '<span class="ctl-card-title">\ud83c\udf0e Mi Zona \u00b7 Ventas por Punto de Venta</span>' +
+            '<span class="ctl-card-count">0 PDVs</span>' +
+            '</div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zona-table zona-compact-table">' +
+            '<thead>' +
+            '<tr class="zona-header-group">' +
+            '<th class="ctl-th-left zona-pdv-col" rowspan="2">Punto de Venta</th>' +
+            '<th colspan="4" class="zona-group-header">\ud83c\udfc6 Apuestas Deportivas</th>' +
+            '<th colspan="4" class="zona-group-header">\ud83c\udfae Juegos Virtuales</th>' +
+            '<th colspan="4" class="zona-group-header">\ud83d\udcb0 Ventas Acumuladas</th>' +
+            '<th class="zona-total-col" rowspan="2">Total General</th>' +
+            '</tr>' +
+            '<tr class="zona-header-metrics">' +
+            '<th class="zona-ad-col">Venta</th><th class="zona-ad-col">Cuota</th><th class="zona-ad-col">Faltante</th><th class="zona-ad-col">%</th>' +
+            '<th class="zona-jv-col">Venta</th><th class="zona-jv-col">Cuota</th><th class="zona-jv-col">Faltante</th><th class="zona-jv-col">%</th>' +
+            '<th>Mi Billetera</th><th>Lotobola</th><th>VLT</th><th>Torito</th>' +
+            '</tr>' +
+            '</thead><tbody>' +
+            '<tr><td colspan="13" class="empty-state" style="text-align:center;padding:40px;">No se pudo identificar los puntos de venta de tu zona.</td></tr>' +
+            '</tbody></table></div>' +
+            '</div>';
+        return;
+    }
+
+    // If active period but no sales data, render table with empty message
+    if (infoPeriodo.activo && !ventasEnRango.length) {
+        const allData = DataStore.getCumplimientoPorPDV();
+        let rowsHtml = '';
+        for (const pdv of zonaPDVs) {
+            rowsHtml += '<tr>' +
+                '<td class="ctl-td-left ctl-td-strong zona-pdv-name">' + ctlEsc(ctlNombreCorto(pdv)) + '</td>' +
+                '<td class="zona-ad-col">S/ 0</td>' +
+                '<td class="zona-ad-col">S/ 0</td>' +
+                '<td class="zona-ad-col">S/ 0</td>' +
+                '<td class="zona-ad-col">0%</td>' +
+                '<td class="zona-jv-col">S/ 0</td>' +
+                '<td class="zona-jv-col">S/ 0</td>' +
+                '<td class="zona-jv-col">S/ 0</td>' +
+                '<td class="zona-jv-col">0%</td>' +
+                '<td class="zona-venta-only">S/ 0</td>' +
+                '<td class="zona-venta-only">S/ 0</td>' +
+                '<td class="zona-venta-only">S/ 0</td>' +
+                '<td class="zona-venta-only">S/ 0</td>' +
+                '</tr>';
+        }
+
+        const totalRow = '<tr class="acu-total-row zona-total-row">' +
+            '<td class="ctl-td-left acu-total-label">\ud83c\udf0e TOTAL ZONA</td>' +
+            '<td class="acu-total-val zona-ad-total">S/ 0</td>' +
+            '<td class="acu-total-val zona-ad-total">S/ 0</td>' +
+            '<td class="acu-total-val zona-ad-total">S/ 0</td>' +
+            '<td class="acu-total-val zona-ad-total">0%</td>' +
+            '<td class="acu-total-val zona-jv-total">S/ 0</td>' +
+            '<td class="acu-total-val zona-jv-total">S/ 0</td>' +
+            '<td class="acu-total-val zona-jv-total">S/ 0</td>' +
+            '<td class="acu-total-val zona-jv-total">0%</td>' +
+            '<td class="acu-total-val zona-venta-only">S/ 0</td>' +
+            '<td class="acu-total-val zona-venta-only">S/ 0</td>' +
+            '<td class="acu-total-val zona-venta-only">S/ 0</td>' +
+            '<td class="acu-total-val zona-venta-only">S/ 0</td>' +
+            '<td class="acu-total-val zona-total-general">S/ 0</td>' +
+            '</tr>';
+
+        container.innerHTML = '' +
+            '<div class="ctl-card zona-avance-card">' +
+            '<div class="ctl-card-header">' +
+            '<span class="ctl-card-title">\ud83c\udf0e Mi Zona \u00b7 Ventas por Punto de Venta</span>' +
+            '<span class="ctl-card-count">' + zonaPDVs.length + ' PDVs</span>' +
+            '</div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zona-table zona-compact-table">' +
+            '<thead>' +
+            '<tr class="zona-header-group">' +
+            '<th class="ctl-th-left zona-pdv-col" rowspan="2">Punto de Venta</th>' +
+            '<th colspan="4" class="zona-group-header">\ud83c\udfc6 Apuestas Deportivas</th>' +
+            '<th colspan="4" class="zona-group-header">\ud83c\udfae Juegos Virtuales</th>' +
+            '<th colspan="4" class="zona-group-header">\ud83d\udcb0 Ventas Acumuladas</th>' +
+            '<th class="zona-total-col" rowspan="2">Total General</th>' +
+            '</tr>' +
+            '<tr class="zona-header-metrics">' +
+            '<th class="zona-ad-col">Venta</th><th class="zona-ad-col">Cuota</th><th class="zona-ad-col">Faltante</th><th class="zona-ad-col">%</th>' +
+            '<th class="zona-jv-col">Venta</th><th class="zona-jv-col">Cuota</th><th class="zona-jv-col">Faltante</th><th class="zona-jv-col">%</th>' +
+            '<th>Mi Billetera</th><th>Lotobola</th><th>VLT</th><th>Torito</th>' +
+            '</tr>' +
+            '</thead><tbody>' + rowsHtml + totalRow +
+            '<tr><td colspan="13" class="empty-state" style="text-align:center;padding:20px;color:var(--t-dim);">No existen registros de ventas para el periodo seleccionado.</td></tr>' +
+            '</tbody></table></div>' +
+            '</div>';
+        return;
+    }
 
     const AD = 'Apuestas Deportivas';
     const JV = 'Juegos Virtuales';
@@ -1639,6 +1788,8 @@ function renderAvanceZonaVentasPromotor() {
 }
 
 function renderAvanceZonaPromociones() {
+    const startTime = Date.now();
+    
     actualizarVisibilidadBotonExportar();
     renderAvisoOficial();
     renderPeriodoAnalizado('periodo-analizado-avance-zona');
@@ -1669,12 +1820,37 @@ function renderAvanceZonaPromociones() {
     const container = document.getElementById('avance-zona-content');
     if (!container) return;
 
-    const tienda = _tiendaPromotorSesion();
-    const zonaPDVs = _pdvsDeZonaDeTienda(tienda);
-    if (!zonaPDVs.length) {
-        container.innerHTML = '<div class="empty-state"><p>No se pudo identificar los puntos de venta de tu zona.</p></div>';
+    if (!HorariosDataStore._firestoreLoaded || !HorariosDataStore.zonas?.length || !HorariosDataStore.promotores?.length) {
+        const elapsed = Date.now() - startTime;
+        console.log('[AVANCE ZONA PROMOS] Esperando datos de zona...', {
+            firestoreLoaded: HorariosDataStore._firestoreLoaded,
+            zonas: HorariosDataStore.zonas?.length || 0,
+            promotores: HorariosDataStore.promotores?.length || 0,
+            elapsed: elapsed + 'ms'
+        });
+        
+        // Timeout fallback: after 10 seconds, try to render anyway
+        if (elapsed > 10000) {
+            console.warn('[AVANCE ZONA PROMOS] Timeout esperando datos de zona, intentando renderizar de todos modos');
+            if (container) {
+                container.innerHTML = '<div class="empty-state"><p>No fue posible cargar los datos de la zona. Intente recargar la página.</p></div>';
+            }
+            return;
+        }
+        
+        container.innerHTML = '<div class="empty-state"><p>Cargando datos de la zona...</p></div>';
+        setTimeout(renderAvanceZonaPromociones, 200);
         return;
     }
+
+    console.log('[AVANCE ZONA PROMOS] Datos de zona cargados:', {
+        zonas: HorariosDataStore.zonas?.length || 0,
+        promotores: HorariosDataStore.promotores?.length || 0
+    });
+
+    const promotor = obtenerPromotorSesionInforme();
+    const tienda = _tiendaPromotorSesion();
+    const zonaPDVs = _pdvsDeZonaDeTienda(tienda);
 
     if (typeof PromocionesStore === 'undefined' || !PromocionesStore._firestoreLoaded) {
         container.innerHTML = '<div class="empty-state"><p>Cargando promociones...</p></div>';
@@ -1682,17 +1858,88 @@ function renderAvanceZonaPromociones() {
     }
 
     const p = PromocionesStore._periodoEfectivo();
+    const mesAnio = p.desde ? `${MESES.find(m => m.valor === new Date(p.desde).getMonth() + 1)?.nombre || ''} ${new Date(p.desde).getFullYear()}` : 'Actual';
+    
     const promocionesObjetivo = ['5x5 Virtuales', 'Bet Builder 15', 'Free Bet Cliente Nuevo'];
     const promoKeys = promocionesObjetivo.map(k => _acuNorm(k));
 
     const registrosEnRango = PromocionesStore.getRegistrosEnRango(p.desde, p.hasta);
-    const mesAnio = p.desde ? `${MESES.find(m => m.valor === new Date(p.desde).getMonth() + 1)?.nombre || ''} ${new Date(p.desde).getFullYear()}` : 'Actual';
+    
     console.log('=== AVANCE ZONA PROMOCIONES - VALIDACIÓN PERIODO ===');
-    console.log('Periodo seleccionado:', mesAnio);
-    console.log('Registros encontrados:', registrosEnRango.length);
+    console.log('Promotor:', promotor?.nombre || 'desconocido');
     console.log('Zona:', tienda);
-    console.log('Filtros fecha (DataStore):', DataStore.getFiltrosFecha());
-    console.log('PDVs en zona:', zonaPDVs.length);
+    console.log('Periodo:', mesAnio);
+    console.log('Pestaña:', 'promociones');
+    console.log('PDVs encontrados:', zonaPDVs.length);
+    console.log('Promociones encontradas:', registrosEnRango.length);
+    console.log('Filtros fecha DataStore:', DataStore.getFiltrosFecha());
+
+    // If no zona PDVs, render empty table with message
+    if (!zonaPDVs.length) {
+        container.innerHTML = '' +
+            '<div class="ctl-card zona-avance-card">' +
+            '<div class="ctl-card-header">' +
+            '<span class="ctl-card-title">\ud83c\udf0e Mi Zona \u00b7 Promociones por Punto de Venta</span>' +
+            '<span class="ctl-card-count">0 PDVs</span>' +
+            '</div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zona-table zona-compact-table zona-promo-table">' +
+            '<thead>' +
+            '<tr class="zona-header-group">' +
+            '<th class="ctl-th-left zona-pdv-col" rowspan="2">Punto de Venta</th>' +
+            '<th colspan="4" class="zona-group-header">\ud83c\udf81 Promociones</th>' +
+            '</tr>' +
+            '<tr class="zona-header-metrics">' +
+            '<th>5x5 Virtuales</th><th>Bet Builder 15</th><th>Free Bet Cliente Nuevo</th><th>Total Promociones</th>' +
+            '</tr>' +
+            '</thead><tbody>' +
+            '<tr><td colspan="5" class="empty-state" style="text-align:center;padding:40px;">No se pudo identificar los puntos de venta de tu zona.</td></tr>' +
+            '</tbody></table></div>' +
+            '</div>';
+        return;
+    }
+
+    // If no registros, render empty table with message
+    if (!registrosEnRango.length) {
+        let rowsHtml = '';
+        for (const pdv of zonaPDVs) {
+            rowsHtml += '<tr>' +
+                '<td class="ctl-td-left ctl-td-strong zona-pdv-name">' + ctlEsc(ctlNombreCorto(pdv)) + '</td>' +
+                '<td class="zona-promo-cant">0</td>' +
+                '<td class="zona-promo-cant">0</td>' +
+                '<td class="zona-promo-cant">0</td>' +
+                '<td class="zona-promo-total">0</td>' +
+                '</tr>';
+        }
+
+        const totalRow = '<tr class="acu-total-row zona-total-row">' +
+            '<td class="ctl-td-left acu-total-label">\ud83c\udf0e TOTAL ZONA</td>' +
+            '<td class="acu-total-val zona-promo-cant">0</td>' +
+            '<td class="acu-total-val zona-promo-cant">0</td>' +
+            '<td class="acu-total-val zona-promo-cant">0</td>' +
+            '<td class="acu-total-val zona-promo-total">0</td>' +
+            '</tr>';
+
+        container.innerHTML = '' +
+            '<div class="ctl-card zona-avance-card">' +
+            '<div class="ctl-card-header">' +
+            '<span class="ctl-card-title">\ud83c\udf0e Mi Zona \u00b7 Promociones por Punto de Venta</span>' +
+            '<span class="ctl-card-count">' + zonaPDVs.length + ' PDVs</span>' +
+            '</div>' +
+            '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zona-table zona-compact-table zona-promo-table">' +
+            '<thead>' +
+            '<tr class="zona-header-group">' +
+            '<th class="ctl-th-left zona-pdv-col" rowspan="2">Punto de Venta</th>' +
+            '<th colspan="4" class="zona-group-header">\ud83c\udf81 Promociones</th>' +
+            '</tr>' +
+            '<tr class="zona-header-metrics">' +
+            '<th>5x5 Virtuales</th><th>Bet Builder 15</th><th>Free Bet Cliente Nuevo</th><th>Total Promociones</th>' +
+            '</tr>' +
+            '</thead><tbody>' + rowsHtml + totalRow +
+            '<tr><td colspan="5" class="empty-state" style="text-align:center;padding:20px;color:var(--t-dim);">No existen registros de promociones para el periodo seleccionado.</td></tr>' +
+            '</tbody></table></div>' +
+            '</div>';
+        return;
+    }
 
     let rowsHtml = '';
     const totales = { '5x5 Virtuales': 0, 'Bet Builder 15': 0, 'Free Bet Cliente Nuevo': 0 };
@@ -1998,19 +2245,29 @@ function _ventasDelDiaGlobal(fecha) {
 function _acumuladoZonalRows(zonaPDVs) {
     const ADn = _acuNorm('Apuestas Deportivas');
     const JVn = _acuNorm('Juegos Virtuales');
+    const MBn = _acuNorm('Mi Billetera');
+    const TORn = _acuNorm('Torito');
+    const LOTo = _acuNorm('Lotobola');
+    const VLTn = _acuNorm('VLT');
     const allData = DataStore.getCumplimientoPorPDV();
     const rows = [];
     let totADv = 0, totADc = 0, totJVv = 0, totJVc = 0;
+    let totMBv = 0, totTORv = 0, totLOTOv = 0, totVLTv = 0;
     for (const pdv of zonaPDVs) {
         const d = allData[pdv];
         const ad = { venta: 0, cuota: 0, cumplimiento: 0 };
         const jv = { venta: 0, cuota: 0, cumplimiento: 0 };
+        let mbVenta = 0, torVenta = 0, lotoVenta = 0, vltVenta = 0;
         if (d && d.productos) {
             for (const key of Object.keys(d.productos)) {
                 const p = d.productos[key];
                 const n = _acuNorm(key);
                 if (n === ADn) { ad.venta = p.venta || 0; ad.cuota = p.cuota || 0; ad.cumplimiento = p.cumplimiento || 0; }
                 else if (n === JVn) { jv.venta = p.venta || 0; jv.cuota = p.cuota || 0; jv.cumplimiento = p.cumplimiento || 0; }
+                else if (n === MBn) { mbVenta = p.venta || 0; }
+                else if (n === TORn) { torVenta = p.venta || 0; }
+                else if (n === LOTo) { lotoVenta = p.venta || 0; }
+                else if (n === VLTn) { vltVenta = p.venta || 0; }
             }
         }
         rows.push({
@@ -2019,16 +2276,19 @@ function _acumuladoZonalRows(zonaPDVs) {
             alcAD: ad.cuota > 0 ? (ad.venta / ad.cuota) * 100 : 0,
             jvVenta: jv.venta, jvCuota: jv.cuota, jvFalt: jv.cuota - jv.venta,
             alcJV: jv.cuota > 0 ? (jv.venta / jv.cuota) * 100 : 0,
+            mbVenta, torVenta, lotoVenta, vltVenta,
             alcance: (ad.cuota + jv.cuota) > 0 ? ((ad.venta + jv.venta) / (ad.cuota + jv.cuota)) * 100 : 0
         });
         totADv += ad.venta; totADc += ad.cuota;
         totJVv += jv.venta; totJVc += jv.cuota;
+        totMBv += mbVenta; totTORv += torVenta; totLOTOv += lotoVenta; totVLTv += vltVenta;
     }
     const totales = {
         adVenta: totADv, adCuota: totADc, adFalt: totADc - totADv,
         alcAD: totADc > 0 ? (totADv / totADc) * 100 : 0,
         jvVenta: totJVv, jvCuota: totJVc, jvFalt: totJVc - totJVv,
-        alcJV: totJVc > 0 ? (totJVv / totJVc) * 100 : 0
+        alcJV: totJVc > 0 ? (totJVv / totJVc) * 100 : 0,
+        mbVenta: totMBv, torVenta: totTORv, lotoVenta: totLOTOv, vltVenta: totVLTv
     };
     return {
         rows,
@@ -2262,42 +2522,58 @@ function renderResumenZonalAcumulado() {
     data.rows.forEach(r => {
         rowsHtml += '<tr>' +
             '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(ctlNombreCorto(r.pdv)) + '</td>' +
-            '<td>' + formatCurrency(r.adVenta) + '</td>' +
-            '<td>' + formatCurrency(r.adCuota) + '</td>' +
-            '<td class="' + (r.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.adFalt <= 0 ? '\u2713 0' : formatCurrency(r.adFalt)) + '</td>' +
-            '<td>' + _zonalPctCell(r.alcAD) + '</td>' +
-            '<td>' + formatCurrency(r.jvVenta) + '</td>' +
-            '<td>' + formatCurrency(r.jvCuota) + '</td>' +
-            '<td class="' + (r.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.jvFalt <= 0 ? '\u2713 0' : formatCurrency(r.jvFalt)) + '</td>' +
-            '<td>' + _zonalPctCell(r.alcJV) + '</td>' +
+            '<td class="zona-ad-col">' + formatCurrencyCompact(r.adVenta) + '</td>' +
+            '<td class="zona-ad-col">' + formatCurrencyCompact(r.adCuota) + '</td>' +
+            '<td class="zona-ad-col ' + (r.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.adFalt <= 0 ? '\u2713 0' : formatCurrencyCompact(r.adFalt)) + '</td>' +
+            '<td class="zona-ad-col">' + _zonalPctCell(r.alcAD) + '</td>' +
+            '<td class="zona-jv-col">' + formatCurrencyCompact(r.jvVenta) + '</td>' +
+            '<td class="zona-jv-col">' + formatCurrencyCompact(r.jvCuota) + '</td>' +
+            '<td class="zona-jv-col ' + (r.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.jvFalt <= 0 ? '\u2713 0' : formatCurrencyCompact(r.jvFalt)) + '</td>' +
+            '<td class="zona-jv-col">' + _zonalPctCell(r.alcJV) + '</td>' +
+            '<td class="zona-venta-only">' + formatCurrencyCompact(r.mbVenta) + '</td>' +
+            '<td class="zona-venta-only">' + formatCurrencyCompact(r.torVenta) + '</td>' +
+            '<td class="zona-venta-only">' + formatCurrencyCompact(r.lotoVenta) + '</td>' +
+            '<td class="zona-venta-only">' + formatCurrencyCompact(r.vltVenta) + '</td>' +
             '</tr>';
     });
 
     const t = data.totales;
     const totalRow = '<tr class="acu-total-row">' +
-        '<td class="ctl-td-left acu-total-label">TOTAL ZONA</td>' +
-        '<td class="acu-total-val">' + formatCurrency(t.adVenta) + '</td>' +
-        '<td class="acu-total-val">' + formatCurrency(t.adCuota) + '</td>' +
-        '<td class="acu-total-val ' + (t.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.adFalt <= 0 ? '\u2713 0' : formatCurrency(t.adFalt)) + '</td>' +
-        '<td class="acu-total-val">' + _zonalPctCell(t.alcAD, true) + '</td>' +
-        '<td class="acu-total-val">' + formatCurrency(t.jvVenta) + '</td>' +
-        '<td class="acu-total-val">' + formatCurrency(t.jvCuota) + '</td>' +
-        '<td class="acu-total-val ' + (t.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.jvFalt <= 0 ? '\u2713 0' : formatCurrency(t.jvFalt)) + '</td>' +
-        '<td class="acu-total-val">' + _zonalPctCell(t.alcJV, true) + '</td>' +
+        '<td class="ctl-td-left acu-total-label">\ud83c\udf0e TOTAL ZONA</td>' +
+        '<td class="acu-total-val zona-ad-total">' + formatCurrencyCompact(t.adVenta) + '</td>' +
+        '<td class="acu-total-val zona-ad-total">' + formatCurrencyCompact(t.adCuota) + '</td>' +
+        '<td class="acu-total-val zona-ad-total ' + (t.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.adFalt <= 0 ? '\u2713 0' : formatCurrencyCompact(t.adFalt)) + '</td>' +
+        '<td class="acu-total-val zona-ad-total">' + _zonalPctCell(t.alcAD, true) + '</td>' +
+        '<td class="acu-total-val zona-jv-total">' + formatCurrencyCompact(t.jvVenta) + '</td>' +
+        '<td class="acu-total-val zona-jv-total">' + formatCurrencyCompact(t.jvCuota) + '</td>' +
+        '<td class="acu-total-val zona-jv-total ' + (t.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.jvFalt <= 0 ? '\u2713 0' : formatCurrencyCompact(t.jvFalt)) + '</td>' +
+        '<td class="acu-total-val zona-jv-total">' + _zonalPctCell(t.alcJV, true) + '</td>' +
+        '<td class="acu-total-val zona-venta-only">' + formatCurrencyCompact(t.mbVenta) + '</td>' +
+        '<td class="acu-total-val zona-venta-only">' + formatCurrencyCompact(t.torVenta) + '</td>' +
+        '<td class="acu-total-val zona-venta-only">' + formatCurrencyCompact(t.lotoVenta) + '</td>' +
+        '<td class="acu-total-val zona-venta-only">' + formatCurrencyCompact(t.vltVenta) + '</td>' +
         '</tr>';
 
     container.innerHTML = '' +
         '<div class="ctl-card">' +
         '<div class="ctl-card-header">' +
         '<span class="ctl-card-title">\ud83d\udcca Resumen Zonal Acumulado \u00b7 ' + ctlEsc(_nombreZonaSeleccionada()) + '</span>' +
-        '<span class="ctl-card-count">' + zonaPDVs.length + ' PDVs \u00b7 Apuestas Deportivas y Juegos Virtuales</span>' +
+        '<span class="ctl-card-count">' + zonaPDVs.length + ' PDVs \u00b7 AD, JV y Ventas Acumuladas</span>' +
         '</div>' +
-        '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zonal-table">' +
-        '<thead><tr>' +
-        '<th class="ctl-th-left">PDV</th>' +
-        '<th>Venta AD</th><th>Cuota AD</th><th>Faltante AD</th><th>% AD</th>' +
-        '<th>Venta JV</th><th>Cuota JV</th><th>Faltante JV</th><th>% JV</th>' +
-        '</tr></thead><tbody>' + rowsHtml + totalRow + '</tbody>' +
+        '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zonal-table zona-compact-table">' +
+        '<thead>' +
+        '<tr class="zona-header-group">' +
+        '<th class="ctl-th-left zona-pdv-col" rowspan="2">PDV</th>' +
+        '<th colspan="4" class="zona-group-header">\ud83c\udfc6 Apuestas Deportivas</th>' +
+        '<th colspan="4" class="zona-group-header">\ud83c\udfae Juegos Virtuales</th>' +
+        '<th colspan="4" class="zona-group-header">\ud83d\udcb0 Ventas Acumuladas</th>' +
+        '</tr>' +
+        '<tr class="zona-header-metrics">' +
+        '<th class="zona-ad-col">Venta</th><th class="zona-ad-col">Cuota</th><th class="zona-ad-col">Faltante</th><th class="zona-ad-col">%</th>' +
+        '<th class="zona-jv-col">Venta</th><th class="zona-jv-col">Cuota</th><th class="zona-jv-col">Faltante</th><th class="zona-jv-col">%</th>' +
+        '<th>Mi Billetera</th><th>Torito</th><th>Lotobola</th><th>VLT</th>' +
+        '</tr>' +
+        '</thead><tbody>' + rowsHtml + totalRow + '</tbody>' +
         '</table></div>' +
         '</div>';
 
@@ -3093,7 +3369,7 @@ function bloquearSupervisor() {
     const activePage = document.querySelector('.page.active');
     if (activePage) {
         const id = activePage.id.replace('page-', '');
-        if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios' || id === 'tiendas' || id === 'corte-comercial') {
+        if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios' || id === 'tiendas') {
             cambiarPagina('avance');
         }
     }
@@ -3125,7 +3401,7 @@ function actualizarSidebarSupervisor() {
         const activePage = document.querySelector('.page.active');
         if (activePage) {
             const id = activePage.id.replace('page-', '');
-            if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios' || id === 'corte-comercial') {
+            if (id === 'resumen' || id === 'vista-ejecutiva' || id === 'horarios') {
                 cambiarPagina('avance');
             }
         }
@@ -3243,7 +3519,6 @@ if (typeof HorariosDataStore !== 'undefined') {
     renderizarAvancePDV();
     renderizarRanking();
     renderizarVistaEjecutiva();
-    renderizarCorteComercial();
 
     if (typeof PromocionesStore !== 'undefined') {
         if (!PromocionesStore.initialized) {
@@ -3265,13 +3540,13 @@ function cambiarPagina(pagina) {
         return;
     }
 
-    const paginasSupervisor = ['resumen', 'vista-ejecutiva', 'horarios', 'informe-promotor', 'tiendas', 'corte-comercial'];
+    const paginasSupervisor = ['resumen', 'vista-ejecutiva', 'horarios', 'informe-promotor', 'tiendas'];
     if (session.rol === 'promotor' && paginasSupervisor.indexOf(pagina) !== -1) {
         cambiarPagina('avance');
         return;
     }
 
-    if ((pagina === 'resumen' || pagina === 'vista-ejecutiva' || pagina === 'horarios' || pagina === 'tiendas' || pagina === 'corte-comercial') && !estaSupervisorDesbloqueado()) {
+    if ((pagina === 'resumen' || pagina === 'vista-ejecutiva' || pagina === 'horarios' || pagina === 'tiendas') && !estaSupervisorDesbloqueado()) {
         abrirModalPassword();
         return;
     }
@@ -3294,11 +3569,9 @@ document.getElementById('page-title').textContent =
                 pagina === 'ranking' ? 'Ranking de Tiendas' :
                 pagina === 'informe-promotor' ? 'Informe por Promotor' :
                 pagina === 'informe-individual' ? 'Informe Individual' :
-                pagina === 'acumulado-diario' ? 'Acumulado Diario' :
                 pagina === 'horarios' ? 'Gestión de Promotores' :
-            pagina === 'tiendas' ? 'Gestión de Tiendas' :
-                pagina === 'corte-comercial' ? 'Corte Comercial' :
-                pagina === 'jefe-dashboard' ? 'Dashboard General' :
+pagina === 'tiendas' ? 'Gestión de Tiendas' :
+            pagina === 'jefe-dashboard' ? 'Dashboard General' :
                     pagina === 'jefe-ranking' ? 'Ranking de Supervisores' :
                     pagina === 'jefe-supervisores' ? 'Gestión de Supervisores' :
                     pagina === 'jefe-zonas' ? 'Gestión de Zonas' : 'Dashboard';
@@ -3321,8 +3594,6 @@ document.getElementById('page-title').textContent =
         renderizarInformePromotor();
     } else if (pagina === 'informe-individual') {
         renderizarInformeIndividual();
-    } else if (pagina === 'acumulado-diario') {
-        renderizarAcumuladoDiario();
     } else if (pagina === 'horarios') {
         if (!HorariosDataStore.initialized) {
             initHorarios('supervisor');
@@ -3337,8 +3608,6 @@ document.getElementById('page-title').textContent =
         } else if (typeof renderGestionTiendas === 'function') {
             renderGestionTiendas();
         }
-    } else if (pagina === 'corte-comercial') {
-        renderizarCorteComercial();
     } else if (pagina === 'jefe-dashboard') {
         if (typeof renderJefeDashboard === 'function') renderJefeDashboard();
     } else if (pagina === 'jefe-ranking') {
@@ -3478,7 +3747,7 @@ function renderTablaCuotas(mes, anio) {
     const tbody = document.getElementById('tbody-cuotas');
     const thead = document.querySelector('#tabla-cuotas thead tr');
 
-    const pdvs = DataStore.getPDVs();
+    const pdvs = DataStore.getAllPDVs();
     const productos = DataStore.getProductos();
     const cuotas = DataStore.getCuotas(mes, anio);
 
@@ -3488,6 +3757,8 @@ function renderTablaCuotas(mes, anio) {
     const pdvsVisibles = zonaNorm
         ? pdvs.filter(pdv => _normalizarZonaCuotas(_getZonaPDVCuotas(pdv)) === zonaNorm)
         : pdvs;
+
+    console.log('[VALIDACION CUOTAS] Mes:', MESES.find(m => m.valor === mes)?.nombre || mes, '| Año:', anio, '| Zona seleccionada:', zona || 'Todas', '| PDVs totales:', pdvs.length, '| PDVs visibles:', pdvsVisibles.length, '| Cuotas recuperadas:', cuotas.length);
 
     const infoNombre = document.getElementById('cuotas-zona-nombre');
     if (infoNombre) infoNombre.textContent = zona || 'Todas las Zonas';
@@ -3572,6 +3843,17 @@ function guardarCuotas() {
         const inputs = document.querySelectorAll('.cuotas-input');
         const mes = parseInt(document.getElementById('cuotas-mes').value);
         const anio = parseInt(document.getElementById('cuotas-anio').value);
+        
+        // Obtener la zona seleccionada y los PDVs visibles (los que se están editando)
+        const zonaSel = document.getElementById('cuotas-zona');
+        const zona = zonaSel ? zonaSel.value : '';
+        
+        const pdvs = DataStore.getAllPDVs();
+        const zonaNorm = _normalizarZonaCuotas(zona);
+        const pdvsVisibles = zonaNorm
+            ? pdvs.filter(pdv => _normalizarZonaCuotas(_getZonaPDVCuotas(pdv)) === zonaNorm)
+            : pdvs;
+
         const nuevasCuotas = [];
 
         inputs.forEach(inp => {
@@ -3582,7 +3864,8 @@ function guardarCuotas() {
                     producto: inp.dataset.prod,
                     cuota: val,
                     mes,
-                    anio
+                    anio,
+                    zona: _getZonaPDVCuotas(inp.dataset.pdv) || zona || ''
                 });
             }
         });
@@ -3592,7 +3875,9 @@ function guardarCuotas() {
             return;
         }
 
-        DataStore.actualizarCuotas(nuevasCuotas, mes, anio);
+        console.log('[VALIDACION CUOTAS] Zona:', zona || 'Todas', '| Mes:', MESES.find(m => m.valor === mes)?.nombre || mes, '| Año:', anio, '| PDVs a guardar:', pdvsVisibles.length, '| Cuotas a guardar:', nuevasCuotas.length);
+        DataStore.actualizarCuotas(nuevasCuotas, mes, anio, pdvsVisibles);
+        console.log('[VALIDACION CUOTAS] Cuotas guardadas:', nuevasCuotas.length, '| Documento: dashboard/datos | Zona:', zona || 'Todas', '| Mes:', mes, '| Año:', anio);
         cerrarModalCuotas();
         recargarDashboard();
         mostrarNotificacion('✅ Información guardada correctamente.', 'success');
@@ -5947,254 +6232,6 @@ function renderizarInformeIndividual() {
     if (infIndTab === 'promociones') {
         renderPromocionesInformeIndividual();
     }
-}
-
-/* ===== ACUMULADO DIARIO ===== */
-const ACU_PRODUCTOS = ['Apuestas Deportivas', 'Hípica', 'Juegos Virtuales', 'Lotobola', 'Lottingo', 'Mi Billetera', 'Torito', 'VLT'];
-
-function _acuNorm(s) {
-    if (s == null) return '';
-    return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function _acuDiaStr(fecha) {
-    const d = fecha ? new Date(fecha) : new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-
-function _acuVentasDelDia(tienda, fecha) {
-    const anio = fecha.getFullYear();
-    const mes = fecha.getMonth() + 1;
-    const dia = fecha.getDate();
-    const ventas = (typeof DataStore !== 'undefined' && typeof DataStore.getVentasActivas === 'function') ? DataStore.getVentasActivas() : [];
-    return ventas.filter(v => {
-        if (!v || v.punto_venta !== tienda) return false;
-        const f = v.fecha ? new Date(v.fecha) : null;
-        if (f && !isNaN(f.getTime())) {
-            return f.getFullYear() === anio && f.getMonth() + 1 === mes && f.getDate() === dia;
-        }
-        return v.dia === dia && (v.mes || mes) === mes && (v.anio || anio) === anio;
-    });
-}
-
-function _acuCuotasTienda(tienda, mes, anio) {
-    if (typeof DataStore === 'undefined' || typeof DataStore.getCuotas !== 'function') return [];
-    return DataStore.getCuotas(mes, anio).filter(c => c && c.punto_venta === tienda);
-}
-
-function _acuSem(pct) {
-    if (pct >= 100) return 'ok';
-    if (pct >= 70) return 'mid';
-    return 'low';
-}
-
-function renderizarAcumuladoDiario() {
-    const page = document.getElementById('page-acumulado-diario');
-    if (!page) return;
-
-    if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore.initialized && typeof initHorarios === 'function') {
-        initHorarios('supervisor');
-        HorariosDataStore.onUpdate = function () { renderHorarios(); };
-    }
-
-    const warning = document.getElementById('acu-session-warning');
-    const dashboard = document.getElementById('acu-dashboard');
-    const heroUser = document.getElementById('acu-hero-user');
-
-    const promotor = obtenerPromotorSesionInforme();
-    if (!promotor) {
-        if (warning) {
-            warning.style.display = 'flex';
-            warning.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> <div><strong>Inicia sesi&oacute;n como promotor</strong><span>Este m&oacute;dulo es exclusivo para el promotor autenticado con su propia sesi&oacute;n.</span></div>';
-        }
-        if (dashboard) dashboard.style.display = 'none';
-        if (heroUser) heroUser.innerHTML = '';
-        const tabsAcu1 = document.getElementById('acu-view-tabs');
-        if (tabsAcu1) tabsAcu1.style.display = 'none';
-        return;
-    }
-
-    if (warning) warning.style.display = 'none';
-    if (dashboard) dashboard.style.display = '';
-    if (heroUser) heroUser.innerHTML = renderHeroUsuarioInforme(promotor);
-
-    const tienda = _tiendaNombrePromotor(promotor);
-    if (!tienda) {
-        if (warning) {
-            warning.style.display = 'flex';
-            warning.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> <div><strong>Sin tienda asignada</strong><span>El promotor no tiene una tienda asignada para consultar su acumulado diario.</span></div>';
-        }
-        if (dashboard) dashboard.style.display = 'none';
-        const tabsAcu2 = document.getElementById('acu-view-tabs');
-        if (tabsAcu2) tabsAcu2.style.display = 'none';
-        return;
-    }
-
-    const hoy = new Date();
-    const hoyStr = _acuDiaStr(hoy);
-    const fechaInput = document.getElementById('acu-fecha');
-    if (fechaInput) {
-        if (!fechaInput.max) fechaInput.max = hoyStr;
-        if (!fechaInput.value) fechaInput.value = hoyStr;
-    }
-    const selStr = fechaInput ? (fechaInput.value || hoyStr) : hoyStr;
-    const partes = String(selStr).split('-').map(Number);
-    if (partes.length !== 3 || partes.some(isNaN)) return;
-    const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
-    syncVistaAcuUI();
-    const zonaContainer = document.getElementById('acu-zona');
-    if (acuVista === 'zona') {
-        if (zonaContainer) zonaContainer.style.display = '';
-        renderAcumuladoZona(fecha, tienda);
-        return;
-    }
-    if (zonaContainer) zonaContainer.style.display = 'none';
-    const mes = fecha.getMonth() + 1;
-    const anio = fecha.getFullYear();
-    const diasMes = new Date(anio, mes, 0).getDate();
-
-    const ventasDia = _acuVentasDelDia(tienda, fecha);
-    const cuotas = _acuCuotasTienda(tienda, mes, anio);
-
-    const ventaPorProd = {};
-    ventasDia.forEach(v => {
-        const n = _acuNorm(v.producto);
-        ventaPorProd[n] = (ventaPorProd[n] || 0) + (v.venta || 0);
-    });
-    const cuotaPorProd = {};
-    cuotas.forEach(c => {
-        const n = _acuNorm(c.producto);
-        cuotaPorProd[n] = (cuotaPorProd[n] || 0) + (c.cuota || 0);
-    });
-
-    const rows = ACU_PRODUCTOS.map(nombre => {
-        const n = _acuNorm(nombre);
-        const ventaDia = ventaPorProd[n] || 0;
-        const metaDia = diasMes > 0 ? (cuotaPorProd[n] || 0) / diasMes : 0;
-        const alcance = metaDia > 0 ? (ventaDia / metaDia) * 100 : 0;
-        return { nombre, ventaDia, metaDia, alcance };
-    });
-
-    const totalVentaDia = rows.reduce((s, r) => s + r.ventaDia, 0);
-    const totalMetaDia = rows.reduce((s, r) => s + r.metaDia, 0);
-    const totalAlcance = totalMetaDia > 0 ? (totalVentaDia / totalMetaDia) * 100 : 0;
-    const faltanteDia = totalMetaDia - totalVentaDia;
-
-    const fecLegible = fecha.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
-    document.getElementById('acu-venta-dia').textContent = infIndMoneda(totalVentaDia);
-    document.getElementById('acu-venta-dia-sub').textContent = fecLegible + ' \u00b7 ' + tienda;
-    document.getElementById('acu-meta-dia').textContent = infIndMoneda(totalMetaDia);
-    document.getElementById('acu-meta-dia-sub').textContent = 'Cuota mensual del mes \u00b7 ' + diasMes + ' d\u00edas';
-
-    const alcEl = document.getElementById('acu-alcance-dia');
-    alcEl.textContent = infIndPctStr(totalAlcance);
-    alcEl.className = 'inf-ind-venta-big acu-sem-' + _acuSem(totalAlcance);
-
-    const faltEl = document.getElementById('acu-faltante-dia');
-    faltEl.className = 'inf-ind-venta-big ' + (faltanteDia <= 0 ? 'acu-var-ok' : 'acu-var-bad');
-    faltEl.textContent = faltanteDia <= 0 ? '\u2713 0' : infIndMoneda(faltanteDia);
-
-    const ayer = new Date(anio, mes - 1, fecha.getDate() - 1);
-    const ventasAyer = _acuVentasDelDia(tienda, ayer);
-    const ventaAyer = ventasAyer.reduce((s, v) => s + (v.venta || 0), 0);
-    const varPct = ventaAyer > 0 ? ((totalVentaDia - ventaAyer) / ventaAyer) * 100 : (totalVentaDia > 0 ? 100 : 0);
-    document.getElementById('acu-comp-hoy').textContent = infIndMoneda(totalVentaDia);
-    document.getElementById('acu-comp-ayer').textContent = infIndMoneda(ventaAyer);
-    const varEl = document.getElementById('acu-comp-var');
-    varEl.textContent = (varPct >= 0 ? '+' : '') + infIndPctStr(varPct);
-    varEl.className = varPct >= 0 ? 'acu-var-ok' : 'acu-var-bad';
-
-    const tbody = document.getElementById('acu-tabla');
-    if (!tbody) return;
-    const prodRows = rows.map(r => {
-        const sem = _acuSem(r.alcance);
-        const pctStr = r.metaDia > 0 ? infIndPctStr(r.alcance) : '\u2014';
-        return '<tr>' +
-            '<td class="inf-ind-th-left">' + infIndEsc(r.nombre) + '</td>' +
-            '<td class="inf-ind-num ' + (r.ventaDia > 0 ? '' : 'inf-ind-vacio') + '">' + (r.ventaDia > 0 ? infIndMoneda(r.ventaDia) : '\u2014') + '</td>' +
-            '<td class="inf-ind-num">' + (r.metaDia > 0 ? infIndMoneda(r.metaDia) : '\u2014') + '</td>' +
-            '<td class="acu-sem-' + sem + '"><span class="acu-sem-dot"></span>' + pctStr + '</td>' +
-            '</tr>';
-    }).join('');
-
-    const totSem = _acuSem(totalAlcance);
-    const totalRow = '<tr class="acu-total-row">' +
-        '<td class="inf-ind-th-left acu-total-label">TOTAL DEL D\u00cdA</td>' +
-        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totalVentaDia) + '</td>' +
-        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totalMetaDia) + '</td>' +
-        '<td class="acu-sem-' + totSem + '"><span class="acu-sem-dot"></span>' + infIndPctStr(totalAlcance) + '</td>' +
-        '</tr>';
-
-    tbody.innerHTML = prodRows + totalRow;
-}
-
-function cambiarVistaAcumulado(vista) {
-    acuVista = (vista === 'zona') ? 'zona' : 'tienda';
-    renderizarAcumuladoDiario();
-}
-
-function syncVistaAcuUI() {
-    const tabs = document.getElementById('acu-view-tabs');
-    if (tabs) {
-        tabs.style.display = 'flex';
-        tabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.vista === acuVista));
-    }
-}
-
-function renderAcumuladoZona(fecha, tienda) {
-    const tbody = document.getElementById('acu-zona-tabla');
-    if (!tbody) return;
-    const zonaPDVs = _pdvsDeZonaDeTienda(tienda);
-    if (!zonaPDVs.length) {
-        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><p>No se pudo identificar los puntos de venta de tu zona.</p></div></td></tr>';
-        return;
-    }
-
-    const anio = fecha.getFullYear();
-    const mes = fecha.getMonth() + 1;
-    const dia = fecha.getDate();
-    const ventas = (typeof DataStore !== 'undefined' && typeof DataStore.getVentasActivas === 'function') ? DataStore.getVentasActivas() : [];
-    const ADn = _acuNorm('Apuestas Deportivas');
-    const JVn = _acuNorm('Juegos Virtuales');
-
-    const ventasDia = ventas.filter(v => {
-        if (!v || !v.punto_venta) return false;
-        const f = v.fecha ? new Date(v.fecha) : null;
-        if (f && !isNaN(f.getTime())) {
-            return f.getFullYear() === anio && f.getMonth() + 1 === mes && f.getDate() === dia;
-        }
-        return v.dia === dia && (v.mes || mes) === mes && (v.anio || anio) === anio;
-    });
-
-    let rowsHtml = '';
-    let totAD = 0, totJV = 0;
-    for (const pdv of zonaPDVs) {
-        let ad = 0, jv = 0;
-        ventasDia.forEach(v => {
-            if (v.punto_venta !== pdv) return;
-            const n = _acuNorm(v.producto);
-            if (n === ADn) ad += (v.venta || 0);
-            else if (n === JVn) jv += (v.venta || 0);
-        });
-        const total = ad + jv;
-        totAD += ad; totJV += jv;
-        rowsHtml += '<tr>' +
-            '<td class="inf-ind-th-left">' + infIndEsc(pdv) + '</td>' +
-            '<td class="inf-ind-num ' + (ad > 0 ? '' : 'inf-ind-vacio') + '">' + (ad > 0 ? infIndMoneda(ad) : '\u2014') + '</td>' +
-            '<td class="inf-ind-num ' + (jv > 0 ? '' : 'inf-ind-vacio') + '">' + (jv > 0 ? infIndMoneda(jv) : '\u2014') + '</td>' +
-            '<td class="inf-ind-num ' + (total > 0 ? '' : 'inf-ind-vacio') + '">' + (total > 0 ? infIndMoneda(total) : '\u2014') + '</td>' +
-            '</tr>';
-    }
-
-    const totTotal = totAD + totJV;
-    const totalRow = '<tr class="acu-total-row">' +
-        '<td class="inf-ind-th-left acu-total-label">TOTAL ZONA</td>' +
-        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totAD) + '</td>' +
-        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totJV) + '</td>' +
-        '<td class="inf-ind-num acu-total-val">' + infIndMoneda(totTotal) + '</td>' +
-        '</tr>';
-
-    tbody.innerHTML = rowsHtml + totalRow;
 }
 
 function renderHeroUsuarioInforme(promotor) {

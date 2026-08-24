@@ -243,11 +243,23 @@ const DataStore = {
         return this.cuotas.filter(c => this.esPDVActivo(c.punto_venta));
     },
     getCuotas(mes, anio) {
-        const filtradas = this.cuotas.filter(c => this.esPDVActivo(c.punto_venta));
-        if (mes && anio) {
-            return filtradas.filter(c => c.mes === mes && c.anio === anio);
+        const targetMes = mes || MES;
+        const targetAnio = anio || ANIO;
+        const result = this.cuotas.filter(c => c.mes === targetMes && c.anio === targetAnio);
+        if (this.cuotas.length > 0 && result.length === 0) {
+            console.warn('[VALIDACION CUOTAS] Error de filtrado detectado: cuotas en Firestore:', this.cuotas.length, 'pero consulta devuelve 0 para mes:', targetMes, 'año:', targetAnio);
         }
-        return filtradas.filter(c => c.mes === MES && c.anio === ANIO);
+        return result;
+    },
+    getCuotasFiltradas(mes, anio) {
+        const filtradas = this.cuotas.filter(c => this.esPDVActivo(c.punto_venta));
+        const targetMes = mes || MES;
+        const targetAnio = anio || ANIO;
+        const result = filtradas.filter(c => c.mes === targetMes && c.anio === targetAnio);
+        if (filtradas.length > 0 && result.length === 0) {
+            console.warn('[VALIDACION CUOTAS] Error de filtrado detectado (filtrado): cuotas en zona:', filtradas.length, 'pero consulta devuelve 0 para mes:', targetMes, 'año:', targetAnio);
+        }
+        return result;
     },
     getCuotasCompletas() { return this.cuotas; },
     getPromotores() { return this.promotores; },
@@ -280,7 +292,8 @@ const DataStore = {
             if (activo) return this.getVentasEnRango(this.filtrosFecha.desde, this.filtrosFecha.hasta);
             return this.getVentasDelMes();
         }
-        return this.ventas.filter(v => {
+        console.log('[DEBUG getVentasEnRango] fd:', fd, 'fh:', fh, 'fechaDesde:', fechaDesde, 'fechaHasta:', fechaHasta);
+        const result = this.ventas.filter(v => {
             if (!this.esPDVActivo(v.punto_venta)) return false;
             if (!v.fecha) return false;
             const f = new Date(v.fecha);
@@ -290,6 +303,8 @@ const DataStore = {
             if (fh && ts > fh.getTime()) return false;
             return true;
         });
+        console.log('[DEBUG getVentasEnRango] ventas filtradas:', result.length);
+        return result;
     },
 
     getMesesEnRango(fechaDesde, fechaHasta) {
@@ -314,10 +329,13 @@ const DataStore = {
     getCuotasEnRango(fechaDesde, fechaHasta) {
         const mesesEnRango = this.getMesesEnRango(fechaDesde, fechaHasta);
         const keys = new Set(mesesEnRango.map(m => m.mes + '-' + m.anio));
-        return this.cuotas.filter(c =>
+        console.log('[DEBUG getCuotasEnRango] keys:', Array.from(keys), 'fechaDesde:', fechaDesde, 'fechaHasta:', fechaHasta);
+        const result = this.cuotas.filter(c =>
             this.esPDVActivo(c.punto_venta) &&
             keys.has((c.mes || MES) + '-' + (c.anio || ANIO))
         );
+        console.log('[DEBUG getCuotasEnRango] cuotas filtradas:', result.length);
+        return result;
     },
 
     getInfoPeriodo() {
@@ -402,6 +420,13 @@ const DataStore = {
             console.log('[AUDITORIA] PDVs obtenidos desde configuración:', activos.length, activos);
         }
         return activos;
+    },
+
+    getAllPDVs() {
+        if (typeof TiendasStore !== 'undefined' && TiendasStore.tiendas && TiendasStore.tiendas.length > 0) {
+            return TiendasStore.getTiendasActivas().map(t => t.nombre);
+        }
+        return [...PDVS_FIJOS];
     },
 
     getTiendaCadena(nombre) {
@@ -737,8 +762,16 @@ const DataStore = {
         return aEliminar.length;
     },
 
-    actualizarCuotas(nuevasCuotas, mes, anio) {
-        const otrasCuotas = this.cuotas.filter(c => c.mes !== mes || c.anio !== anio);
+    actualizarCuotas(nuevasCuotas, mes, anio, pdvsVisibles = null) {
+        let otrasCuotas;
+        if (pdvsVisibles && pdvsVisibles.length > 0) {
+            const pdvSet = new Set(pdvsVisibles);
+            otrasCuotas = this.cuotas.filter(c => 
+                c.mes !== mes || c.anio !== anio || !pdvSet.has(c.punto_venta)
+            );
+        } else {
+            otrasCuotas = this.cuotas.filter(c => c.mes !== mes || c.anio !== anio);
+        }
         this.cuotas = [...otrasCuotas, ...nuevasCuotas];
         this._guardarEnFirestore();
     },
