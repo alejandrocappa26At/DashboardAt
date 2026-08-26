@@ -1,0 +1,117 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "punto_venta", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "promotor_id", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "producto", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ventas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "punto_venta", "order": "ASCENDING" },
+        { "fieldPath": "producto", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cuotas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "punto_venta", "order": "ASCENDING" },
+        { "fieldPath": "mes", "order": "ASCENDING" },
+        { "fieldPath": "anio", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cuotas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "producto", "order": "ASCENDING" },
+        { "fieldPath": "mes", "order": "ASCENDING" },
+        { "fieldPath": "anio", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "promotores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "zona_principal_id", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "promotores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "email", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "registro_promociones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "promotor_id", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "registro_promociones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tienda", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "registro_promociones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "promocion", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiendas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cadena", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "supervisores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "zonas_comerciales",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

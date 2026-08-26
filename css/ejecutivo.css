@@ -1161,3 +1161,241 @@ table.ctl-table.ctl-table-exec {
         min-width: 700px;
     }
 }
+
+/* =============================================
+   JEFE COMERCIAL — INFORME ZONA SUR (Resumen Ejecutivo Compacto)
+   ============================================= */
+
+.jefe-informe-table-card {
+    overflow: hidden;
+}
+
+.jefe-informe-table {
+    min-width: 1000px;
+    font-size: 11px;
+}
+
+.jefe-informe-table thead th {
+    padding: 6px 8px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    text-align: center;
+    border-bottom: 2px solid var(--t-w10);
+}
+
+.jefe-informe-table thead th.ctl-th-left {
+    text-align: left;
+}
+
+.jefe-informe-table thead tr:first-child th {
+    background: var(--t-bg2);
+    color: var(--t-text);
+    border-top: 1px solid var(--t-w08);
+    padding: 8px 8px 4px;
+}
+
+.jefe-informe-table thead tr:last-child th {
+    background: var(--t-bg3);
+    color: var(--t-dim);
+    padding: 4px 8px 8px;
+}
+
+/* Header group colors */
+.jefe-header-ad { background: linear-gradient(180deg, rgba(30, 136, 229, 0.25), rgba(25, 118, 210, 0.15)) !important; color: #1E88E5 !important; border-right: 1px solid rgba(30, 136, 229, 0.3); }
+.jefe-header-jv { background: linear-gradient(180deg, rgba(156, 39, 176, 0.25), rgba(123, 31, 162, 0.15)) !important; color: #9C27B0 !important; border-right: 1px solid rgba(156, 39, 176, 0.3); }
+.jefe-header-acum { background: linear-gradient(180deg, rgba(46, 125, 50, 0.25), rgba(27, 94, 32, 0.15)) !important; color: #2E7D32 !important; }
+
+/* Column data colors */
+.jefe-col-ad { background: rgba(30, 136, 229, 0.04); }
+.jefe-col-jv { background: rgba(156, 39, 176, 0.04); }
+.jefe-col-acum { background: rgba(46, 125, 50, 0.04); }
+
+/* Subtle vertical dividers between groups */
+.jefe-informe-table thead th.jefe-col-ad:last-child,
+.jefe-informe-table tbody td.jefe-col-ad:last-child {
+    border-right: 1px solid rgba(30, 136, 229, 0.15);
+}
+
+.jefe-informe-table thead th.jefe-col-jv:last-child,
+.jefe-informe-table tbody td.jefe-col-jv:last-child {
+    border-right: 1px solid rgba(156, 39, 176, 0.15);
+}
+
+.jefe-informe-table thead th.jefe-col-acum:last-child,
+.jefe-informe-table tbody td.jefe-col-acum:last-child {
+    border-right: none;
+}
+
+/* Row styles */
+.jefe-informe-table tbody td {
+    padding: 5px 7px;
+    font-size: 11px;
+    vertical-align: middle;
+    text-align: center;
+    border-bottom: 1px solid var(--t-w04);
+    border-right: 1px solid var(--t-w03);
+}
+
+.jefe-informe-table tbody td.ctl-td-left {
+    text-align: left;
+}
+
+.jefe-informe-zona-cell {
+    min-width: 140px;
+    font-weight: 700;
+    color: var(--t-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.jefe-informe-row:hover td {
+    background: var(--t-w02);
+}
+
+.jefe-informe-row:nth-child(even) td {
+    background: var(--t-w015);
+}
+
+.jefe-informe-row:nth-child(even) td.jefe-col-ad {
+    background: rgba(30, 136, 229, 0.02);
+}
+
+.jefe-informe-row:nth-child(even) td.jefe-col-jv {
+    background: rgba(156, 39, 176, 0.02);
+}
+
+.jefe-informe-row:nth-child(even) td.jefe-col-acum {
+    background: rgba(46, 125, 50, 0.02);
+}
+
+/* Value cells */
+.jefe-informe-venta,
+.jefe-informe-cuota,
+.jefe-informe-faltante,
+.jefe-informe-acumulado {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--t-text);
+}
+
+.jefe-informe-cuota {
+    color: var(--t-textSec);
+    font-weight: 500;
+}
+
+.jefe-informe-faltante.negativo {
+    color: #EF4444;
+    font-weight: 700;
+}
+
+.jefe-informe-acumulado {
+    color: #2E7D32;
+    font-weight: 700;
+}
+
+.jefe-informe-pct {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.jefe-informe-pct .ctl-semaforo {
+    font-size: 9px;
+    padding: 1px 8px;
+}
+
+/* Total row */
+.jefe-informe-total-row td {
+    font-weight: 800;
+    font-size: 11.5px;
+    padding: 8px 7px;
+    border-top: 2px solid var(--t-w10);
+    border-bottom: 2px solid var(--t-w15);
+}
+
+.jefe-informe-total-row td.jefe-col-ad {
+    background: rgba(30, 136, 229, 0.18) !important;
+    color: #1E88E5;
+}
+
+.jefe-informe-total-row td.jefe-col-jv {
+    background: rgba(156, 39, 176, 0.18) !important;
+    color: #9C27B0;
+}
+
+.jefe-informe-total-row td.jefe-col-acum {
+    background: rgba(46, 125, 50, 0.18) !important;
+    color: #2E7D32;
+}
+
+.jefe-informe-total-row td.ctl-td-left {
+    background: var(--t-bg2) !important;
+    color: var(--t-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.jefe-informe-total-row .ctl-semaforo {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+.jefe-informe-total-row .ctl-semaforo .dot {
+    background: #fff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+/* Compact semaforo for table */
+.ctl-semaforo {
+    font-size: 9.5px;
+    padding: 2px 8px;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .jefe-informe-table {
+        min-width: 950px;
+        font-size: 10.5px;
+    }
+    .jefe-informe-table thead th { padding: 5px 6px; font-size: 8.5px; }
+    .jefe-informe-table tbody td { padding: 4px 6px; font-size: 10.5px; }
+    .jefe-informe-zona-cell { min-width: 120px; }
+}
+
+@media (max-width: 1200px) {
+    .jefe-informe-table {
+        min-width: 900px;
+        font-size: 10px;
+    }
+    .jefe-informe-table thead th { padding: 4px 5px; font-size: 8px; }
+    .jefe-informe-table tbody td { padding: 3px 5px; font-size: 10px; }
+    .jefe-informe-zona-cell { min-width: 110px; }
+    .ctl-semaforo { font-size: 8.5px; padding: 1px 6px; }
+}
+
+/* KPI compact for this view */
+#jefe-informe-kpis.ctl-kpis {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+#jefe-informe-kpis .ctl-kpi {
+    padding: 8px 10px;
+}
+
+#jefe-informe-kpis .ctl-kpi-label { font-size: 8.5px; }
+#jefe-informe-kpis .ctl-kpi-value { font-size: 17px; }
+#jefe-informe-kpis .ctl-kpi-sub { font-size: 9.5px; }
+
+@media (max-width: 1400px) {
+    #jefe-informe-kpis.ctl-kpis { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+    #jefe-informe-kpis.ctl-kpis { grid-template-columns: repeat(2, 1fr); }
+}

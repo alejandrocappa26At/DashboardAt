@@ -2184,11 +2184,17 @@ function _acumuladoZonasSurRows() {
     const zonas = _zonasSur();
     const ADn = _acuNorm('Apuestas Deportivas');
     const JVn = _acuNorm('Juegos Virtuales');
+    const MBn = _acuNorm('Mi Billetera');
+    const TORn = _acuNorm('Torito');
+    const LOTo = _acuNorm('Lotobola');
+    const VLTn = _acuNorm('VLT');
     const allData = DataStore.getCumplimientoPorPDV();
     const rows = [];
     let totADv = 0, totADc = 0, totJVv = 0, totJVc = 0;
+    let totMBv = 0, totTORv = 0, totLOTOv = 0, totVLTv = 0;
     for (const zona of zonas) {
         let adV = 0, adC = 0, jvV = 0, jvC = 0;
+        let mbV = 0, torV = 0, lotoV = 0, vltV = 0;
         for (const pdv of _pdvsDeZona(zona)) {
             const d = allData[pdv];
             if (!d || !d.productos) continue;
@@ -2197,6 +2203,10 @@ function _acumuladoZonasSurRows() {
                 const n = _acuNorm(key);
                 if (n === ADn) { adV += p.venta || 0; adC += p.cuota || 0; }
                 else if (n === JVn) { jvV += p.venta || 0; jvC += p.cuota || 0; }
+                else if (n === MBn) { mbV += p.venta || 0; }
+                else if (n === TORn) { torV += p.venta || 0; }
+                else if (n === LOTo) { lotoV += p.venta || 0; }
+                else if (n === VLTn) { vltV += p.venta || 0; }
             }
         }
         rows.push({
@@ -2206,16 +2216,19 @@ function _acumuladoZonasSurRows() {
             alcAD: adC > 0 ? (adV / adC) * 100 : 0,
             jvVenta: jvV, jvCuota: jvC, jvFalt: jvC - jvV,
             alcJV: jvC > 0 ? (jvV / jvC) * 100 : 0,
+            mbVenta: mbV, torVenta: torV, lotoVenta: lotoV, vltVenta: vltV,
             alcance: (adC + jvC) > 0 ? ((adV + jvV) / (adC + jvC)) * 100 : 0
         });
         totADv += adV; totADc += adC;
         totJVv += jvV; totJVc += jvC;
+        totMBv += mbV; totTORv += torV; totLOTOv += lotoV; totVLTv += vltV;
     }
     const totales = {
         adVenta: totADv, adCuota: totADc, adFalt: totADc - totADv,
         alcAD: totADc > 0 ? (totADv / totADc) * 100 : 0,
         jvVenta: totJVv, jvCuota: totJVc, jvFalt: totJVc - totJVv,
-        alcJV: totJVc > 0 ? (totJVv / totJVc) * 100 : 0
+        alcJV: totJVc > 0 ? (totJVv / totJVc) * 100 : 0,
+        mbVenta: totMBv, torVenta: totTORv, lotoVenta: totLOTOv, vltVenta: totVLTv
     };
     return {
         rows,
@@ -2581,6 +2594,13 @@ function renderResumenZonalAcumulado() {
     _renderZonalKpis(data.venta, data.cuota, data.faltante, data.alcGen, mr.mejor, mr.riesgo);
 }
 
+function _fmtCompact(n) {
+    const val = Number(n || 0);
+    if (val >= 1000000) return 'S/ ' + (val / 1000000).toFixed(1).replace('.0', '') + 'M';
+    if (val >= 1000) return 'S/ ' + (val / 1000).toFixed(1).replace('.0', '') + 'K';
+    return 'S/ ' + val.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 function renderResumenZonaSur() {
     actualizarVisibilidadBotonExportar();
     renderAvisoOficial();
@@ -2604,43 +2624,57 @@ function renderResumenZonaSur() {
     const data = _acumuladoZonasSurRows();
     let rowsHtml = '';
     data.rows.forEach(r => {
-        rowsHtml += '<tr>' +
-            '<td class="ctl-td-left ctl-td-strong">' + ctlEsc(r.zona) + '</td>' +
-            '<td>' + formatCurrency(r.adVenta) + '</td>' +
-            '<td>' + formatCurrency(r.adCuota) + '</td>' +
-            '<td class="' + (r.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.adFalt <= 0 ? '\u2713 0' : formatCurrency(r.adFalt)) + '</td>' +
-            '<td>' + _zonalPctCell(r.alcAD) + '</td>' +
-            '<td>' + formatCurrency(r.jvVenta) + '</td>' +
-            '<td>' + formatCurrency(r.jvCuota) + '</td>' +
-            '<td class="' + (r.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (r.jvFalt <= 0 ? '\u2713 0' : formatCurrency(r.jvFalt)) + '</td>' +
-            '<td>' + _zonalPctCell(r.alcJV) + '</td>' +
+        rowsHtml += '<tr class="jefe-informe-row">' +
+            '<td class="ctl-td-left ctl-td-strong jefe-informe-zona-cell">' + ctlEsc(r.zona) + '</td>' +
+            '<td class="jefe-col-ad jefe-informe-venta">' + _fmtCompact(r.adVenta) + '</td>' +
+            '<td class="jefe-col-ad jefe-informe-cuota">' + _fmtCompact(r.adCuota) + '</td>' +
+            '<td class="jefe-col-ad jefe-informe-faltante ' + (r.adFalt <= 0 ? '' : 'negativo') + '">' + (r.adFalt <= 0 ? 'S/ 0' : _fmtCompact(r.adFalt)) + '</td>' +
+            '<td class="jefe-col-ad jefe-informe-pct">' + _zonalPctCell(r.alcAD) + '</td>' +
+            '<td class="jefe-col-jv jefe-informe-venta">' + _fmtCompact(r.jvVenta) + '</td>' +
+            '<td class="jefe-col-jv jefe-informe-cuota">' + _fmtCompact(r.jvCuota) + '</td>' +
+            '<td class="jefe-col-jv jefe-informe-faltante ' + (r.jvFalt <= 0 ? '' : 'negativo') + '">' + (r.jvFalt <= 0 ? 'S/ 0' : _fmtCompact(r.jvFalt)) + '</td>' +
+            '<td class="jefe-col-jv jefe-informe-pct">' + _zonalPctCell(r.alcJV) + '</td>' +
+            '<td class="jefe-col-acum jefe-informe-acumulado">' + _fmtCompact(r.mbVenta) + '</td>' +
+            '<td class="jefe-col-acum jefe-informe-acumulado">' + _fmtCompact(r.torVenta) + '</td>' +
+            '<td class="jefe-col-acum jefe-informe-acumulado">' + _fmtCompact(r.lotoVenta) + '</td>' +
+            '<td class="jefe-col-acum jefe-informe-acumulado">' + _fmtCompact(r.vltVenta) + '</td>' +
             '</tr>';
     });
 
     const t = data.totales;
-    const totalRow = '<tr class="acu-total-row">' +
-        '<td class="ctl-td-left acu-total-label">TOTAL ZONAS SUR</td>' +
-        '<td class="acu-total-val">' + formatCurrency(t.adVenta) + '</td>' +
-        '<td class="acu-total-val">' + formatCurrency(t.adCuota) + '</td>' +
-        '<td class="acu-total-val ' + (t.adFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.adFalt <= 0 ? '\u2713 0' : formatCurrency(t.adFalt)) + '</td>' +
-        '<td class="acu-total-val">' + _zonalPctCell(t.alcAD, true) + '</td>' +
-        '<td class="acu-total-val">' + formatCurrency(t.jvVenta) + '</td>' +
-        '<td class="acu-total-val">' + formatCurrency(t.jvCuota) + '</td>' +
-        '<td class="acu-total-val ' + (t.jvFalt <= 0 ? 'ctl-td-good' : 'ctl-td-bad') + '">' + (t.jvFalt <= 0 ? '\u2713 0' : formatCurrency(t.jvFalt)) + '</td>' +
-        '<td class="acu-total-val">' + _zonalPctCell(t.alcJV, true) + '</td>' +
+    const totalRow = '<tr class="jefe-informe-total-row">' +
+        '<td class="ctl-td-left ctl-td-strong">🌎 TOTAL ZONAS SUR</td>' +
+        '<td class="jefe-col-ad jefe-informe-venta">' + _fmtCompact(t.adVenta) + '</td>' +
+        '<td class="jefe-col-ad jefe-informe-cuota">' + _fmtCompact(t.adCuota) + '</td>' +
+        '<td class="jefe-col-ad jefe-informe-faltante ' + (t.adFalt <= 0 ? '' : 'negativo') + '">' + (t.adFalt <= 0 ? 'S/ 0' : _fmtCompact(t.adFalt)) + '</td>' +
+        '<td class="jefe-col-ad jefe-informe-pct">' + _zonalPctCell(t.alcAD, true) + '</td>' +
+        '<td class="jefe-col-jv jefe-informe-venta">' + _fmtCompact(t.jvVenta) + '</td>' +
+        '<td class="jefe-col-jv jefe-informe-cuota">' + _fmtCompact(t.jvCuota) + '</td>' +
+        '<td class="jefe-col-jv jefe-informe-faltante ' + (t.jvFalt <= 0 ? '' : 'negativo') + '">' + (t.jvFalt <= 0 ? 'S/ 0' : _fmtCompact(t.jvFalt)) + '</td>' +
+        '<td class="jefe-col-jv jefe-informe-pct">' + _zonalPctCell(t.alcJV, true) + '</td>' +
+        '<td class="jefe-col-acum jefe-informe-acumulado">' + _fmtCompact(t.mbVenta) + '</td>' +
+        '<td class="jefe-col-acum jefe-informe-acumulado">' + _fmtCompact(t.torVenta) + '</td>' +
+        '<td class="jefe-col-acum jefe-informe-acumulado">' + _fmtCompact(t.lotoVenta) + '</td>' +
+        '<td class="jefe-col-acum jefe-informe-acumulado">' + _fmtCompact(t.vltVenta) + '</td>' +
         '</tr>';
 
     container.innerHTML = '' +
-        '<div class="ctl-card">' +
+        '<div class="ctl-card jefe-informe-table-card">' +
         '<div class="ctl-card-header">' +
         '<span class="ctl-card-title">\ud83c\udf0e Resumen Zona Sur</span>' +
-        '<span class="ctl-card-count">' + zonas.length + ' zonas \u00b7 Apuestas Deportivas y Juegos Virtuales</span>' +
+        '<span class="ctl-card-count">' + zonas.length + ' zonas \u00b7 AD, JV y Ventas Acumuladas</span>' +
         '</div>' +
-        '<div class="ctl-table-wrap"><table class="ctl-table ctl-table-exec avance-zonal-table">' +
+        '<div class="ctl-table-wrap" id="jefe-informe-table-wrapper">' +
+        '<table class="ctl-table jefe-informe-table avance-zonal-table">' +
         '<thead><tr>' +
-        '<th class="ctl-th-left">Zona</th>' +
-        '<th>Venta AD</th><th>Cuota AD</th><th>Faltante AD</th><th>% AD</th>' +
-        '<th>Venta JV</th><th>Cuota JV</th><th>Faltante JV</th><th>% JV</th>' +
+        '<th class="ctl-th-left" rowspan="2">ZONA</th>' +
+        '<th colspan="4" class="jefe-header-ad">APUESTAS DEPORTIVAS</th>' +
+        '<th colspan="4" class="jefe-header-jv">JUEGOS VIRTUALES</th>' +
+        '<th colspan="4" class="jefe-header-acum">VENTAS ACUMULADAS</th>' +
+        '</tr><tr>' +
+        '<th class="jefe-col-ad">Venta AD</th><th class="jefe-col-ad">Cuota AD</th><th class="jefe-col-ad">Faltante AD</th><th class="jefe-col-ad">% AD</th>' +
+        '<th class="jefe-col-jv">Venta JV</th><th class="jefe-col-jv">Cuota JV</th><th class="jefe-col-jv">Faltante JV</th><th class="jefe-col-jv">% JV</th>' +
+        '<th class="jefe-col-acum">Mi Billetera</th><th class="jefe-col-acum">Torito</th><th class="jefe-col-acum">Lotobola</th><th class="jefe-col-acum">VLT</th>' +
         '</tr></thead><tbody>' + rowsHtml + totalRow + '</tbody>' +
         '</table></div>' +
         '</div>';
@@ -3747,18 +3781,36 @@ function renderTablaCuotas(mes, anio) {
     const tbody = document.getElementById('tbody-cuotas');
     const thead = document.querySelector('#tabla-cuotas thead tr');
 
+    const esJefe = Auth.isJefeComercial();
+    const zonaSup = _supervisorZonaSesion();
     const pdvs = DataStore.getAllPDVs();
     const productos = DataStore.getProductos();
     const cuotas = DataStore.getCuotas(mes, anio);
 
     const zonaSel = document.getElementById('cuotas-zona');
-    const zona = zonaSel ? zonaSel.value : '';
+    let zona = zonaSel ? zonaSel.value : '';
+    
+    // Para supervisores, forzar su zona y no permitir cambio
+    if (!esJefe && zonaSup) {
+        zona = zonaSup;
+        if (document.getElementById('cuotas-zona')) {
+            document.getElementById('cuotas-zona').value = zonaSup;
+        }
+    }
+    
     const zonaNorm = _normalizarZonaCuotas(zona);
     const pdvsVisibles = zonaNorm
         ? pdvs.filter(pdv => _normalizarZonaCuotas(_getZonaPDVCuotas(pdv)) === zonaNorm)
         : pdvs;
 
-    console.log('[VALIDACION CUOTAS] Mes:', MESES.find(m => m.valor === mes)?.nombre || mes, '| Año:', anio, '| Zona seleccionada:', zona || 'Todas', '| PDVs totales:', pdvs.length, '| PDVs visibles:', pdvsVisibles.length, '| Cuotas recuperadas:', cuotas.length);
+    // Log de seguridad
+    console.log('[SEGURIDAD CUOTAS]', {
+        rol: esJefe ? 'jefe' : 'supervisor',
+        zonaSesion: zonaSup,
+        zonaSolicitada: zona,
+        pdvsVisibles: pdvsVisibles.length,
+        pdvsTotales: pdvs.length
+    });
 
     const infoNombre = document.getElementById('cuotas-zona-nombre');
     if (infoNombre) infoNombre.textContent = zona || 'Todas las Zonas';
@@ -3804,6 +3856,20 @@ function _getZonaPDVCuotas(pdv) {
 function cambiarZonaCuotas() {
     if (!document.getElementById('modal-cuotas').classList.contains('open')) return;
 
+    const esJefe = Auth.isJefeComercial();
+    if (!esJefe) {
+        // Supervisores no pueden cambiar de zona
+        const zonaSup = _supervisorZonaSesion();
+        if (document.getElementById('cuotas-zona')) {
+            document.getElementById('cuotas-zona').value = zonaSup || '';
+        }
+        console.warn('[SEGURIDAD CUOTAS] Supervisor intentó cambiar zona - bloqueado');
+        if (typeof window.mostrarNotificacion === 'function') {
+            window.mostrarNotificacion('No puedes cambiar de zona. Solo puedes ver tu zona asignada.', 'warning');
+        }
+        return;
+    }
+
     const mes = parseInt(document.getElementById('cuotas-mes').value);
     const anio = parseInt(document.getElementById('cuotas-anio').value);
 
@@ -3813,10 +3879,35 @@ function cambiarZonaCuotas() {
 function abrirModalCuotasSinPassword() {
     sincronizarSelectsPeriodo();
     const zonaSup = _supervisorZonaSesion();
-    if (zonaSup) {
-        const zonaSel = document.getElementById('cuotas-zona');
-        if (zonaSel) zonaSel.value = zonaSup;
+    const esJefe = Auth.isJefeComercial();
+    const zonaSel = document.getElementById('cuotas-zona');
+    const zonaLabel = document.querySelector('label[for="cuotas-zona"]');
+    const zonaInfo = document.getElementById('cuotas-info-zona');
+
+    if (esJefe) {
+        // Jefe Comercial: mostrar selector con todas las zonas
+        if (zonaSel) {
+            zonaSel.style.display = '';
+            zonaSel.disabled = false;
+            if (zonaLabel) zonaLabel.style.display = '';
+        }
+        if (zonaInfo) zonaInfo.style.display = '';
+    } else if (zonaSup) {
+        // Supervisor: ocultar selector, fijar su zona
+        if (zonaSel) {
+            zonaSel.value = zonaSup;
+            zonaSel.style.display = 'none';
+            zonaSel.disabled = true;
+        }
+        if (zonaLabel) zonaLabel.style.display = 'none';
+        // Mostrar info de zona fija
+        if (zonaInfo) {
+            zonaInfo.style.display = '';
+            const zonaNombre = document.getElementById('cuotas-zona-nombre');
+            if (zonaNombre) zonaNombre.textContent = zonaSup;
+        }
     }
+
     const mesActual = parseInt(document.getElementById('cuotas-mes').value);
     const anioActual = parseInt(document.getElementById('cuotas-anio').value);
 

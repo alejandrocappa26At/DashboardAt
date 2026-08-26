@@ -170,6 +170,50 @@ const DataStore = {
             }, e => {
                 console.error('Error en snapshot de Firestore:', e);
             });
+
+        this._cargarCuotasNuevaEstructura();
+    },
+
+    async _cargarCuotasNuevaEstructura() {
+        if (typeof db === 'undefined' || !db) return;
+        try {
+            const hoy = new Date();
+            const mesActual = hoy.getMonth() + 1;
+            const anioActual = hoy.getFullYear();
+            const mesAnioKey = `${mesActual}-${anioActual}`;
+
+            const snap = await db.collection('cuotas').doc(mesAnioKey).collection('items').get();
+            if (!snap.empty) {
+                const cuotasNuevas = snap.docs.map(d => ({
+                    ...d.data(),
+                    id: d.id
+                }));
+                console.log('[CUOTAS] Cargadas desde nueva estructura:', cuotasNuevas.length, 'cuotas para', mesAnioKey);
+
+                const existentes = new Map();
+                for (const c of this.cuotas) {
+                    const key = `${c.punto_venta}|${c.producto}|${c.mes}|${c.anio}`;
+                    existentes.set(key, c);
+                }
+
+                for (const c of cuotasNuevas) {
+                    const key = `${c.punto_venta}|${c.producto}|${c.mes}|${c.anio}`;
+                    if (!existentes.has(key)) {
+                        this.cuotas.push({
+                            punto_venta: c.punto_venta,
+                            producto: c.producto,
+                            mes: c.mes,
+                            anio: c.anio,
+                            cuota: c.cuota,
+                            fechaActualizacion: c.fechaActualizacion,
+                            usuarioActualizacion: c.usuarioActualizacion
+                        });
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('[CUOTAS] No se pudieron cargar de la nueva estructura:', e.message);
+        }
     },
 
     _mergePDVsFijos() {
@@ -763,17 +807,130 @@ const DataStore = {
     },
 
     actualizarCuotas(nuevasCuotas, mes, anio, pdvsVisibles = null) {
+        const targetMes = mes || MES;
+        const targetAnio = anio || ANIO;
+        const ahora = new Date().toISOString();
+        const usuario = this._obtenerUsuarioActual();
+
+        // Validación de zona del supervisor (seguridad)
+        const zonaSupervisor = this._zonaSesionSupervisor();
+        const esJefe = this._esJefeComercial();
+
+        // Validar que todos los PDVs solicitados pertenecen a la zona del supervisor
+        if (pdvsVisibles && pdvsVisibles.length > 0 && !esJefe) {
+            if (!zonaSupervisor) {
+                console.warn('[SEGURIDAD CUOTAS] Supervisor sin zona asignada - operación cancelada');
+                console.log('[SEGURIDAD CUOTAS]', {
+                    supervisor: 'SIN ZONA',
+                    pdvsSolicitados: pdvsVisibles,
+                    accion: 'RECHAZADA'
+                });
+                if (typeof window.mostrarNotificacion === 'function') {
+                    window.mostrarNotificacion('No tienes una zona asignada. Contacte al Jefe Comercial.', 'error');
+                }
+                return;
+            }
+
+            const zonaNorm = (z => String(z || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim());
+            const zonaSupervisorNorm = zonaNorm(zonaSupervisor);
+
+            // Verificar cada PDV solicitado
+            for (const pdv of pdvsVisibles) {
+                const cadenaPDV = this.getTiendaCadena(pdv);
+                const cadenaPDVNorm = zonaNorm(cadenaPDV);
+                if (cadenaPDVNorm !== zonaSupervisorNorm) {
+                    console.warn('[SEGURIDAD CUOTAS] Intento de editar cuotas fuera de zona - operación cancelada');
+                    console.log('[SEGURIDAD CUOTAS]', {
+                        supervisor: zonaSupervisor,
+                        zonaSesion: zonaSupervisor,
+                        pdvSolicitado: pdv,
+                        cadenaPDV: cadenaPDV,
+                        accion: 'RECHAZADA'
+                    });
+                    if (typeof window.mostrarNotificacion === 'function') {
+                        window.mostrarNotificacion('No tienes permisos para editar cuotas de ' + pdv + ' (zona: ' + cadenaPDV + ')', 'error');
+                    }
+                    return;
+                }
+            }
+
+            console.log('[SEGURIDAD CUOTAS] Validación de zona exitosa - Supervisor:', zonaSupervisor, '| PDVs:', pdvsVisibles.length);
+        } else if (esJefe) {
+            console.log('[SEGURIDAD CUOTAS] Jefe Comercial - acceso total a cuotas');
+        }
+
         let otrasCuotas;
         if (pdvsVisibles && pdvsVisibles.length > 0) {
             const pdvSet = new Set(pdvsVisibles);
             otrasCuotas = this.cuotas.filter(c => 
-                c.mes !== mes || c.anio !== anio || !pdvSet.has(c.punto_venta)
+                c.mes !== targetMes || c.anio !== targetAnio || !pdvSet.has(c.punto_venta)
             );
         } else {
-            otrasCuotas = this.cuotas.filter(c => c.mes !== mes || c.anio !== anio);
+            otrasCuotas = this.cuotas.filter(c => c.mes !== targetMes || c.anio !== targetAnio);
         }
-        this.cuotas = [...otrasCuotas, ...nuevasCuotas];
+
+        const cuotasConAuditoria = nuevasCuotas.map(c => ({
+            ...c,
+            mes: targetMes,
+            anio: targetAnio,
+            fechaActualizacion: ahora,
+            usuarioActualizacion: usuario
+        }));
+
+        this.cuotas = [...otrasCuotas, ...cuotasConAuditoria];
+
+        this._guardarCuotasBatch(cuotasConAuditoria, targetMes, targetAnio, pdvsVisibles);
         this._guardarEnFirestore();
+    },
+
+    _esJefeComercial() {
+        try {
+            const raw = sessionStorage.getItem('auth_session');
+            if (!raw) return false;
+            const s = JSON.parse(raw);
+            return s && s.rol === 'jefe';
+        } catch (e) {
+            return false;
+        }
+    },
+
+    _obtenerUsuarioActual() {
+        try {
+            const raw = sessionStorage.getItem('auth_session');
+            if (raw) {
+                const s = JSON.parse(raw);
+                return s.email || s.id || s.nombre || 'desconocido';
+            }
+        } catch (e) {}
+        return 'sistema';
+    },
+
+    async _guardarCuotasBatch(cuotas, mes, anio, pdvsVisibles = null) {
+        if (typeof db === 'undefined' || !db) return;
+        try {
+            const batch = db.batch();
+            const mesAnioKey = `${mes}-${anio}`;
+            const cuotasRef = db.collection('cuotas').doc(mesAnioKey).collection('items');
+
+            for (const c of cuotas) {
+                const cuotaId = `${c.punto_venta}_${c.producto}`.replace(/[^a-zA-Z0-9_]/g, '_');
+                const docRef = cuotasRef.doc(cuotaId);
+                batch.set(docRef, {
+                    punto_venta: c.punto_venta,
+                    producto: c.producto,
+                    mes: c.mes,
+                    anio: c.anio,
+                    cuota: c.cuota,
+                    fechaActualizacion: c.fechaActualizacion,
+                    usuarioActualizacion: c.usuarioActualizacion
+                }, { merge: true });
+            }
+
+            await batch.commit();
+            console.log('[CUOTAS] Batch write completado:', cuotas.length, 'cuotas para', mesAnioKey);
+        } catch (e) {
+            console.error('[CUOTAS] Error en batch write:', e);
+        }
     },
 
     _renombrarTiendaPropagacion(oldName, newName) {

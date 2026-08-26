@@ -9,9 +9,11 @@
 
 const SUPERVISORES_COLLECTION = 'supervisores';
 const ZONAS_COMERCIALES_COLLECTION = 'zonas_comerciales';
-const JEFE_COMERCIAL_USUARIO = 'jefe';
-const JEFE_COMERCIAL_PASSWORD = 'Adecco2019@';
 const ZONAS_OFICIALES = ['AREQUIPA SUR', 'PUNO SUR', 'CUSCO SUR', 'APUR\u00cdMAC SUR', 'TACNA SUR'];
+
+// Configuración de Jefe Comercial - MIGRACIÓN: usar Firebase Auth + config_jefe/credenciales
+// Las credenciales hardcoded han sido ELIMINADAS por seguridad.
+// Ver función ingresarJefeComercial() para lógica de autenticación.
 
 function jefeEsc(str) {
     return String(str == null ? '' : str)
@@ -30,6 +32,10 @@ function jefePct(n) {
 
 function jefeEsActivo(estado) {
     return !String(estado || 'Activo').toLowerCase().startsWith('inact');
+}
+
+function jefeNormalizarZona(str) {
+    return String(str || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
 /* =============================================
@@ -191,20 +197,20 @@ async function ingresarJefeComercial() {
         } catch (e) { config = null; }
     }
 
-    const usuarioOk = config && config.usuario
-        ? String(config.usuario).trim().toLowerCase() === usuario
-        : String(JEFE_COMERCIAL_USUARIO).trim().toLowerCase() === usuario;
+    if (!config || !config.usuario) {
+        btn.classList.remove('loading');
+        setErrorLogin('login-acceso-error', 'Configuración de acceso no encontrada. Contacte al administrador.');
+        return;
+    }
+
+    const usuarioOk = String(config.usuario).trim().toLowerCase() === usuario;
 
     let passwordOk = false;
-    if (config && config.usuario) {
-        if (config.password_hash) {
-            const hash = await hashPassword(password);
-            passwordOk = hash ? config.password_hash === hash : config.password === password;
-        } else {
-            passwordOk = config.password === password;
-        }
+    if (config.password_hash) {
+        const hash = await hashPassword(password);
+        passwordOk = hash ? config.password_hash === hash : false;
     } else {
-        passwordOk = password === JEFE_COMERCIAL_PASSWORD;
+        passwordOk = config.password === password;
     }
 
     btn.classList.remove('loading');
@@ -264,8 +270,9 @@ function jefePDVsDeZona(zona) {
     const nombre = String(zona && zona.nombre || '').trim();
     if (nombre && typeof DataStore !== 'undefined' && DataStore.getPDVObjects) {
         const todos = DataStore.getPDVObjects();
+        const nombreNorm = jefeNormalizarZona(nombre);
         const match = todos
-            .filter(t => String(t.cadena || '').trim().toUpperCase() === nombre.toUpperCase())
+            .filter(t => jefeNormalizarZona(t.cadena || '') === nombreNorm)
             .map(t => t.nombre);
         if (match.length > 0) return match;
     }
@@ -285,9 +292,16 @@ function jefeStatsZona(zona, ventas, cuotas) {
 
 function jefeStatsSupervisor(sup, ventas, cuotas, zonasById) {
     const supZonas = (sup.zonas || []).map(z => String(z));
+    
+    // Crear mapa normalizado para lookup de zonas (maneja tildes, mayúsculas/minúsculas)
+    const zonasByIdNorm = new Map();
+    zonasById.forEach((zona, id) => {
+        zonasByIdNorm.set(jefeNormalizarZona(id), zona);
+    });
+
     const pdvsSet = new Set();
     supZonas.forEach(zid => {
-        const zona = zonasById.get(zid);
+        const zona = zonasByIdNorm.get(jefeNormalizarZona(zid));
         if (zona) jefePDVsDeZona(zona).forEach(p => pdvsSet.add(p));
     });
     let venta = 0;
@@ -916,12 +930,19 @@ function jefeCerrarModal() {
 }
 
 /* =============================================
-   INFORME POR SUPERVISOR
-   Consolidado por supervisor: AD, JV, Lottingo (Venta/Cuota/Faltante/%) + MB/Lotobola/VLT/Torito (Venta)
+   INFORME POR SUPERVISOR — Resumen Zona Sur
+   Consolidado por zona: AD, JV (Venta/Cuota/Faltante/%) + Ventas Acumuladas (MB/Torito/Lotobola/VLT)
    ============================================= */
 
-const PRODUCTOS_COMPLETOS = ['Apuestas Deportivas', 'Juegos Virtuales', 'Lottingo'];
-const PRODUCTOS_ACUMULADOS = ['MI BILLETERA', 'LOTOBOLA', 'VLT', 'Torito'];
+const PRODUCTOS_COMPLETOS = ['Apuestas Deportivas', 'Juegos Virtuales'];
+const PRODUCTOS_ACUMULADOS = ['MI BILLETERA', 'TORITO', 'LOTOBOLA', 'VLT'];
+
+function jefeMonedaCompacta(n) {
+    const val = Number(n || 0);
+    if (val >= 1000000) return 'S/ ' + (val / 1000000).toFixed(1).replace('.0', '') + 'M';
+    if (val >= 1000) return 'S/ ' + (val / 1000).toFixed(1).replace('.0', '') + 'K';
+    return 'S/ ' + val.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
 
 function renderJefeInformeSupervisor() {
     if (!jefeRenderGuard('page-jefe-informe-supervisor')) return;
@@ -933,68 +954,22 @@ function renderJefeInformeSupervisor() {
 
     const ventas = jefeVentasPeriodo();
     const cuotas = jefeCuotasPeriodo();
-    const supervisores = JefeComercialStore.getSupervisoresActivos();
-    const todasZonas = JefeComercialStore.zonas;
+    const todasZonas = JefeComercialStore.getZonasActivas();
     const zonasById = new Map(todasZonas.map(z => [z.id, z]));
 
-    // 🔍 LOGS DE DEBUG - Verificar carga de datos
-    console.group('📊 INFORME POR SUPERVISOR - DEBUG');
-    console.log('🔹 Supervisores encontrados:', supervisores.length);
-    supervisores.forEach(s => console.log(`  - ${s.nombre || s.id} | Zonas: ${JSON.stringify(s.zonas || [])} | Estado: ${s.estado}`));
-    
-    console.log('🔹 Zonas encontradas:', todasZonas.length);
-    todasZonas.forEach(z => console.log(`  - ${z.nombre || z.id} | PDVs asignados: ${JSON.stringify(z.pdvs || [])} | Estado: ${z.estado}`));
-    
-    console.log('🔹 Ventas encontradas en periodo:', ventas.length);
-    console.log('🔹 Cuotas encontradas en periodo:', cuotas.length);
-    
-    // Verificar periodo efectivo
-    const periodo = jefePeriodoEfectivo();
-    console.log('🔹 Periodo efectivo:', periodo.desde, 'a', periodo.hasta);
-    
-    // Verificar productos únicos en ventas
-    const productosEnVentas = [...new Set(ventas.map(v => v.producto))];
-    console.log('🔹 Productos en ventas:', productosEnVentas);
-    
-    // Verificar productos únicos en cuotas
-    const productosEnCuotas = [...new Set(cuotas.map(c => c.producto))];
-    console.log('🔹 Productos en cuotas:', productosEnCuotas);
-    
-    // Verificar tiendas únicas en ventas
-    const tiendasEnVentas = [...new Set(ventas.map(v => v.punto_venta))];
-    console.log('🔹 Tiendas con ventas:', tiendasEnVentas.length, tiendasEnVentas);
-    
-    // Verificar tiendas únicas en cuotas
-    const tiendasEnCuotas = [...new Set(cuotas.map(c => c.punto_venta))];
-    console.log('🔹 Tiendas con cuotas:', tiendasEnCuotas.length, tiendasEnCuotas);
-    console.groupEnd();
-
-    if (!JefeComercialStore._firestoreLoaded || supervisores.length === 0) {
+    if (!JefeComercialStore._firestoreLoaded || todasZonas.length === 0) {
         const kpiContainer = document.getElementById('jefe-informe-kpis');
         const tbody = document.getElementById('jefe-informe-tbody');
-        if (kpiContainer) kpiContainer.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:20px;"><p>Cargando supervisores...</p></div>';
-        if (tbody) tbody.innerHTML = '<tr><td colspan="16"><div class="empty-state"><p>No existen supervisores registrados.</p></div></td></tr>';
+        if (kpiContainer) kpiContainer.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:20px;"><p>Cargando zonas...</p></div>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="13"><div class="empty-state"><p>No existen zonas registradas.</p></div></td></tr>';
         return;
     }
 
-    // Calcular stats por supervisor
-    const supStats = supervisores.map(sup => {
-        const supZonas = (sup.zonas || []).map(z => String(z));
-        const pdvsSet = new Set();
-        supZonas.forEach(zid => {
-            const zona = zonasById.get(zid);
-            if (zona) {
-                const pdvs = jefePDVsDeZona(zona);
-                console.log(`  🏪 Supervisor ${sup.nombre || sup.id} -> Zona ${zid} (${zona.nombre}) -> PDVs: ${pdvs.length} [${pdvs.join(', ')}]`);
-                pdvs.forEach(p => pdvsSet.add(p));
-            } else {
-                console.warn(`  ⚠️ Supervisor ${sup.nombre || sup.id} -> Zona ${zid} NO ENCONTRADA en zonasById`);
-            }
-        });
-        
-        console.log(`  📦 Supervisor ${sup.nombre || sup.id} -> Total PDVs únicos: ${pdvsSet.size} [${Array.from(pdvsSet).join(', ')}]`);
+    // Calcular stats por zona
+    const zonaStats = todasZonas.map(zona => {
+        const pdvs = jefePDVsDeZona(zona);
+        const pdvsSet = new Set(pdvs);
 
-        // Agregar por producto
         const productos = {};
         PRODUCTOS_COMPLETOS.forEach(prod => {
             let venta = 0, meta = 0;
@@ -1003,24 +978,21 @@ function renderJefeInformeSupervisor() {
             const faltante = Math.max(0, meta - venta);
             const pct = meta > 0 ? (venta / meta) * 100 : 0;
             productos[prod] = { venta, meta, faltante, pct };
-            console.log(`    📈 ${prod}: Venta=${venta}, Meta=${meta}, Faltante=${faltante}, %=${pct.toFixed(1)}%`);
         });
         PRODUCTOS_ACUMULADOS.forEach(prod => {
             let venta = 0;
             ventas.forEach(v => { if (pdvsSet.has(v.punto_venta) && v.producto === prod) venta += (v.venta || 0); });
             productos[prod] = { venta };
-            console.log(`    📦 ${prod}: Venta=${venta}`);
         });
 
-        // Totales para KPIs
         let ventaTotal = 0, metaTotal = 0;
         PRODUCTOS_COMPLETOS.forEach(prod => { ventaTotal += productos[prod].venta; metaTotal += productos[prod].meta; });
         const cumplimientoTotal = metaTotal > 0 ? (ventaTotal / metaTotal) * 100 : 0;
 
         return {
-            sup: sup,
-            nombre: sup.nombre || sup.id,
-            zonas: supZonas.map(zid => { const z = zonasById.get(zid); return z ? z.nombre : zid; }).filter(Boolean).join(', '),
+            zona: zona,
+            nombre: zona.nombre,
+            pdvs: pdvs,
             productos,
             ventaTotal,
             metaTotal,
@@ -1029,89 +1001,110 @@ function renderJefeInformeSupervisor() {
     });
 
     // Ordenar por venta total descendente
-    supStats.sort((a, b) => b.ventaTotal - a.ventaTotal);
+    zonaStats.sort((a, b) => b.ventaTotal - a.ventaTotal);
 
     // KPIs Superiores
-    const ventaTotalZona = supStats.reduce((s, x) => s + x.ventaTotal, 0);
-    const metaTotalZona = supStats.reduce((s, x) => s + x.metaTotal, 0);
+    const ventaTotalZona = zonaStats.reduce((s, x) => s + x.ventaTotal, 0);
+    const metaTotalZona = zonaStats.reduce((s, x) => s + x.metaTotal, 0);
     const faltanteTotalZona = Math.max(0, metaTotalZona - ventaTotalZona);
     const cumplimientoGeneral = metaTotalZona > 0 ? (ventaTotalZona / metaTotalZona) * 100 : 0;
-    const mejorSup = supStats.length > 0 ? supStats[0] : null;
-    const peorSup = supStats.length > 1 ? supStats[supStats.length - 1] : null;
+    const mejorZona = zonaStats.length > 0 ? zonaStats[0] : null;
+    const peorZona = zonaStats.length > 1 ? zonaStats[zonaStats.length - 1] : null;
 
     const kpiContainer = document.getElementById('jefe-informe-kpis');
     if (kpiContainer) {
         kpiContainer.innerHTML =
-            '<div class="ctl-kpi"><span class="ctl-kpi-label">Venta Total Zona Sur</span><span class="ctl-kpi-value green">' + jefeMoneda(ventaTotalZona) + '</span><span class="ctl-kpi-sub">acumulado del periodo</span></div>' +
-            '<div class="ctl-kpi"><span class="ctl-kpi-label">Cuota Total Zona Sur</span><span class="ctl-kpi-value blue">' + jefeMoneda(metaTotalZona) + '</span><span class="ctl-kpi-sub">meta asignada</span></div>' +
-            '<div class="ctl-kpi"><span class="ctl-kpi-label">Faltante Total</span><span class="ctl-kpi-value red">' + jefeMoneda(faltanteTotalZona) + '</span><span class="ctl-kpi-sub">para alcanzar la meta</span></div>' +
+            '<div class="ctl-kpi"><span class="ctl-kpi-label">Venta Total Zona Sur</span><span class="ctl-kpi-value green">' + jefeMonedaCompacta(ventaTotalZona) + '</span><span class="ctl-kpi-sub">acumulado del periodo</span></div>' +
+            '<div class="ctl-kpi"><span class="ctl-kpi-label">Cuota Total Zona Sur</span><span class="ctl-kpi-value blue">' + jefeMonedaCompacta(metaTotalZona) + '</span><span class="ctl-kpi-sub">meta asignada</span></div>' +
+            '<div class="ctl-kpi"><span class="ctl-kpi-label">Faltante Total</span><span class="ctl-kpi-value red">' + jefeMonedaCompacta(faltanteTotalZona) + '</span><span class="ctl-kpi-sub">para alcanzar la meta</span></div>' +
             '<div class="ctl-kpi"><span class="ctl-kpi-label">Cumplimiento General</span><span class="ctl-kpi-value ' + (cumplimientoGeneral >= 100 ? 'green' : cumplimientoGeneral >= 70 ? 'yellow' : 'red') + '">' + jefePct(cumplimientoGeneral) + '</span><span class="ctl-kpi-sub">avance general</span></div>' +
-            '<div class="ctl-kpi"><span class="ctl-kpi-label">Mejor Supervisor</span><span class="ctl-kpi-value yellow">' + (mejorSup ? jefeEsc(mejorSup.nombre) : '\u2014') + '</span><span class="ctl-kpi-sub">' + (mejorSup ? jefePct(mejorSup.cumplimientoTotal) : '') + '</span></div>' +
-            '<div class="ctl-kpi"><span class="ctl-kpi-label">Supervisor con Menor Avance</span><span class="ctl-kpi-value red">' + (peorSup ? jefeEsc(peorSup.nombre) : '\u2014') + '</span><span class="ctl-kpi-sub">' + (peorSup ? jefePct(peorSup.cumplimientoTotal) : '') + '</span></div>';
+            '<div class="ctl-kpi"><span class="ctl-kpi-label">Mejor Zona</span><span class="ctl-kpi-value yellow">' + (mejorZona ? jefeEsc(mejorZona.nombre) : '\u2014') + '</span><span class="ctl-kpi-sub">' + (mejorZona ? jefePct(mejorZona.cumplimientoTotal) : '') + '</span></div>' +
+            '<div class="ctl-kpi"><span class="ctl-kpi-label">Zona con Menor Avance</span><span class="ctl-kpi-value red">' + (peorZona ? jefeEsc(peorZona.nombre) : '\u2014') + '</span><span class="ctl-kpi-sub">' + (peorZona ? jefePct(peorZona.cumplimientoTotal) : '') + '</span></div>';
     }
 
     // Render tabla
     const tbody = document.getElementById('jefe-informe-tbody');
     if (!tbody) return;
 
-    const filas = supStats.map(s => {
-        const prods = s.productos;
+    const filas = zonaStats.map(z => {
+        const prods = z.productos;
         let html = '<tr class="jefe-informe-row">';
-        html += '<td class="ctl-td-left ctl-td-strong jefe-informe-supervisor-cell">' + jefeEsc(s.nombre) + '</td>';
+        html += '<td class="ctl-td-left ctl-td-strong jefe-informe-zona-cell">' + jefeEsc(z.nombre) + '</td>';
 
-        // Productos con gestión completa
-        PRODUCTOS_COMPLETOS.forEach(prod => {
-            const p = prods[prod];
-            const pct = p.pct;
-            const semaforo = pct >= 100 ? 'cumple' : pct >= 70 ? 'riesgo' : 'critico';
-            const semaforoHtml = '<span class="ctl-semaforo ' + semaforo + '"><span class="dot"></span>' + (pct >= 100 ? 'Cumple' : pct >= 70 ? 'Riesgo' : 'Cr\u00edtico') + '</span>';
-            html += '<td class="jefe-informe-venta">' + jefeMoneda(p.venta) + '</td>';
-            html += '<td class="jefe-informe-cuota">' + jefeMoneda(p.meta) + '</td>';
-            html += '<td class="jefe-informe-faltante ' + (p.faltante > 0 ? 'negativo' : '') + '">' + jefeMoneda(p.faltante) + '</td>';
-            html += '<td class="jefe-informe-pct">' + semaforoHtml + ' ' + jefePct(pct) + '</td>';
-        });
+        // APUESTAS DEPORTIVAS
+        const ad = prods['Apuestas Deportivas'];
+        const adPct = ad.pct;
+        const adSemaforo = adPct >= 100 ? 'cumple' : adPct >= 70 ? 'riesgo' : 'critico';
+        const adSemaforoHtml = '<span class="ctl-semaforo ' + adSemaforo + '"><span class="dot"></span>' + (adPct >= 100 ? 'Cumple' : adPct >= 70 ? 'Riesgo' : 'Cr\u00edtico') + '</span>';
+        html += '<td class="jefe-col-ad jefe-informe-venta">' + jefeMonedaCompacta(ad.venta) + '</td>';
+        html += '<td class="jefe-col-ad jefe-informe-cuota">' + jefeMonedaCompacta(ad.meta) + '</td>';
+        html += '<td class="jefe-col-ad jefe-informe-faltante ' + (ad.faltante > 0 ? 'negativo' : '') + '">' + jefeMonedaCompacta(ad.faltante) + '</td>';
+        html += '<td class="jefe-col-ad jefe-informe-pct">' + adSemaforoHtml + ' ' + jefePct(adPct) + '</td>';
 
-        // Productos solo acumulados
-        PRODUCTOS_ACUMULADOS.forEach(prod => {
-            const p = prods[prod];
-            html += '<td class="jefe-informe-acumulado">' + jefeMoneda(p.venta) + '</td>';
-        });
+        // JUEGOS VIRTUALES
+        const jv = prods['Juegos Virtuales'];
+        const jvPct = jv.pct;
+        const jvSemaforo = jvPct >= 100 ? 'cumple' : jvPct >= 70 ? 'riesgo' : 'critico';
+        const jvSemaforoHtml = '<span class="ctl-semaforo ' + jvSemaforo + '"><span class="dot"></span>' + (jvPct >= 100 ? 'Cumple' : jvPct >= 70 ? 'Riesgo' : 'Cr\u00edtico') + '</span>';
+        html += '<td class="jefe-col-jv jefe-informe-venta">' + jefeMonedaCompacta(jv.venta) + '</td>';
+        html += '<td class="jefe-col-jv jefe-informe-cuota">' + jefeMonedaCompacta(jv.meta) + '</td>';
+        html += '<td class="jefe-col-jv jefe-informe-faltante ' + (jv.faltante > 0 ? 'negativo' : '') + '">' + jefeMonedaCompacta(jv.faltante) + '</td>';
+        html += '<td class="jefe-col-jv jefe-informe-pct">' + jvSemaforoHtml + ' ' + jefePct(jvPct) + '</td>';
+
+        // VENTAS ACUMULADAS
+        html += '<td class="jefe-col-acum jefe-informe-acumulado">' + jefeMonedaCompacta(prods['MI BILLETERA'].venta) + '</td>';
+        html += '<td class="jefe-col-acum jefe-informe-acumulado">' + jefeMonedaCompacta(prods['TORITO'].venta) + '</td>';
+        html += '<td class="jefe-col-acum jefe-informe-acumulado">' + jefeMonedaCompacta(prods['LOTOBOLA'].venta) + '</td>';
+        html += '<td class="jefe-col-acum jefe-informe-acumulado">' + jefeMonedaCompacta(prods['VLT'].venta) + '</td>';
 
         html += '</tr>';
         return html;
     }).join('');
 
-    // Fila Total Zona Sur
+    // Fila Total Zonas Sur
     const totalProductos = {};
     PRODUCTOS_COMPLETOS.forEach(prod => {
         let venta = 0, meta = 0;
-        supStats.forEach(s => { venta += s.productos[prod].venta; meta += s.productos[prod].meta; });
+        zonaStats.forEach(z => { venta += z.productos[prod].venta; meta += z.productos[prod].meta; });
         const faltante = Math.max(0, meta - venta);
         const pct = meta > 0 ? (venta / meta) * 100 : 0;
         totalProductos[prod] = { venta, meta, faltante, pct };
     });
     PRODUCTOS_ACUMULADOS.forEach(prod => {
         let venta = 0;
-        supStats.forEach(s => { venta += s.productos[prod].venta; });
+        zonaStats.forEach(z => { venta += z.productos[prod].venta; });
         totalProductos[prod] = { venta };
     });
 
     let totalRow = '<tr class="jefe-informe-total-row">';
-    totalRow += '<td class="ctl-td-left ctl-td-strong">🌎 TOTAL ZONA SUR</td>';
-    PRODUCTOS_COMPLETOS.forEach(prod => {
-        const p = totalProductos[prod];
-        const pct = p.pct;
-        const semaforo = pct >= 100 ? 'cumple' : pct >= 70 ? 'riesgo' : 'critico';
-        const semaforoHtml = '<span class="ctl-semaforo ' + semaforo + '"><span class="dot"></span>' + (pct >= 100 ? 'Cumple' : pct >= 70 ? 'Riesgo' : 'Cr\u00edtico') + '</span>';
-        totalRow += '<td class="jefe-informe-venta">' + jefeMoneda(p.venta) + '</td>';
-        totalRow += '<td class="jefe-informe-cuota">' + jefeMoneda(p.meta) + '</td>';
-        totalRow += '<td class="jefe-informe-faltante ' + (p.faltante > 0 ? 'negativo' : '') + '">' + jefeMoneda(p.faltante) + '</td>';
-        totalRow += '<td class="jefe-informe-pct">' + semaforoHtml + ' ' + jefePct(pct) + '</td>';
-    });
-    PRODUCTOS_ACUMULADOS.forEach(prod => {
-        const p = totalProductos[prod];
-        totalRow += '<td class="jefe-informe-acumulado">' + jefeMoneda(p.venta) + '</td>';
-    });
+    totalRow += '<td class="ctl-td-left ctl-td-strong">🌎 TOTAL ZONAS SUR</td>';
+    
+    // AD Total
+    const adTotal = totalProductos['Apuestas Deportivas'];
+    const adTotalPct = adTotal.pct;
+    const adTotalSemaforo = adTotalPct >= 100 ? 'cumple' : adTotalPct >= 70 ? 'riesgo' : 'critico';
+    const adTotalSemaforoHtml = '<span class="ctl-semaforo ' + adTotalSemaforo + '"><span class="dot"></span>' + (adTotalPct >= 100 ? 'Cumple' : adTotalPct >= 70 ? 'Riesgo' : 'Cr\u00edtico') + '</span>';
+    totalRow += '<td class="jefe-col-ad jefe-informe-venta">' + jefeMonedaCompacta(adTotal.venta) + '</td>';
+    totalRow += '<td class="jefe-col-ad jefe-informe-cuota">' + jefeMonedaCompacta(adTotal.meta) + '</td>';
+    totalRow += '<td class="jefe-col-ad jefe-informe-faltante ' + (adTotal.faltante > 0 ? 'negativo' : '') + '">' + jefeMonedaCompacta(adTotal.faltante) + '</td>';
+    totalRow += '<td class="jefe-col-ad jefe-informe-pct">' + adTotalSemaforoHtml + ' ' + jefePct(adTotalPct) + '</td>';
+
+    // JV Total
+    const jvTotal = totalProductos['Juegos Virtuales'];
+    const jvTotalPct = jvTotal.pct;
+    const jvTotalSemaforo = jvTotalPct >= 100 ? 'cumple' : jvTotalPct >= 70 ? 'riesgo' : 'critico';
+    const jvTotalSemaforoHtml = '<span class="ctl-semaforo ' + jvTotalSemaforo + '"><span class="dot"></span>' + (jvTotalPct >= 100 ? 'Cumple' : jvTotalPct >= 70 ? 'Riesgo' : 'Cr\u00edtico') + '</span>';
+    totalRow += '<td class="jefe-col-jv jefe-informe-venta">' + jefeMonedaCompacta(jvTotal.venta) + '</td>';
+    totalRow += '<td class="jefe-col-jv jefe-informe-cuota">' + jefeMonedaCompacta(jvTotal.meta) + '</td>';
+    totalRow += '<td class="jefe-col-jv jefe-informe-faltante ' + (jvTotal.faltante > 0 ? 'negativo' : '') + '">' + jefeMonedaCompacta(jvTotal.faltante) + '</td>';
+    totalRow += '<td class="jefe-col-jv jefe-informe-pct">' + jvTotalSemaforoHtml + ' ' + jefePct(jvTotalPct) + '</td>';
+
+    // Ventas Acumuladas Total
+    totalRow += '<td class="jefe-col-acum jefe-informe-acumulado">' + jefeMonedaCompacta(totalProductos['MI BILLETERA'].venta) + '</td>';
+    totalRow += '<td class="jefe-col-acum jefe-informe-acumulado">' + jefeMonedaCompacta(totalProductos['TORITO'].venta) + '</td>';
+    totalRow += '<td class="jefe-col-acum jefe-informe-acumulado">' + jefeMonedaCompacta(totalProductos['LOTOBOLA'].venta) + '</td>';
+    totalRow += '<td class="jefe-col-acum jefe-informe-acumulado">' + jefeMonedaCompacta(totalProductos['VLT'].venta) + '</td>';
+
     totalRow += '</tr>';
 
     tbody.innerHTML = filas + totalRow;

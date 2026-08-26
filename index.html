@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/styles.css?v=110">
     <link rel="stylesheet" href="css/horarios.css?v=3">
     <link rel="stylesheet" href="css/tiendas.css?v=3">
-    <link rel="stylesheet" href="css/ejecutivo.css?v=7">
+    <link rel="stylesheet" href="css/ejecutivo.css?v=8">
     <link rel="stylesheet" href="css/mobile.css?v=4">
     <link rel="stylesheet" href="css/themes.css?v=3">
     <script>
@@ -2141,38 +2141,30 @@
                     <table class="ctl-table jefe-informe-table">
                         <thead>
                             <tr>
-                                <th class="ctl-th-left" rowspan="2">SUPERVISOR</th>
+                                <th class="ctl-th-left" rowspan="2">ZONA</th>
                                 <!-- Apuestas Deportivas -->
-                                <th colspan="4">APUESTAS DEPORTIVAS</th>
+                                <th colspan="4" class="jefe-header-ad">APUESTAS DEPORTIVAS</th>
                                 <!-- Juegos Virtuales -->
-                                <th colspan="4">JUEGOS VIRTUALES</th>
-                                <!-- Lottingo -->
-                                <th colspan="4">LOTTINGO</th>
-                                <!-- Mi Billetera -->
-                                <th>MI BILLETERA</th>
-                                <!-- Lotobola -->
-                                <th>LOTOBOLA</th>
-                                <!-- VLT -->
-                                <th>VLT</th>
-                                <!-- Torito -->
-                                <th>TORITO</th>
+                                <th colspan="4" class="jefe-header-jv">JUEGOS VIRTUALES</th>
+                                <!-- Ventas Acumuladas -->
+                                <th colspan="4" class="jefe-header-acum">VENTAS ACUMULADAS</th>
                             </tr>
                             <tr>
                                 <!-- AD -->
-                                <th>VENTA</th>
-                                <th>CUOTA</th>
-                                <th>FALTANTE</th>
-                                <th>%</th>
+                                <th class="jefe-col-ad">Venta AD</th>
+                                <th class="jefe-col-ad">Cuota AD</th>
+                                <th class="jefe-col-ad">Faltante AD</th>
+                                <th class="jefe-col-ad">% AD</th>
                                 <!-- JV -->
-                                <th>VENTA</th>
-                                <th>CUOTA</th>
-                                <th>FALTANTE</th>
-                                <th>%</th>
-                                <!-- Lottingo -->
-                                <th>VENTA</th>
-                                <th>CUOTA</th>
-                                <th>FALTANTE</th>
-                                <th>%</th>
+                                <th class="jefe-col-jv">Venta JV</th>
+                                <th class="jefe-col-jv">Cuota JV</th>
+                                <th class="jefe-col-jv">Faltante JV</th>
+                                <th class="jefe-col-jv">% JV</th>
+                                <!-- Ventas Acumuladas -->
+                                <th class="jefe-col-acum">Mi Billetera</th>
+                                <th class="jefe-col-acum">Torito</th>
+                                <th class="jefe-col-acum">Lotobola</th>
+                                <th class="jefe-col-acum">VLT</th>
                             </tr>
                         </thead>
                         <tbody id="jefe-informe-tbody"></tbody>
@@ -2534,17 +2526,23 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/firestore.js?v=2"></script>
-    <script src="js/data.js?v=3"></script>
+    <script src="js/data.js?v=4"></script>
+    <script src="js/auth.js?v=1"></script>
+    <script src="js/session.js?v=1"></script>
+    <script src="js/router.js?v=1"></script>
+    <script src="js/performance.js?v=1"></script>
+    <script src="js/ventas.js?v=1"></script>
+    <script src="js/cuotas.js?v=1"></script>
     <script src="js/charts.js?v=3"></script>
     <script src="js/promociones.js?v=2"></script>
     <script src="js/horarios-data.js?v=4"></script>
     <script src="js/horarios.js?v=6"></script>
     <script src="js/tiendas.js?v=4"></script>
     <script src="js/ejecutivo.js?v=2"></script>
-    <script src="js/jefe-comercial.js?v=3"></script>
+    <script src="js/jefe-comercial.js?v=4"></script>
     <script src="js/mobile.js?v=1"></script>
     <script src="js/theme.js?v=1"></script>
-    <script src="js/app.js?v=27"></script>
+    <script src="js/app.js?v=28"></script>
     <script src="js/respaldo.js?v=1"></script>
 </body>
 

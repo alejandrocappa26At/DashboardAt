@@ -747,6 +747,8 @@ const HorariosDataStore = {
             }).catch(() => {
                 if (typeof this.onUpdate === 'function') this.onUpdate();
             });
+
+            this._cargarSemanasParticionadas();
         } else {
             setTimeout(() => {
                 if (typeof this.onUpdate === 'function') this.onUpdate();
@@ -866,8 +868,23 @@ const HorariosDataStore = {
                     if (typeof this.onUpdate === 'function') {
                         this.onUpdate(true);
                     }
-                }, () => {});
-        } catch (e) {}
+                }, () => { });
+        } catch (e) { }
+
+        try {
+            this.realtimeSemanasUnsubscribe = db.collection(HORARIOS_COLLECTION + '_semanas')
+                .onSnapshot(snap => {
+                    snap.docChanges().forEach(change => {
+                        const data = change.doc.data();
+                        if (data) {
+                            this.semanas[change.doc.id] = data;
+                        }
+                    });
+                    if (typeof this.onUpdate === 'function') {
+                        this.onUpdate(true);
+                    }
+                }, () => { });
+        } catch (e) { }
     },
 
     _guardarEnFirestore(permitirVacio) {
@@ -901,11 +918,54 @@ const HorariosDataStore = {
                 updatedAt: new Date().toISOString()
             });
 
-            db.collection(HORARIOS_COLLECTION).doc('semanas').set({
-                semanas: this.semanas,
+            this._guardarSemanasParticionadas();
+        } catch (e) { }
+    },
+
+    async _guardarSemanasParticionadas() {
+        if (typeof db === 'undefined' || !db) return;
+
+        const batch = db.batch();
+        const semanasRef = db.collection(HORARIOS_COLLECTION + '_semanas');
+
+        for (const [key, semana] of Object.entries(this.semanas)) {
+            const docRef = semanasRef.doc(key);
+            batch.set(docRef, {
+                ...semana,
                 updatedAt: new Date().toISOString()
-            });
-        } catch (e) {}
+            }, { merge: true });
+        }
+
+        try {
+            await batch.commit();
+            console.log('[HORARIOS] Semanas particionadas guardadas:', Object.keys(this.semanas).length);
+        } catch (e) {
+            console.error('[HORARIOS] Error guardando semanas particionadas:', e);
+            // Fallback: guardar en documento legacy
+            try {
+                await db.collection(HORARIOS_COLLECTION).doc('semanas').set({
+                    semanas: this.semanas,
+                    updatedAt: new Date().toISOString()
+                });
+            } catch (fallbackError) {
+                console.error('[HORARIOS] Fallback también falló:', fallbackError);
+            }
+        }
+    },
+
+    async _cargarSemanasParticionadas() {
+        if (typeof db === 'undefined' || !db) return;
+        try {
+            const snap = await db.collection(HORARIOS_COLLECTION + '_semanas').get();
+            if (!snap.empty) {
+                snap.docs.forEach(doc => {
+                    this.semanas[doc.id] = doc.data();
+                });
+                console.log('[HORARIOS] Semanas particionadas cargadas:', snap.docs.length);
+            }
+        } catch (e) {
+            console.warn('[HORARIOS] No se pudieron cargar semanas particionadas:', e.message);
+        }
     },
 
     cleanup() {
@@ -913,5 +973,12 @@ const HorariosDataStore = {
             this.realtimeUnsubscribe();
             this.realtimeUnsubscribe = null;
         }
+        if (this.realtimeSemanasUnsubscribe) {
+            this.realtimeSemanasUnsubscribe();
+            this.realtimeSemanasUnsubscribe = null;
+        }
     }
 };
+
+window.HorariosDataStore = HorariosDataStore;
+console.log('HORARIOS DATASTORE CARGADO');
