@@ -303,12 +303,14 @@ const HorariosDataStore = {
         }
 
         this._guardarEnFirestore();
+        if (typeof this.onUpdate === 'function') this.onUpdate();
         return promotor;
     },
 
     editarPromotor(promotorId, cambios) {
         const promotor = this.promotores.find(p => p.id === promotorId);
         if (!promotor) return null;
+        const rolAnterior = promotor.tipo || 'fijo';
         if (cambios.nombre !== undefined) promotor.nombre = cambios.nombre;
         if (cambios.tipo !== undefined) promotor.tipo = cambios.tipo;
         if (cambios.zona_principal_id !== undefined) promotor.zona_principal_id = cambios.zona_principal_id;
@@ -318,6 +320,20 @@ const HorariosDataStore = {
         if (cambios.estado !== undefined) promotor.estado = cambios.estado;
         promotor.fecha_actualizacion = new Date().toISOString();
         this._guardarEnFirestore();
+        if (cambios.tipo && cambios.tipo !== rolAnterior) {
+            const fijos = this.promotores.filter(p => (p.tipo || 'fijo') === 'fijo').length;
+            const volantes = this.promotores.filter(p => (p.tipo || 'fijo') === 'volante').length;
+            const vacacioneros = this.promotores.filter(p => (p.tipo || 'fijo') === 'vacacionero').length;
+            const expertos = this.promotores.filter(p => (p.tipo || 'fijo') === 'experto').length;
+            console.log('Promotor actualizado:', promotor.nombre);
+            console.log('Rol anterior:', rolAnterior);
+            console.log('Rol nuevo:', cambios.tipo);
+            console.log('Fijos:', fijos);
+            console.log('Volantes:', volantes);
+            console.log('Vacacioneros:', vacacioneros);
+            console.log('Expertos:', expertos);
+        }
+        if (typeof this.onUpdate === 'function') this.onUpdate();
         return promotor;
     },
 
@@ -334,6 +350,7 @@ const HorariosDataStore = {
         }
 
         this._guardarEnFirestore();
+        if (typeof this.onUpdate === 'function') this.onUpdate();
         return true;
     },
 
@@ -390,6 +407,7 @@ const HorariosDataStore = {
         }
         if (creados.length > 0) {
             this._guardarEnFirestore();
+            if (typeof this.onUpdate === 'function') this.onUpdate();
         }
         return { creados, errores };
     },

@@ -1,5 +1,5 @@
 /* =============================================
-   MÓDULO: AUTENTICACIÓN Y SESIÓN
+   MÓDULO: AUTENTICACIÓN Y SESIÓN - SEGURO
    ============================================= */
 
 const Auth = {
@@ -16,17 +16,28 @@ const Auth = {
             const raw = sessionStorage.getItem('auth_session');
             if (raw) {
                 const s = JSON.parse(raw);
-                if (s && s.rol) {
-                    if (s.rol === 'supervisor') {
+                if (s && s.rol && s.uid) {
+                    if (s.rol === 'supervisor' || s.rol === 'jefe') {
                         this.supervisorDesbloqueado = true;
                         sessionStorage.setItem('supervisor_unlocked', 'true');
-                    } else if (s.rol === 'jefe') {
-                        this.supervisorDesbloqueado = true;
-                        sessionStorage.setItem('supervisor_unlocked', 'true');
+                    } else if (s.rol === 'promotor') {
+                        this._hidratarPromotorEnMemoria(s.uid);
                     }
                 }
             }
         } catch (e) {}
+    },
+
+    _hidratarPromotorEnMemoria(uid) {
+        if (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) {
+            const p = HorariosDataStore.promotores.find(x => x.id === uid);
+            if (p && p.estado === 'Activo' && p.zona_principal_id) {
+                this.promotorSession = {
+                    id: p.id,
+                    zona_principal_id: p.zona_principal_id
+                };
+            }
+        }
     },
 
     getPerfilLoginActual() {
@@ -52,10 +63,6 @@ const Auth = {
 
     getPromotorSession() {
         return this.promotorSession;
-    },
-
-    setPromotorSession(session) {
-        this.promotorSession = session;
     },
 
     async ingresarPromotor(email, password) {
@@ -102,17 +109,17 @@ const Auth = {
         }
 
         const session = {
-            id: promotor.id,
-            nombre: promotor.nombre,
-            dni: promotor.dni || '',
-            email: promotor.email,
-            zona_principal_id: promotor.zona_principal_id,
-            rol: 'promotor'
+            uid: promotor.id,
+            rol: 'promotor',
+            zona: promotor.zona_principal_id
         };
 
-        this.promotorSession = session;
-        this._guardarSesionPromotor(session);
+        this.promotorSession = {
+            id: promotor.id,
+            zona_principal_id: promotor.zona_principal_id
+        };
 
+        this._guardarSesion(session);
         return { ok: true, session };
     },
 
@@ -157,10 +164,8 @@ const Auth = {
         sessionStorage.setItem('supervisor_unlocked', 'true');
 
         const session = {
+            uid: sup.id,
             rol: 'supervisor',
-            id: sup.id,
-            nombre: sup.nombre || sup.id,
-            email: sup.email || '',
             zona: zona
         };
 
@@ -199,8 +204,9 @@ const Auth = {
         sessionStorage.setItem('supervisor_unlocked', 'true');
 
         const session = {
+            uid: 'jefe_comercial',
             rol: 'jefe',
-            nombre: 'Jefe Comercial'
+            zona: null
         };
 
         this._guardarSesion(session);
@@ -211,17 +217,9 @@ const Auth = {
         sessionStorage.setItem('auth_session', JSON.stringify(data));
     },
 
-    _guardarSesionPromotor(session) {
-        try {
-            localStorage.setItem('promotor_session', JSON.stringify(session));
-            sessionStorage.setItem('auth_session', JSON.stringify({ ...session, rol: 'promotor' }));
-        } catch (e) {}
-    },
-
     cerrarSesionPromotor() {
         this.promotorSession = null;
         try {
-            localStorage.removeItem('promotor_session');
             sessionStorage.removeItem('auth_session');
         } catch (e) {}
     },
@@ -229,6 +227,7 @@ const Auth = {
     bloquearSupervisor() {
         this.supervisorDesbloqueado = false;
         sessionStorage.removeItem('supervisor_unlocked');
+        sessionStorage.removeItem('auth_session');
     },
 
     leerSesion() {
@@ -246,27 +245,14 @@ const Auth = {
 
     aplicarSesionInicial() {
         const stored = this.leerSesion();
-        const promotorStored = this._leerSesionPromotor();
-
         if (stored && stored.rol === 'supervisor') {
             this.supervisorDesbloqueado = true;
             sessionStorage.setItem('supervisor_unlocked', 'true');
         } else if (stored && stored.rol === 'jefe') {
             this.supervisorDesbloqueado = true;
             sessionStorage.setItem('supervisor_unlocked', 'true');
-        }
-
-        if (promotorStored) {
-            this.promotorSession = { ...promotorStored };
-        }
-    },
-
-    _leerSesionPromotor() {
-        try {
-            const raw = localStorage.getItem('promotor_session');
-            return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-            return null;
+        } else if (stored && stored.rol === 'promotor') {
+            this._hidratarPromotorEnMemoria(stored.uid);
         }
     },
 
@@ -295,8 +281,7 @@ const Auth = {
     logValidacionPromotor() {
         if (!this.promotorSession) return;
         const tienda = this._tiendaPromotorSesion();
-        console.log('[VALIDACION] Promotor autenticado:', this.promotorSession.nombre);
-        console.log('[VALIDACION] Correo:', this.promotorSession.email);
+        console.log('[VALIDACION] Promotor autenticado:', this.promotorSession.id);
         console.log('[VALIDACION] Tienda encontrada:', tienda || 'Sin tienda asignada');
     },
 

@@ -36,6 +36,10 @@ function _nombreTiendaPromotor(zonaId, zonas) {
 }
 
 function _zonaGestionSesion() {
+    if (typeof Auth !== 'undefined' && typeof Auth.getSupervisorZona === 'function') {
+        return Auth.getSupervisorZona();
+    }
+    // Fallback
     try {
         const raw = sessionStorage.getItem('auth_session');
         if (!raw) return null;
@@ -45,6 +49,10 @@ function _zonaGestionSesion() {
 }
 
 function _esJefeGestion() {
+    if (typeof Auth !== 'undefined' && typeof Auth.isJefeComercial === 'function') {
+        return Auth.isJefeComercial();
+    }
+    // Fallback
     try {
         const raw = sessionStorage.getItem('auth_session');
         if (!raw) return false;

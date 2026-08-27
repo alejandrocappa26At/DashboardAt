@@ -17,20 +17,21 @@ const VentasModule = {
         const promotorSel = document.getElementById('venta-promotor');
         const fechaInput = document.getElementById('venta-fecha');
         const sessionBar = document.getElementById('venta-session-bar');
-        const promotorSession = window.promotorSession;
+        
+        const promoSession = typeof Auth !== 'undefined' ? Auth.getPromotorSession() : null;
 
-        if (!supervisor && promotorSession) {
+        if (!supervisor && promoSession) {
             const tiendaNombre = this._tiendaPromotorSesion();
             tiendaSel.innerHTML = '<option value="">Seleccionar tienda...</option>' +
                 (tiendaNombre ? '<option value="' + this._escHtml(tiendaNombre) + '">' + this._escHtml(tiendaNombre) + '</option>' : '');
             if (tiendaNombre) tiendaSel.value = tiendaNombre;
             tiendaSel.disabled = true;
-            const promo = activos.find(p => p.id === promotorSession.id);
-            promotorSel.innerHTML = '<option value="' + this._escHtml(promotorSession.id) + '">' + this._escHtml(promo ? promo.nombre : promotorSession.nombre) + '</option>';
+            const promo = activos.find(p => p.id === promoSession.id);
+            promotorSel.innerHTML = '<option value="' + this._escHtml(promoSession.id) + '">' + this._escHtml(promo ? promo.nombre : promoSession.id) + '</option>';
             promotorSel.disabled = true;
             if (sessionBar) {
                 sessionBar.style.display = 'flex';
-                sessionBar.innerHTML = '<div class="venta-session-user">👤 ' + this._escHtml(promotorSession.nombre) + '</div>' +
+                sessionBar.innerHTML = '<div class="venta-session-user">👤 ' + this._escHtml(promoSession.id) + '</div>' +
                     '<button type="button" class="venta-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesión</button>';
             }
         } else {
@@ -41,9 +42,9 @@ const VentasModule = {
             promotorSel.innerHTML = '<option value="">Seleccionar promotor...</option>' +
                 activos.map(p => '<option value="' + p.id + '">' + this._escHtml(p.nombre) + (p.dni ? ' · ' + this._escHtml(p.dni) : '') + '</option>').join('');
             if (sessionBar) {
-                if (promotorSession) {
+                if (promoSession) {
                     sessionBar.style.display = 'flex';
-                    sessionBar.innerHTML = '<div class="venta-session-user">👤 ' + this._escHtml(promotorSession.nombre) + '</div>' +
+                    sessionBar.innerHTML = '<div class="venta-session-user">👤 ' + this._escHtml(promoSession.id) + '</div>' +
                         '<button type="button" class="venta-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesión</button>';
                 } else {
                     sessionBar.style.display = 'none';
@@ -52,15 +53,15 @@ const VentasModule = {
             }
         }
 
-        if (typeof window.logValidacionPromotor === 'function') window.logValidacionPromotor();
+        if (typeof Auth !== 'undefined' && typeof Auth.logValidacionPromotor === 'function') Auth.logValidacionPromotor();
 
         fechaInput.value = this._formatearFechaLocal(new Date());
         this.cargarVentasCalendario();
     },
 
     _tiendaPromotorSesion() {
-        if (typeof SessionManager !== 'undefined' && typeof SessionManager._tiendaPromotorSesion === 'function') {
-            return SessionManager._tiendaPromotorSesion();
+        if (typeof Auth !== 'undefined' && typeof Auth._tiendaPromotorSesion === 'function') {
+            return Auth._tiendaPromotorSesion();
         }
         return null;
     },

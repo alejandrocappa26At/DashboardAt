@@ -311,6 +311,10 @@ const PromocionesStore = {
     },
 
     _zonaSesionSupervisor() {
+        if (typeof Auth !== 'undefined' && typeof Auth.getSupervisorZona === 'function') {
+            return Auth.getSupervisorZona();
+        }
+        // Fallback
         try {
             const raw = sessionStorage.getItem('auth_session');
             if (!raw) return null;

@@ -597,8 +597,7 @@ function renderEncabezadoPromocionesPromotor(promotor, registros, fechaDesde, fe
 
 /* ===== PÁGINA: REGISTRAR VENTAS (PROMOTOR) ===== */
 function navegarRegistrarVentas() {
-    initPromotorSession();
-    if (!estaSupervisorDesbloqueado() && !promotorSession) {
+    if (!Auth.estaSupervisorDesbloqueado() && !Auth.getPromotorSession()) {
         mostrarModalLogin();
         return;
     }
@@ -608,8 +607,7 @@ function navegarRegistrarVentas() {
 
 /* ===== PÁGINA: REGISTRAR PROMOCIONES (PROMOTOR) ===== */
 function navegarRegistrarPromociones() {
-    initPromotorSession();
-    if (!estaSupervisorDesbloqueado() && !promotorSession) {
+    if (!Auth.estaSupervisorDesbloqueado() && !Auth.getPromotorSession()) {
         mostrarModalLogin();
         return;
     }
@@ -623,8 +621,7 @@ function navegarRegistrarPromociones() {
 
 /* ===== PÁGINA: AVANCE ZONA (PROMOTOR) ===== */
 function navegarAvanceZona() {
-    initPromotorSession();
-    if (!estaSupervisorDesbloqueado() && !promotorSession) {
+    if (!Auth.estaSupervisorDesbloqueado() && !Auth.getPromotorSession()) {
         mostrarModalLogin();
         return;
     }
@@ -688,7 +685,7 @@ function inicializarRegistroPromociones() {
 }
 
 function abrirPanelPromocionesConSesion() {
-    const supervisor = estaSupervisorDesbloqueado();
+    const supervisor = Auth.estaSupervisorDesbloqueado();
     const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
     const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
     const activos = promotores.filter(p => p.estado === 'Activo' && p.zona_principal_id && zonas.some(z => z.id === p.zona_principal_id));
@@ -698,18 +695,20 @@ function abrirPanelPromocionesConSesion() {
     const fechaInput = document.getElementById('promo-fecha');
     const sessionBar = document.getElementById('promo-session-bar');
 
-    if (!supervisor && promotorSession) {
-        const tiendaNombre = _tiendaPromotorSesion();
+    const promoSession = Auth.getPromotorSession();
+
+    if (!supervisor && promoSession) {
+        const tiendaNombre = Auth._tiendaPromotorSesion();
         tiendaSel.innerHTML = '<option value="">Seleccionar tienda...</option>' +
             (tiendaNombre ? '<option value="' + escHtml(tiendaNombre) + '">' + escHtml(tiendaNombre) + '</option>' : '');
         if (tiendaNombre) tiendaSel.value = tiendaNombre;
         tiendaSel.disabled = true;
-        const promo = activos.find(p => p.id === promotorSession.id);
-        promotorSel.innerHTML = '<option value="' + escHtml(promotorSession.id) + '">' + escHtml(promo ? promo.nombre : promotorSession.nombre) + '</option>';
+        const promo = activos.find(p => p.id === promoSession.id);
+        promotorSel.innerHTML = '<option value="' + escHtml(promoSession.id) + '">' + escHtml(promo ? promo.nombre : promoSession.id) + '</option>';
         promotorSel.disabled = true;
         if (sessionBar) {
             sessionBar.style.display = 'flex';
-            sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promotorSession.nombre) + '</div>' +
+            sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promoSession.id) + '</div>' +
                 '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesi\u00f3n</button>';
         }
     } else {
@@ -720,9 +719,9 @@ function abrirPanelPromocionesConSesion() {
         promotorSel.innerHTML = '<option value="">Seleccionar promotor...</option>' +
             activos.map(p => '<option value="' + p.id + '">' + escHtml(p.nombre) + (p.dni ? ' \u00b7 ' + escHtml(p.dni) : '') + '</option>').join('');
         if (sessionBar) {
-            if (promotorSession) {
+            if (promoSession) {
                 sessionBar.style.display = 'flex';
-                sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promotorSession.nombre) + '</div>' +
+                sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promoSession.id) + '</div>' +
                     '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesi\u00f3n</button>';
             } else {
                 sessionBar.style.display = 'none';
@@ -731,7 +730,7 @@ function abrirPanelPromocionesConSesion() {
         }
     }
 
-    logValidacionPromotor();
+    Auth.logValidacionPromotor();
 
     fechaInput.value = formatearFechaLocal(new Date());
     cargarPromocionesTabla();
@@ -1033,37 +1032,11 @@ function pdvSumItem(label, value, cls, tip) {
 }
 
 function _tiendaPromotorSesion() {
-    if (estaSupervisorDesbloqueado()) return null;
-    _rehidratarSesionPromotor();
-    if (!promotorSession) return null;
-    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
-
-    const id = promotorSession.zona_principal_id;
-    if (id) {
-        const zona = zonas.find(z => z.id === id);
-        if (zona) return zona.nombre;
-        return id;
-    }
-
-    // Fallback defensivo: resolver la tienda a partir del promotor por id/correo
-    // en caso de que la sesión se haya creado sin tienda (carrera de carga).
-    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
-    const p = (promotorSession.id && promotores.find(x => x.id === promotorSession.id))
-        || (promotorSession.email && promotores.find(x => x.email && String(x.email).trim().toLowerCase() === String(promotorSession.email).trim().toLowerCase()))
-        || null;
-    const zonaNueva = (p && (p.zona_principal_id || p.tienda_asignada || p.tienda)) || null;
-    if (zonaNueva) {
-        promotorSession.zona_principal_id = zonaNueva;
-        try { localStorage.setItem('promotor_session', JSON.stringify(promotorSession)); } catch (e) {}
-    }
-    const zona = zonas.find(z => z.id === zonaNueva);
-    return (zona && zona.nombre) || zonaNueva || null;
+    return Auth._tiendaPromotorSesion();
 }
 
 function _esPromotorRestringido() {
-    if (estaSupervisorDesbloqueado()) return false;
-    _rehidratarSesionPromotor();
-    return !!promotorSession;
+    return !Auth.estaSupervisorDesbloqueado() && !!Auth.getPromotorSession();
 }
 
 function _pdvsPermitidosPromotor() {
@@ -4039,7 +4012,8 @@ const productos = DataStore.getProductos();
 
     const ventas = DataStore.getVentasDelMes(mes, anio).filter(v => {
         if (v.punto_venta !== pdv || v.dia > diaMaximo) return false;
-        if (promotorSession && v.promotor_id && v.promotor_id !== promotorSession.id) return false;
+        const promoSession = Auth.getPromotorSession();
+        if (promoSession && v.promotor_id && v.promotor_id !== promoSession.id) return false;
         return true;
     });
 
@@ -4246,12 +4220,13 @@ function guardarVentasCalendario() {
         const mes = parseInt(document.getElementById('venta-mes').value);
         const anio = parseInt(document.getElementById('venta-anio').value);
         const inputs = document.querySelectorAll('.calendario-input');
-        const datos = [];
+const datos = [];
 
-        const promoId = promotorSession ? promotorSession.id : null;
-        const promoNombre = promotorSession ? promotorSession.nombre : null;
-        const promoCorreo = promotorSession ? promotorSession.email : null;
-        const promoDni = promotorSession ? promotorSession.dni : null;
+        const promoSession = Auth.getPromotorSession();
+        const promoId = promoSession ? promoSession.id : null;
+        const promoNombre = promoSession ? promoSession.id : null; // Solo ID, no nombre/email/DNI
+        const promoCorreo = null;
+        const promoDni = null;
 
         inputs.forEach(inp => {
             const val = parseFloat(inp.value);
@@ -4303,91 +4278,13 @@ function guardarVentasCalendario() {
 }
 
 /* ===== PROMOTOR AUTHENTICATION ===== */
-let promotorSession = null;
+/* Sesión gestionada por Auth (js/auth.js) - usar Auth.getPromotorSession() y Auth.leerSesion() */
 
 function _zonaIdSeguro(nueva, previa) {
     const valida = (v) => v && String(v) !== '' && String(v) !== 'Sin tienda asignada';
     if (valida(nueva)) return nueva;
     if (valida(previa)) return previa;
     return null;
-}
-
-function _rehidratarSesionPromotor() {
-    const sesion = leerSesion();
-    if (!sesion || sesion.rol !== 'promotor') return null;
-    const actual = promotorSession || (function () {
-        try {
-            const raw = localStorage.getItem('promotor_session') || sessionStorage.getItem('promotor_session');
-            return raw ? JSON.parse(raw) : null;
-        } catch (e) { return null; }
-    })();
-    if (!actual) return null;
-
-    const id = actual.id || sesion.id || null;
-    const email = String(actual.email || sesion.email || '').trim().toLowerCase();
-
-    const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
-    let p = null;
-    if (id) p = promotores.find(x => x.id === id);
-    if (!p && email) {
-        p = promotores.find(x => x.email && String(x.email).trim().toLowerCase() === email) || null;
-    }
-
-    const zonaNueva = (p && (p.zona_principal_id || p.tienda_asignada || p.tienda)) || null;
-    const zonaPrevia = actual.zona_principal_id || null;
-    const zonaId = _zonaIdSeguro(zonaNueva, zonaPrevia);
-
-    promotorSession = {
-        id: id || sesion.id,
-        nombre: (p && p.nombre) || actual.nombre || sesion.nombre || '',
-        dni: (p && p.dni) || actual.dni || null,
-        email: (p && p.email) || actual.email || sesion.email || null,
-        zona_principal_id: zonaId
-    };
-
-    // PROTECCIÓN: solo se persiste la sesión cuando existe tienda asignada,
-    // para que la tienda jamás se sobrescriba por null/cadena vacía.
-    if (promotorSession.zona_principal_id) {
-        try { localStorage.setItem('promotor_session', JSON.stringify(promotorSession)); } catch (e) {}
-    }
-    return promotorSession;
-}
-
-function initPromotorSession() {
-    if (!promotorSession) {
-        const stored = localStorage.getItem('promotor_session') || sessionStorage.getItem('promotor_session');
-        if (stored) {
-            try {
-                const data = JSON.parse(stored);
-                if (data && data.email) {
-                    promotorSession = data;
-                }
-            } catch (e) {
-                promotorSession = null;
-            }
-        }
-    }
-    // AUDITORÍA: re-hidratar la tienda asignada en cada acceso por si la sesión
-    // se creó sin ella (carrera de carga) o el promotor aún no existía en la lista.
-    _rehidratarSesionPromotor();
-}
-
-function logValidacionPromotor() {
-    const p = promotorSession;
-    if (!p) return;
-    const zonas = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.zonas) ? HorariosDataStore.zonas : [];
-    const zona = zonas.find(z => z.id === p.zona_principal_id);
-    const tienda = (zona && zona.nombre) || p.zona_principal_id || 'Sin tienda asignada';
-    const ventasCargadas = (typeof DataStore !== 'undefined' && DataStore.ventas) ? DataStore.ventas.length : 0;
-    const promosCargadas = (typeof PromocionesStore !== 'undefined' && PromocionesStore.promociones) ? PromocionesStore.promociones.length : 0;
-    console.log('[VALIDACION] Promotor autenticado:', p.nombre || '');
-    console.log('[VALIDACION] Correo:', p.email || '');
-    console.log('[VALIDACION] Tienda encontrada:', tienda);
-    console.log('[VALIDACION] Promociones cargadas:', promosCargadas);
-    console.log('[VALIDACION] Ventas cargadas:', ventasCargadas);
-    console.log('Usuario autenticado:\n' + (p.nombre || ''));
-    console.log('Correo:\n' + (p.email || ''));
-    console.log('Tienda asignada:\n' + tienda);
 }
 
 function mostrarModalLogin() {
@@ -4536,21 +4433,17 @@ function mostrarErrorLogin(mensaje) {
 }
 
 function iniciarSesionPromotor(promotor, remember) {
-    promotorSession = {
-        id: promotor.id,
-        nombre: promotor.nombre,
-        dni: promotor.dni,
-        email: promotor.email,
-        zona_principal_id: _zonaIdSeguro(promotor.zona_principal_id || promotor.tienda_asignada || promotor.tienda, null)
+    const session = {
+        uid: promotor.id,
+        rol: 'promotor',
+        zona: _zonaIdSeguro(promotor.zona_principal_id || promotor.tienda_asignada || promotor.tienda, null)
     };
-    const storage = remember ? localStorage : sessionStorage;
-    storage.setItem('promotor_session', JSON.stringify(promotorSession));
+    Auth._guardarSesion(session);
+    Auth._hidratarPromotorEnMemoria(promotor.id);
 }
 
 function cerrarSesionPromotor() {
-    promotorSession = null;
-    localStorage.removeItem('promotor_session');
-    sessionStorage.removeItem('promotor_session');
+    Auth.cerrarSesionPromotor();
     cerrarPanelVentas();
     cerrarPanelPromociones();
     const sessionBar = document.getElementById('ventas-session-bar');
@@ -4577,8 +4470,7 @@ async function registrarAcceso(promotor, correo, resultado) {
 }
 
 function abrirModalVenta() {
-    initPromotorSession();
-    if (!promotorSession) {
+    if (!Auth.estaSupervisorDesbloqueado() && !Auth.getPromotorSession()) {
         mostrarModalLogin();
         return;
     }
@@ -4587,12 +4479,14 @@ function abrirModalVenta() {
     abrirPanelVentas();
 }
 
-function abrirPanelVentasConSesion() {
+function abrirPanelVentas() {
     const pdvSel = document.getElementById('modal-pdv');
     const pdvs = DataStore.getPDVs();
 
-    if (!estaSupervisorDesbloqueado() && promotorSession) {
-        const tiendaNombre = _tiendaPromotorSesion();
+    const promoSession = Auth.getPromotorSession();
+
+    if (!Auth.estaSupervisorDesbloqueado() && promoSession) {
+        const tiendaNombre = Auth._tiendaPromotorSesion();
         if (tiendaNombre) {
             pdvSel.innerHTML = '<option value="' + escHtml(tiendaNombre) + '">' + escHtml(tiendaNombre) + '</option>';
             pdvSel.disabled = true;
@@ -4600,20 +4494,19 @@ function abrirPanelVentasConSesion() {
             pdvSel.innerHTML = '<option value="">Sin tienda asignada</option>';
             pdvSel.disabled = true;
         }
-        logValidacionPromotor();
     } else {
         pdvSel.disabled = false;
         pdvSel.innerHTML = '<option value="">Seleccionar punto de venta...</option>' +
             pdvs.map(p => '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>').join('');
-        const tiendaPromotor = _tiendaPromotorSesion();
-        if (!estaSupervisorDesbloqueado() && tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) pdvSel.value = tiendaPromotor;
+        const tiendaPromotor = Auth._tiendaPromotorSesion();
+        if (!Auth.estaSupervisorDesbloqueado() && tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) pdvSel.value = tiendaPromotor;
     }
 
     const sessionBar = document.getElementById('ventas-session-bar');
-    if (!estaSupervisorDesbloqueado() && promotorSession) {
+    if (!Auth.estaSupervisorDesbloqueado() && promoSession) {
         if (sessionBar) {
             sessionBar.style.display = 'flex';
-            sessionBar.innerHTML = '<div class="ventas-session-user"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>Bienvenido, ' + escHtml(promotorSession.nombre) + '</div>' +
+            sessionBar.innerHTML = '<div class="ventas-session-user"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>Bienvenido, ' + escHtml(promoSession.id) + '</div>' +
                 '<button class="ventas-session-logout" onclick="cerrarSesionPromotor()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar Sesi\u00f3n</button>';
         }
     } else if (sessionBar) {
@@ -4638,6 +4531,43 @@ function abrirPanelVentasConSesion() {
     if (target) target.classList.remove('vista-dia');
     sincronizarSelectsPeriodo();
     cargarVentasCalendario();
+}
+
+function abrirPanelVentasConSesion() {
+    const pdvSel = document.getElementById('modal-pdv');
+    const pdvs = DataStore.getPDVs();
+
+    const promoSession = Auth.getPromotorSession();
+
+    if (!Auth.estaSupervisorDesbloqueado() && promoSession) {
+        const tiendaNombre = Auth._tiendaPromotorSesion();
+        if (tiendaNombre) {
+            pdvSel.innerHTML = '<option value="' + escHtml(tiendaNombre) + '">' + escHtml(tiendaNombre) + '</option>';
+            pdvSel.disabled = true;
+        } else {
+            pdvSel.innerHTML = '<option value="">Sin tienda asignada</option>';
+            pdvSel.disabled = true;
+        }
+        Auth.logValidacionPromotor();
+    } else {
+        pdvSel.disabled = false;
+        pdvSel.innerHTML = '<option value="">Seleccionar punto de venta...</option>' +
+            pdvs.map(p => '<option value="' + escHtml(p) + '">' + escHtml(p) + '</option>').join('');
+        const tiendaPromotor = Auth._tiendaPromotorSesion();
+        if (!Auth.estaSupervisorDesbloqueado() && tiendaPromotor && pdvs.indexOf(tiendaPromotor) !== -1) pdvSel.value = tiendaPromotor;
+    }
+
+    const sessionBar = document.getElementById('ventas-session-bar');
+    if (!Auth.estaSupervisorDesbloqueado() && promoSession) {
+        if (sessionBar) {
+            sessionBar.style.display = 'flex';
+            sessionBar.innerHTML = '<div class="ventas-session-user"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>Bienvenido, ' + escHtml(promoSession.id) + '</div>' +
+                '<button class="ventas-session-logout" onclick="cerrarSesionPromotor()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar Sesi\u00f3n</button>';
+        }
+    } else if (sessionBar) {
+        sessionBar.style.display = 'none';
+        sessionBar.innerHTML = '';
+    }
 }
 
 /* ===== INFORME POR PROMOTOR ===== */
@@ -5033,8 +4963,9 @@ function infPromDestroyChart(id) {
 function aplicarFiltrosInformePromotor() {
     let promotorId = document.getElementById('inf-promotor-select').value;
 
-    if (!promotorId && promotorSession && !estaSupervisorDesbloqueado()) {
-        promotorId = promotorSession.id;
+const promoSession = Auth.getPromotorSession();
+    if (!promotorId && promoSession && !Auth.estaSupervisorDesbloqueado()) {
+        promotorId = promoSession.id;
     }
 
     if (!promotorId) {
@@ -5513,7 +5444,7 @@ function iniciarSidebarColapsable() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    initPromotorSession();
+    if (typeof Auth !== 'undefined') Auth.init();
     configurarVistaAutenticacion();
     iniciarSidebarColapsable();
     iniciarReloj();
@@ -5584,6 +5515,10 @@ function configurarVistaAutenticacion() {
 }
 
 function leerSesion() {
+    if (typeof Auth !== 'undefined' && typeof Auth.leerSesion === 'function') {
+        return Auth.leerSesion();
+    }
+    // Fallback
     try {
         const raw = sessionStorage.getItem('auth_session');
         return raw ? JSON.parse(raw) : null;
@@ -5593,10 +5528,14 @@ function leerSesion() {
 }
 
 function guardarSesion(data) {
-    try {
-        sessionStorage.setItem('auth_session', JSON.stringify(data));
-    } catch (e) {
-        console.error('[LOGIN][ERROR] No se pudo registrar el historial de acceso:', e);
+    if (typeof Auth !== 'undefined' && typeof Auth.guardarSesion === 'function') {
+        Auth.guardarSesion(data);
+    } else {
+        try {
+            sessionStorage.setItem('auth_session', JSON.stringify(data));
+        } catch (e) {
+            console.error('[LOGIN][ERROR] No se pudo registrar el historial de acceso:', e);
+        }
     }
 }
 
@@ -5967,28 +5906,15 @@ function aplicarSesionInicial() {
             const emailLogin = String(session.email).trim().toLowerCase();
             p = promotores.find(x => x.email && String(x.email).trim().toLowerCase() === emailLogin) || null;
         }
-        let almacenada = null;
-        try {
-            const raw = localStorage.getItem('promotor_session') || sessionStorage.getItem('promotor_session');
-            if (raw) almacenada = JSON.parse(raw);
-        } catch (e) { almacenada = null; }
+        const zonaPromotor = (p && (p.zona_principal_id || p.tienda_asignada || p.tienda)) || null;
+        const zonaPrevia = session.zona_principal_id || null;
+        const zonaId = _zonaIdSeguro(zonaPromotor, _zonaIdSeguro(session.zona_principal_id, zonaPrevia));
+        
+        // Usar Auth para manejar la sesión en memoria
+        Auth._hidratarPromotorEnMemoria(session.id);
+        
         document.body.classList.remove('rol-supervisor');
         document.body.classList.add('rol-promotor');
-        const zonaPromotor = (p && (p.zona_principal_id || p.tienda_asignada || p.tienda)) || null;
-        const zonaPrevia = (almacenada && (almacenada.zona_principal_id || almacenada.tienda_asignada)) || null;
-        const zonaId = _zonaIdSeguro(zonaPromotor, _zonaIdSeguro(session.zona_principal_id, zonaPrevia));
-        promotorSession = {
-            id: session.id,
-            nombre: (p && p.nombre) || (almacenada && almacenada.nombre) || session.nombre || 'Promotor',
-            dni: (p && p.dni) || (almacenada && almacenada.dni) || null,
-            email: (p && p.email) || (almacenada && almacenada.email) || session.email || null,
-            zona_principal_id: zonaId
-        };
-        // PROTECCIÓN: persistir la sesión completa (con tienda asignada) para que
-        // ninguna recarga posterior pierda la asociación promotor ↔ tienda.
-        if (promotorSession.zona_principal_id) {
-            try { localStorage.setItem('promotor_session', JSON.stringify(promotorSession)); } catch (e) {}
-        }
         renderPromotorHeader(session);
         mostrarCerrarSesion();
         cambiarPagina('avance');
@@ -6035,9 +5961,6 @@ function cerrarSesionGlobal() {
     sessionStorage.removeItem('auth_session_secreto');
     sessionStorage.removeItem('auth_session_secreto_tmp');
     sessionStorage.removeItem('supervisor_unlocked');
-    localStorage.removeItem('promotor_session');
-    sessionStorage.removeItem('promotor_session');
-    promotorSession = null;
     document.body.classList.remove('rol-promotor', 'rol-supervisor', 'rol-jefe');
     const welcome = document.getElementById('top-bar-welcome');
     if (welcome) welcome.style.display = 'none';
@@ -6097,32 +6020,28 @@ function infIndPctStr(n) {
 }
 
 function obtenerPromotorSesionInforme() {
-    initPromotorSession();
-    const sesion = leerSesion();
+    const sesion = Auth.leerSesion();
     const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
-    let candidato = promotorSession || null;
-    if (!candidato && sesion && sesion.rol === 'promotor') {
-        candidato = { id: sesion.id, nombre: sesion.nombre, email: sesion.email, zona_principal_id: sesion.zona_principal_id || null };
+    let candidato = null;
+    const promoSession = Auth.getPromotorSession();
+    
+    if (promoSession) {
+        candidato = { id: promoSession.id, zona_principal_id: promoSession.zona_principal_id };
+    } else if (sesion && sesion.rol === 'promotor') {
+        candidato = { id: sesion.id, zona_principal_id: sesion.zona || null };
     }
     if (!candidato) return null;
 
     const id = candidato.id || null;
-    const correo = String(candidato.email || '').trim().toLowerCase();
 
     let promotor = null;
     if (id) promotor = promotores.find(p => p.id === id);
-    if (!promotor && correo) {
-        promotor = promotores.find(p => p.email && String(p.email).trim().toLowerCase() === correo);
-    }
     if (promotor) return promotor;
 
     if (id) {
         return {
             id: id,
-            nombre: candidato.nombre || '',
-            dni: candidato.dni || null,
-            email: candidato.email || null,
-            zona_principal_id: _zonaIdSeguro(candidato.zona_principal_id || candidato.tienda_asignada, null)
+            zona_principal_id: _zonaIdSeguro(candidato.zona_principal_id || null, null)
         };
     }
     return null;

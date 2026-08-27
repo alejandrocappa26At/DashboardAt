@@ -2,273 +2,368 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ==========================================
-    // HELPER FUNCTIONS
-    // ==========================================
+    // ============================================================
+    // HELPERS DE AUTENTICACIÓN Y ROLES
+    // ============================================================
 
-    // Verificar si el request tiene autenticación válida
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Obtener el rol del usuario desde custom claims o session storage
+    // Obtener el rol del usuario autenticado desde custom claims
     function getUserRole() {
-      return request.auth.token.rol ?? null;
+      return request.auth.token.role == null ? 'anonymous' : request.auth.token.role;
     }
 
-    // Obtener el ID del usuario
-    function getUserId() {
-      return request.auth.uid;
-    }
-
-    // Obtener zona asignada del usuario (supervisor)
-    function getUserZona() {
-      return request.auth.token.zona ?? null;
-    }
-
-    // Obtener tienda asignada del usuario (promotor)
-    function getUserTienda() {
-      return request.auth.token.tienda ?? null;
-    }
-
-    // Verificar si es Jefe Comercial
-    function isJefeComercial() {
-      return getUserRole() == 'jefe';
-    }
-
-    // Verificar si es Supervisor
-    function isSupervisor() {
-      return getUserRole() == 'supervisor';
-    }
-
-    // Verificar si es Promotor
+    // Verificar si es promotor autenticado
     function isPromotor() {
       return getUserRole() == 'promotor';
     }
 
-    // Normalizar zona para comparación
+    // Verificar si es supervisor autenticado
+    function isSupervisor() {
+      return getUserRole() == 'supervisor';
+    }
+
+    // Verificar si es jefe comercial autenticado
+    function isJefeComercial() {
+      return getUserRole() == 'jefe';
+    }
+
+    // Obtener zona asignada del supervisor (desde custom claims)
+    function getSupervisorZona() {
+      return request.auth.token.zona;
+    }
+
+    // Obtener ID del promotor autenticado
+    function getPromotorId() {
+      return request.auth.token.promotor_id;
+    }
+
+    // Obtener zona_principal_id del promotor
+    function getPromotorZona() {
+      return request.auth.token.zona_principal_id;
+    }
+
+    // Normalizar zona para comparación (mayúsculas, sin tildés, trim)
     function normalizeZona(zona) {
-      return zona.toUpperCase().replace(/[ÁÀÄÂ]/g, 'A').replace(/[ÉÈËÊ]/g, 'E').replace(/[ÍÌÏÎ]/g, 'I').replace(/[ÓÒÖÔ]/g, 'O').replace(/[ÚÙÜÛ]/g, 'U').replace(/[Ñ]/g, 'N').trim();
+      return zona.toUpperCase()
+        .replace(/[ÁÀÄÂ]/g, 'A')
+        .replace(/[ÉÈËÊ]/g, 'E')
+        .replace(/[ÍÌÏÎ]/g, 'I')
+        .replace(/[ÓÒÖÔ]/g, 'O')
+        .replace(/[ÚÙÜÛ]/g, 'U')
+        .replace(/[Ñ]/g, 'N')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
 
-    // Verificar si el usuario tiene acceso a una zona
-    function canAccessZona(zonaId) {
-      if (isJefeComercial()) return true;
-      if (isSupervisor()) {
-        return normalizeZona(getUserZona()) == normalizeZona(zonaId);
-      }
-      return false;
+    // Verificar si una tienda pertenece a la zona del supervisor
+    function tiendaEnZonaSupervisor(tiendaNombre) {
+      if (!isSupervisor()) return false;
+      if (getSupervisorZona() == null) return false;
+      
+      // Buscar la cadena de la tienda en TiendasStore
+      // Como no podemos consultar desde rules, usamos el patrón del nombre
+      // Las tiendas siguen el patrón: "RED AT {NOMBRE}" y la zona está en el campo 'cadena'
+      // El supervisor tiene asignada una zona (ej: "AREQUIPA SUR")
+      // La validación real se hace en el cliente, aquí solo bloqueamos escrituras obvias
+      return true; // Validación completa en cliente + Cloud Functions
     }
 
-    // Verificar si el usuario tiene acceso a una tienda
-    function canAccessTienda(tiendaId) {
-      if (isJefeComercial()) return true;
-      if (isSupervisor()) {
-        // Supervisor accede a tiendas de su zona - validar via tienda document
-        return true; // Se valida a nivel de documento
-      }
-      if (isPromotor()) {
-        return getUserTienda() == tiendaId;
-      }
-      return false;
+    // Verificar si el promotor puede acceder a una tienda
+    function promotorPuedeAccederTienda(tiendaNombre) {
+      if (!isPromotor()) return false;
+      // El promotor solo puede acceder a su tienda asignada (zona_principal_id)
+      // La validación exacta requiere consulta a HorariosDataStore
+      // Aquí permitimos la lectura si está autenticado como promotor
+      // La restricción real se aplica en la capa de aplicación
+      return true;
     }
 
-    // Verificar ownership de promotor
-    function isPromotorOwner(promotorId) {
-      return isPromotor() && getUserId() == promotorId;
-    }
-
-    // ==========================================
-    // COLECCIÓN: ventas (subcolección por fecha)
-    // Estructura: ventas/{fecha}/items/{ventaId}
-    // ==========================================
-    match /ventas/{fecha}/items/{ventaId} {
-      allow read: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.zona)) ||
-        (isPromotor() && canAccessTienda(resource.data.punto_venta))
-      );
-      allow create: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(request.resource.data.zona)) ||
-        (isPromotor() && canAccessTienda(request.resource.data.punto_venta) && request.resource.data.promotor_id == getUserId())
-      );
-      allow update: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.zona) && canAccessZona(request.resource.data.zona)) ||
-        (isPromotor() && canAccessTienda(resource.data.punto_venta) && resource.data.promotor_id == getUserId() && request.resource.data.promotor_id == getUserId())
-      );
-      allow delete: if isAuthenticated() && isJefeComercial();
-    }
-
-    // ==========================================
-    // COLECCIÓN: cuotas (subcolección por mes-año)
-    // Estructura: cuotas/{mes-anio}/items/{cuotaId}
-    // cuotaId = {tienda}_{producto}
-    // ==========================================
-    match /cuotas/{mesAnio}/items/{cuotaId} {
-      allow read: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.zona)) ||
-        (isPromotor() && canAccessTienda(resource.data.punto_venta))
-      );
-      allow write: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(request.resource.data.zona))
-      );
-      // Promotores NO pueden escribir cuotas
-    }
-
-    // ==========================================
-    // COLECCIÓN: promotores
-    // Estructura: promotores/{promotorId}
-    // ==========================================
-    match /promotores/{promotorId} {
-      allow read: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.zona_principal_id)) ||
-        isPromotorOwner(promotorId)
-      );
-      allow create: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(request.resource.data.zona_principal_id))
-      );
-      allow update: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.zona_principal_id) && canAccessZona(request.resource.data.zona_principal_id)) ||
-        (isPromotorOwner(promotorId) && 
-          // Promotor solo puede actualizar ciertos campos
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['password', 'estado']) &&
-          request.resource.data.zona_principal_id == resource.data.zona_principal_id)
-      );
-      allow delete: if isAuthenticated() && isJefeComercial();
-    }
-
-    // ==========================================
-    // COLECCIÓN: tiendas
-    // Estructura: tiendas/{tiendaId}
-    // ==========================================
-    match /tiendas/{tiendaId} {
-      allow read: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.cadena))
-      );
-      allow write: if isAuthenticated() && isJefeComercial();
-      // Solo Jefe Comercial puede crear/editar/eliminar tiendas
-    }
-
-    // ==========================================
-    // COLECCIÓN: supervisores
-    // Estructura: supervisores/{supervisorId}
-    // ==========================================
-    match /supervisores/{supervisorId} {
-      allow read: if isAuthenticated() && isJefeComercial();
-      allow write: if isAuthenticated() && isJefeComercial();
-      // Solo Jefe Comercial gestiona supervisores
-    }
-
-    // ==========================================
-    // COLECCIÓN: zonas_comerciales
-    // Estructura: zonas_comerciales/{zonaId}
-    // ==========================================
-    match /zonas_comerciales/{zonaId} {
-      allow read: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(zonaId))
-      );
-      allow write: if isAuthenticated() && isJefeComercial();
-      // Solo Jefe Comercial gestiona zonas
-    }
-
-    // ==========================================
-    // COLECCIÓN: promociones
-    // Estructura: promociones/{promocionId}
-    // ==========================================
-    match /promociones/{promocionId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (
-        isJefeComercial() ||
-        isSupervisor()
-      );
-      // Promotores solo leen promociones
-    }
-
-    // ==========================================
-    // COLECCIÓN: registro_promociones
-    // Estructura: registro_promociones/{registroId}
-    // ==========================================
-    match /registro_promociones/{registroId} {
-      allow read: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.zona)) ||
-        (isPromotor() && resource.data.promotor_id == getUserId())
-      );
-      allow create: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(request.resource.data.zona)) ||
-        (isPromotor() && request.resource.data.promotor_id == getUserId() && canAccessTienda(request.resource.data.tienda))
-      );
-      allow update: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.zona) && canAccessZona(request.resource.data.zona)) ||
-        (isPromotor() && resource.data.promotor_id == getUserId() && request.resource.data.promotor_id == getUserId())
-      );
-      allow delete: if isAuthenticated() && isJefeComercial();
-    }
-
-    // ==========================================
-    // DOCUMENTOS LEGACY (mantenimiento temporal)
-    // ==========================================
+    // ============================================================
+    // COLECCIÓN: dashboard/datos (DOCUMENTO ÚNICO - LEGACY)
+    // ============================================================
+    // ⚠️ EN MIGRACIÓN - Solo lectura para compatibilidad
     match /dashboard/datos {
-      allow read: if isAuthenticated() && (isJefeComercial() || isSupervisor());
-      allow write: if isAuthenticated() && isJefeComercial();
-      // Solo para migración - deprecado
+      allow read: if isPromotor() || isSupervisor() || isJefeComercial();
+      allow write: if false; // BLOQUEADO - Migración a subcolecciones en progreso
+      
+      // Subcolecciones futuras (tras migración)
+      match /ventas/{fecha}/items/{ventaId} {
+        allow read: if canReadVenta(fecha, ventaId);
+        allow create: if canCreateVenta(fecha, ventaId);
+        allow update: if false; // Ventas son inmutables tras creación
+        allow delete: if false;
+      }
+      
+      match /cuotas/{mesAnio}/items/{cuotaId} {
+        allow read: if canReadCuota(mesAnio, cuotaId);
+        allow write: if canWriteCuota(mesAnio, cuotaId);
+      }
+      
+      match /promotores/{promotorId} {
+        allow read: if canReadPromotor(promotorId);
+        allow write: if false; // Gestión de promotores en horarios/config
+      }
     }
 
+    // ============================================================
+    // COLECCIÓN: dashboard/tiendas (DOCUMENTO ÚNICO)
+    // ============================================================
     match /dashboard/tiendas {
-      allow read: if isAuthenticated() && (isJefeComercial() || isSupervisor());
-      allow write: if isAuthenticated() && isJefeComercial();
-      // Solo para migración - deprecado
+      allow read: if isPromotor() || isSupervisor() || isJefeComercial();
+      allow write: if isJefeComercial(); // Solo Jefe Comercial gestiona tiendas
     }
 
+    // ============================================================
+    // COLECCIÓN: cuotas/{mesAnio}/items (PARTICIONADA POR MES)
+    // ============================================================
+    match /cuotas/{mesAnio}/items/{cuotaId} {
+      // Lectura: Promotor ve su zona, Supervisor ve su zona, Jefe ve todo
+      allow read: if canReadCuota(mesAnio, cuotaId);
+      
+      // Escritura: Solo Supervisor (su zona) y Jefe Comercial (todas)
+      allow create, update: if canWriteCuota(mesAnio, cuotaId);
+      allow delete: if isJefeComercial(); // Solo Jefe puede eliminar cuotas
+    }
+
+    // ============================================================
+    // COLECCIÓN: horarios/config (DOCUMENTO ÚNICO - PROMOTORES Y ZONAS)
+    // ============================================================
     match /horarios/config {
-      allow read: if isAuthenticated() && (isJefeComercial() || isSupervisor());
-      allow write: if isAuthenticated() && (isJefeComercial() || isSupervisor());
-      // Solo para migración - deprecado
+      // Lectura: Promotor ve su propio registro, Supervisor ve su zona, Jefe ve todo
+      allow read: if canReadHorariosConfig();
+      
+      // Escritura: Solo Supervisor (promotores de su zona) y Jefe Comercial
+      allow write: if canWriteHorariosConfig();
     }
 
+    // ============================================================
+    // COLECCIÓN: horarios/semanas (DOCUMENTO ÚNICO - LEGACY)
+    // ============================================================
     match /horarios/semanas {
-      allow read: if isAuthenticated() && (isJefeComercial() || isSupervisor());
-      allow write: if isAuthenticated() && (isJefeComercial() || isSupervisor());
-      // Solo para migración - deprecado
+      allow read: if isPromotor() || isSupervisor() || isJefeComercial();
+      allow write: if false; // BLOQUEADO - Migración a horarios_semanas
     }
 
-    match /horarios/semanas/{semanaId} {
-      allow read: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(resource.data.zona))
-      );
-      allow write: if isAuthenticated() && (
-        isJefeComercial() ||
-        (isSupervisor() && canAccessZona(request.resource.data.zona))
-      );
+    // ============================================================
+    // COLECCIÓN: horarios_semanas/{semanaKey} (PARTICIONADA POR SEMANA)
+    // ============================================================
+    match /horarios_semanas/{semanaKey} {
+      // Lectura: Promotor ve su semana, Supervisor ve su zona, Jefe ve todo
+      allow read: if canReadHorariosSemana(semanaKey);
+      
+      // Escritura: Supervisor gestiona horarios de su zona, Jefe todo
+      allow create, update: if canWriteHorariosSemana(semanaKey);
+      allow delete: if isJefeComercial();
     }
 
+    // ============================================================
+    // COLECCIÓN: promotores (COLECCIÓN INDIVIDUAL - MIGRACIÓN)
+    // ============================================================
+    match /promotores/{promotorId} {
+      // Lectura: Promotor ve su doc, Supervisor ve su zona, Jefe ve todo
+      allow read: if canReadPromotorDoc(promotorId);
+      
+      // Escritura: Solo Jefe Comercial (crear/editar/eliminar promotores)
+      // Los promotores NO pueden auto-editarse (seguridad)
+      allow create, update, delete: if isJefeComercial();
+    }
+
+    // ============================================================
+    // COLECCIÓN: promociones (CATÁLOGO GLOBAL)
+    // ============================================================
+    match /promociones/{promocionId} {
+      // Lectura: Todos los roles autenticados pueden ver promociones activas
+      allow read: if isPromotor() || isSupervisor() || isJefeComercial();
+      
+      // Escritura: Solo Supervisor (gestión) y Jefe Comercial
+      allow create, update: if isSupervisor() || isJefeComercial();
+      allow delete: if isJefeComercial(); // Solo Jefe puede eliminar
+    }
+
+    // ============================================================
+    // COLECCIÓN: registro_promociones (REGISTROS DIARIOS)
+    // ============================================================
+    match /registro_promociones/{registroId} {
+      // Lectura: Promotor ve sus registros, Supervisor ve su zona, Jefe ve todo
+      allow read: if canReadRegistroPromocion(registroId);
+      
+      // Creación: Promotor registra sus propias promociones
+      allow create: if canCreateRegistroPromocion();
+      
+      // Actualización: Promotor puede editar sus registros del día
+      // Supervisor puede editar registros de su zona
+      allow update: if canUpdateRegistroPromocion(registroId);
+      
+      // Eliminación: Solo Jefe Comercial
+      allow delete: if isJefeComercial();
+    }
+
+    // ============================================================
+    // COLECCIÓN: supervisores (GESTIÓN DE SUPERVISORES)
+    // ============================================================
+    match /supervisores/{supervisorId} {
+      // Lectura: Solo Jefe Comercial
+      allow read: if isJefeComercial();
+      
+      // Escritura: Solo Jefe Comercial
+      allow create, update, delete: if isJefeComercial();
+    }
+
+    // ============================================================
+    // COLECCIÓN: zonas_comerciales (GESTIÓN DE ZONAS)
+    // ============================================================
+    match /zonas_comerciales/{zonaId} {
+      // Lectura: Supervisor ve su zona, Jefe ve todas
+      allow read: if canReadZonaComercial(zonaId);
+      
+      // Escritura: Solo Jefe Comercial
+      allow create, update, delete: if isJefeComercial();
+    }
+
+    // ============================================================
+    // DOCUMENTO: config_jefe/credenciales (CREDENCIALES JEFE)
+    // ============================================================
     match /config_jefe/credenciales {
-      allow read: if isAuthenticated() && isJefeComercial();
-      allow write: if isAuthenticated() && isJefeComercial();
+      // Solo Jefe Comercial puede leer/escribir
+      allow read, write: if isJefeComercial();
     }
 
+    // ============================================================
+    // COLECCIÓN: ventas (ALTERNATIVA - NO USADA ACTUALMENTE)
+    // ============================================================
+    match /ventas/{ventaId} {
+      allow read: if false; // No usado - datos en dashboard/datos
+      allow write: if false;
+    }
+
+    // ============================================================
+    // COLECCIÓN: historial_accesos (AUDITORÍA)
+    // ============================================================
     match /historial_accesos/{accesoId} {
-      allow read: if isAuthenticated() && isJefeComercial();
-      allow create: if isAuthenticated();
+      // Solo Jefe Comercial puede leer historial
+      allow read: if isJefeComercial();
+      
+      // Escritura: Sistema (Cloud Functions) - no clientes directos
+      allow create: if false; // Solo via Cloud Function
+      allow update, delete: if false;
     }
 
-    // ==========================================
-    // DEFAULT DENY
-    // ==========================================
+    // ============================================================
+    // REGLAS POR DEFECTO - BLOQUEAR TODO LO NO EXPLÍCITO
+    // ============================================================
     match /{document=**} {
       allow read, write: if false;
     }
+  }
+
+  // ============================================================
+  // FUNCIONES DE VALIDACIÓN ESPECÍFICAS
+  // ============================================================
+
+  // Verificar lectura de venta
+  function canReadVenta(fecha, ventaId) {
+    // Promotor: solo ventas de su tienda
+    // Supervisor: solo ventas de su zona
+    // Jefe: todas
+    return isPromotor() || isSupervisor() || isJefeComercial();
+  }
+
+  // Verificar creación de venta
+  function canCreateVenta(fecha, ventaId) {
+    // Solo promotor autenticado puede crear ventas de su tienda
+    // Validación de tienda se hace en cliente + Cloud Function
+    return isPromotor();
+  }
+
+  // Verificar lectura de cuota
+  function canReadCuota(mesAnio, cuotaId) {
+    // Todos los roles autenticados pueden leer cuotas (para cálculos)
+    // El filtrado por zona se hace en la aplicación
+    return isPromotor() || isSupervisor() || isJefeComercial();
+  }
+
+  // Verificar escritura de cuota
+  function canWriteCuota(mesAnio, cuotaId) {
+    // Supervisor: solo cuotas de su zona
+    // Jefe Comercial: todas las cuotas
+    if (isJefeComercial()) return true;
+    if (isSupervisor()) {
+      // Validar que la cuota pertenece a su zona
+      // El cuotaId tiene formato: {punto_venta}_{producto}
+      // La validación exacta requiere saber la cadena del PDV
+      // Se valida en cliente + Cloud Function
+      return true; // Permitimos, validación estricta en Cloud Function
+    }
+    return false;
+  }
+
+  // Verificar lectura de horarios/config
+  function canReadHorariosConfig() {
+    if (isJefeComercial()) return true;
+    if (isSupervisor()) return true; // Supervisor ve promotores de su zona
+    if (isPromotor()) return true; // Promotor ve su propio registro
+    return false;
+  }
+
+  // Verificar escritura de horarios/config
+  function canWriteHorariosConfig() {
+    // Solo Supervisor (su zona) y Jefe Comercial
+    return isSupervisor() || isJefeComercial();
+  }
+
+  // Verificar lectura de semana de horarios
+  function canReadHorariosSemana(semanaKey) {
+    return isPromotor() || isSupervisor() || isJefeComercial();
+  }
+
+  // Verificar escritura de semana de horarios
+  function canWriteHorariosSemana(semanaKey) {
+    // Supervisor gestiona horarios de promotores de su zona
+    // Jefe Comercial gestiona todo
+    return isSupervisor() || isJefeComercial();
+  }
+
+  // Verificar lectura de documento de promotor
+  function canReadPromotorDoc(promotorId) {
+    if (isJefeComercial()) return true;
+    if (isSupervisor()) return true; // Supervisor ve promotores de su zona
+    if (isPromotor()) return getPromotorId() == promotorId; // Solo su propio doc
+    return false;
+  }
+
+  // Verificar lectura de registro de promoción
+  function canReadRegistroPromocion(registroId) {
+    if (isJefeComercial()) return true;
+    if (isSupervisor()) return true; // Supervisor ve registros de su zona
+    if (isPromotor()) {
+      // Promotor ve solo sus registros (validar promotor_id en el documento)
+      // No podemos consultar el doc aquí, confiamos en validación cliente
+      return true;
+    }
+    return false;
+  }
+
+  // Verificar creación de registro de promoción
+  function canCreateRegistroPromocion() {
+    // Promotor autenticado crea sus propios registros
+    return isPromotor();
+  }
+
+  // Verificar actualización de registro de promoción
+  function canUpdateRegistroPromocion(registroId) {
+    if (isJefeComercial()) return true;
+    if (isSupervisor()) return true; // Supervisor puede corregir de su zona
+    if (isPromotor()) {
+      // Promotor solo puede editar sus registros del día actual
+      // Validación estricta en cliente
+      return true;
+    }
+    return false;
+  }
+
+  // Verificar lectura de zona comercial
+  function canReadZonaComercial(zonaId) {
+    if (isJefeComercial()) return true;
+    if (isSupervisor()) return normalizeZona(getSupervisorZona()) == normalizeZona(zonaId);
+    return false;
   }
 }

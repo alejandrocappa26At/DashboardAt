@@ -255,6 +255,10 @@ const DataStore = {
 
     getVentas() { return this.ventas; },
     _zonaSesionSupervisor() {
+        if (typeof Auth !== 'undefined' && typeof Auth.getSupervisorZona === 'function') {
+            return Auth.getSupervisorZona();
+        }
+        // Fallback for backward compatibility
         try {
             const raw = sessionStorage.getItem('auth_session');
             if (!raw) return null;
@@ -884,6 +888,10 @@ const DataStore = {
     },
 
     _esJefeComercial() {
+        if (typeof Auth !== 'undefined' && typeof Auth.isJefeComercial === 'function') {
+            return Auth.isJefeComercial();
+        }
+        // Fallback
         try {
             const raw = sessionStorage.getItem('auth_session');
             if (!raw) return false;
@@ -895,6 +903,11 @@ const DataStore = {
     },
 
     _obtenerUsuarioActual() {
+        if (typeof Auth !== 'undefined' && Auth.leerSesion) {
+            const s = Auth.leerSesion();
+            if (s) return s.uid || s.id || s.nombre || 'desconocido';
+        }
+        // Fallback
         try {
             const raw = sessionStorage.getItem('auth_session');
             if (raw) {
