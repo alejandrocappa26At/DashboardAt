@@ -699,16 +699,20 @@ function abrirPanelPromocionesConSesion() {
 
     if (!supervisor && promoSession) {
         const tiendaNombre = Auth._tiendaPromotorSesion();
-        tiendaSel.innerHTML = '<option value="">Seleccionar tienda...</option>' +
-            (tiendaNombre ? '<option value="' + escHtml(tiendaNombre) + '">' + escHtml(tiendaNombre) + '</option>' : '');
-        if (tiendaNombre) tiendaSel.value = tiendaNombre;
+        if (tiendaNombre) {
+            tiendaSel.innerHTML = '<option value="' + escHtml(tiendaNombre) + '">' + escHtml(tiendaNombre) + '</option>';
+            tiendaSel.value = tiendaNombre;
+        } else {
+            tiendaSel.innerHTML = '<option value="">El promotor no tiene una tienda asignada</option>';
+        }
         tiendaSel.disabled = true;
         const promo = activos.find(p => p.id === promoSession.id);
-        promotorSel.innerHTML = '<option value="' + escHtml(promoSession.id) + '">' + escHtml(promo ? promo.nombre : promoSession.id) + '</option>';
+        const nombrePromotor = promoSession.nombre || (promo ? promo.nombre : promoSession.id);
+        promotorSel.innerHTML = '<option value="' + escHtml(promoSession.id) + '">' + escHtml(nombrePromotor) + '</option>';
         promotorSel.disabled = true;
         if (sessionBar) {
             sessionBar.style.display = 'flex';
-            sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promoSession.id) + '</div>' +
+            sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(nombrePromotor) + '</div>' +
                 '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesi\u00f3n</button>';
         }
     } else {
@@ -720,8 +724,9 @@ function abrirPanelPromocionesConSesion() {
             activos.map(p => '<option value="' + p.id + '">' + escHtml(p.nombre) + (p.dni ? ' \u00b7 ' + escHtml(p.dni) : '') + '</option>').join('');
         if (sessionBar) {
             if (promoSession) {
+                const nombrePromotor = promoSession.nombre || promoSession.id;
                 sessionBar.style.display = 'flex';
-                sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(promoSession.id) + '</div>' +
+                sessionBar.innerHTML = '<div class="promo-session-user">\ud83d\udc64 ' + escHtml(nombrePromotor) + '</div>' +
                     '<button type="button" class="promo-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesi\u00f3n</button>';
             } else {
                 sessionBar.style.display = 'none';
@@ -4545,7 +4550,7 @@ function abrirPanelVentasConSesion() {
             pdvSel.innerHTML = '<option value="' + escHtml(tiendaNombre) + '">' + escHtml(tiendaNombre) + '</option>';
             pdvSel.disabled = true;
         } else {
-            pdvSel.innerHTML = '<option value="">Sin tienda asignada</option>';
+            pdvSel.innerHTML = '<option value="">El promotor no tiene una tienda asignada</option>';
             pdvSel.disabled = true;
         }
         Auth.logValidacionPromotor();
@@ -4560,8 +4565,9 @@ function abrirPanelVentasConSesion() {
     const sessionBar = document.getElementById('ventas-session-bar');
     if (!Auth.estaSupervisorDesbloqueado() && promoSession) {
         if (sessionBar) {
+            const nombrePromotor = promoSession.nombre || promoSession.id;
             sessionBar.style.display = 'flex';
-            sessionBar.innerHTML = '<div class="ventas-session-user"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>Bienvenido, ' + escHtml(promoSession.id) + '</div>' +
+            sessionBar.innerHTML = '<div class="ventas-session-user"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>Bienvenido, ' + escHtml(nombrePromotor) + '</div>' +
                 '<button class="ventas-session-logout" onclick="cerrarSesionPromotor()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar Sesi\u00f3n</button>';
         }
     } else if (sessionBar) {

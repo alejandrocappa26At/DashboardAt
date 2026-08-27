@@ -34,6 +34,9 @@ const Auth = {
             if (p && p.estado === 'Activo' && p.zona_principal_id) {
                 this.promotorSession = {
                     id: p.id,
+                    nombre: p.nombre,
+                    dni: p.dni || '',
+                    email: p.email || '',
                     zona_principal_id: p.zona_principal_id
                 };
             }
@@ -79,6 +82,17 @@ const Auth = {
             }
         }
 
+        // Wait for promoters to be loaded from Firestore
+        if (typeof HorariosDataStore !== 'undefined' && !HorariosDataStore._firestoreLoaded) {
+            await new Promise(resolve => {
+                const check = () => {
+                    if (HorariosDataStore._firestoreLoaded) resolve();
+                    else setTimeout(check, 150);
+                };
+                check();
+            });
+        }
+
         const promotores = (typeof HorariosDataStore !== 'undefined' && HorariosDataStore.promotores) ? HorariosDataStore.promotores : [];
         const promotor = promotores.find(p => p.email && p.email.toLowerCase() === email);
 
@@ -116,6 +130,9 @@ const Auth = {
 
         this.promotorSession = {
             id: promotor.id,
+            nombre: promotor.nombre,
+            dni: promotor.dni || '',
+            email: promotor.email || '',
             zona_principal_id: promotor.zona_principal_id
         };
 
@@ -281,8 +298,15 @@ const Auth = {
     logValidacionPromotor() {
         if (!this.promotorSession) return;
         const tienda = this._tiendaPromotorSesion();
-        console.log('[VALIDACION] Promotor autenticado:', this.promotorSession.id);
-        console.log('[VALIDACION] Tienda encontrada:', tienda || 'Sin tienda asignada');
+        const promotorEncontrado = this.promotorSession.nombre ? 'SÍ' : 'NO';
+        console.log('Promotor logueado:');
+        console.log(this.promotorSession.nombre || '(sin nombre)');
+        console.log('ID:');
+        console.log(this.promotorSession.id);
+        console.log('Tienda asignada:');
+        console.log(tienda || 'El promotor no tiene una tienda asignada.');
+        console.log('Promotor encontrado:');
+        console.log(promotorEncontrado);
     },
 
     _tiendaPromotorSesion() {

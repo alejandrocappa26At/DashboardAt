@@ -1086,6 +1086,246 @@ table.ctl-table.ctl-table-exec {
 }
 
 /* =============================================
+   RESUMEN ZONAL ACUMULADO — Estilo Power BI / Microsoft Fabric
+   Colores corporativos diferenciados por grupo de productos
+   ============================================= */
+
+/* Colores corporativos para cada grupo */
+:root {
+    --ad-blue: #3B82F6;
+    --ad-blue-bg: rgba(59, 130, 246, 0.12);
+    --ad-blue-border: rgba(59, 130, 246, 0.20);
+    --ad-blue-strong: rgba(59, 130, 246, 0.25);
+
+    --jv-purple: #A855F7;
+    --jv-purple-bg: rgba(168, 85, 247, 0.12);
+    --jv-purple-border: rgba(168, 85, 247, 0.20);
+    --jv-purple-strong: rgba(168, 85, 247, 0.25);
+
+    --acum-green: #1DB954;
+    --acum-green-bg: rgba(29, 185, 84, 0.12);
+    --acum-green-border: rgba(29, 185, 84, 0.20);
+    --acum-green-strong: rgba(29, 185, 84, 0.25);
+}
+
+/* ===== GRUPO 1: APUESTAS DEPORTIVAS (AZUL) ===== */
+.zona-compact-table .zona-header-group th.zona-group-header:nth-of-type(1) {
+    background: var(--ad-blue) !important;
+    color: #fff !important;
+    border-right: 1px solid var(--ad-blue-border);
+}
+
+.zona-compact-table .zona-header-metrics th.zona-ad-col {
+    background: var(--ad-blue-bg) !important;
+    color: var(--ad-blue) !important;
+    border-right: 1px solid var(--ad-blue-border);
+    border-bottom: 2px solid var(--ad-blue);
+}
+
+.zona-compact-table tbody td.zona-ad-col {
+    background: var(--ad-blue-bg);
+    border-right: 1px solid var(--ad-blue-border);
+}
+
+.zona-compact-table tbody tr:nth-child(even) td.zona-ad-col {
+    background: var(--ad-blue-strong);
+}
+
+.zona-compact-table tbody tr.acu-total-row td.zona-ad-total {
+    background: var(--ad-blue) !important;
+    color: #fff !important;
+    font-weight: 800;
+    border-right: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.zona-compact-table tbody tr.acu-total-row td.zona-ad-total .pct-indicator,
+.zona-compact-table tbody tr.acu-total-row td.zona-ad-total .zona-pct-cell {
+    color: #fff !important;
+    background: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* ===== GRUPO 2: JUEGOS VIRTUALES (MORADO) ===== */
+.zona-compact-table .zona-header-group th.zona-group-header:nth-of-type(2) {
+    background: var(--jv-purple) !important;
+    color: #fff !important;
+    border-right: 1px solid var(--jv-purple-border);
+}
+
+.zona-compact-table .zona-header-metrics th.zona-jv-col {
+    background: var(--jv-purple-bg) !important;
+    color: var(--jv-purple) !important;
+    border-right: 1px solid var(--jv-purple-border);
+    border-bottom: 2px solid var(--jv-purple);
+}
+
+.zona-compact-table tbody td.zona-jv-col {
+    background: var(--jv-purple-bg);
+    border-right: 1px solid var(--jv-purple-border);
+}
+
+.zona-compact-table tbody tr:nth-child(even) td.zona-jv-col {
+    background: var(--jv-purple-strong);
+}
+
+.zona-compact-table tbody tr.acu-total-row td.zona-jv-total {
+    background: var(--jv-purple) !important;
+    color: #fff !important;
+    font-weight: 800;
+    border-right: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.zona-compact-table tbody tr.acu-total-row td.zona-jv-total .pct-indicator,
+.zona-compact-table tbody tr.acu-total-row td.zona-jv-total .zona-pct-cell {
+    color: #fff !important;
+    background: rgba(168, 85, 247, 0.35) !important;
+}
+
+/* ===== GRUPO 3: VENTAS ACUMULADAS (VERDE) ===== */
+.zona-compact-table .zona-header-group th.zona-group-header:nth-of-type(3) {
+    background: var(--acum-green) !important;
+    color: #fff !important;
+    border-right: 1px solid var(--acum-green-border);
+}
+
+.zona-compact-table .zona-header-metrics th:not(.zona-ad-col):not(.zona-jv-col):not(.zona-pdv-col) {
+    background: var(--acum-green-bg) !important;
+    color: var(--acum-green) !important;
+    border-right: 1px solid var(--acum-green-border);
+    border-bottom: 2px solid var(--acum-green);
+}
+
+.zona-compact-table tbody td.zona-venta-only {
+    background: var(--acum-green-bg);
+    border-right: 1px solid var(--acum-green-border);
+    font-weight: 600;
+}
+
+.zona-compact-table tbody tr:nth-child(even) td.zona-venta-only {
+    background: var(--acum-green-strong);
+}
+
+.zona-compact-table tbody td.zona-venta-only:last-child {
+    border-right: none;
+}
+
+.zona-compact-table tbody tr.acu-total-row td.zona-venta-only {
+    background: var(--acum-green) !important;
+    color: #fff !important;
+    font-weight: 800;
+    border-right: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.zona-compact-table tbody tr.acu-total-row td.zona-venta-only:last-child {
+    border-right: none;
+}
+
+/* ===== FILA TOTAL ZONA — Destacado ejecutivo ===== */
+.zona-compact-table tbody tr.acu-total-row {
+    border-top: 2px solid var(--t-w15);
+}
+
+.zona-compact-table tbody tr.acu-total-row td.acu-total-label {
+    background: var(--t-bg2) !important;
+    color: var(--t-dim) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    text-align: left;
+    padding: 10px 12px !important;
+    border-right: 2px solid var(--t-w15);
+    box-shadow: inset -4px 0 0 var(--t-accent);
+}
+
+/* Separadores visuales sutiles entre grupos */
+.zona-compact-table tbody td.zona-ad-col:last-of-type,
+.zona-compact-table thead th.zona-ad-col:last-of-type {
+    border-right: 2px solid var(--ad-blue-border) !important;
+}
+
+.zona-compact-table tbody td.zona-jv-col:last-of-type,
+.zona-compact-table thead th.zona-jv-col:last-of-type {
+    border-right: 2px solid var(--jv-purple-border) !important;
+}
+
+/* Efecto hover en filas de datos */
+.zona-compact-table tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.04) !important;
+    transition: background 0.15s ease;
+}
+
+.zona-compact-table tbody tr:hover td.zona-ad-col {
+    background: var(--ad-blue-strong) !important;
+}
+
+.zona-compact-table tbody tr:hover td.zona-jv-col {
+    background: var(--jv-purple-strong) !important;
+}
+
+.zona-compact-table tbody tr:hover td.zona-venta-only {
+    background: var(--acum-green-strong) !important;
+}
+
+.zona-compact-table tbody tr:hover td.zona-pdv-name {
+    background: var(--t-w04) !important;
+}
+
+/* Sombra suave en la tabla */
+.zona-compact-table {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.zona-compact-table thead {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* Ajuste para tema claro */
+html[data-theme="light"] .zona-compact-table {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme="light"] .zona-compact-table tbody td.zona-ad-col {
+    background: rgba(59, 130, 246, 0.06);
+}
+
+html[data-theme="light"] .zona-compact-table tbody tr:nth-child(even) td.zona-ad-col {
+    background: rgba(59, 130, 246, 0.10);
+}
+
+html[data-theme="light"] .zona-compact-table tbody td.zona-jv-col {
+    background: rgba(168, 85, 247, 0.06);
+}
+
+html[data-theme="light"] .zona-compact-table tbody tr:nth-child(even) td.zona-jv-col {
+    background: rgba(168, 85, 247, 0.10);
+}
+
+html[data-theme="light"] .zona-compact-table tbody td.zona-venta-only {
+    background: rgba(29, 185, 84, 0.06);
+}
+
+html[data-theme="light"] .zona-compact-table tbody tr:nth-child(even) td.zona-venta-only {
+    background: rgba(29, 185, 84, 0.10);
+}
+
+html[data-theme="light"] .zona-compact-table tbody tr:hover td.zona-ad-col {
+    background: rgba(59, 130, 246, 0.12) !important;
+}
+
+html[data-theme="light"] .zona-compact-table tbody tr:hover td.zona-jv-col {
+    background: rgba(168, 85, 247, 0.12) !important;
+}
+
+html[data-theme="light"] .zona-compact-table tbody tr:hover td.zona-venta-only {
+    background: rgba(29, 185, 84, 0.12) !important;
+}
+
+/* =============================================
    PROMOCIONES ZONA — Tabla compacta
    ============================================= */
 

@@ -22,16 +22,20 @@ const VentasModule = {
 
         if (!supervisor && promoSession) {
             const tiendaNombre = this._tiendaPromotorSesion();
-            tiendaSel.innerHTML = '<option value="">Seleccionar tienda...</option>' +
-                (tiendaNombre ? '<option value="' + this._escHtml(tiendaNombre) + '">' + this._escHtml(tiendaNombre) + '</option>' : '');
-            if (tiendaNombre) tiendaSel.value = tiendaNombre;
+            if (tiendaNombre) {
+                tiendaSel.innerHTML = '<option value="' + this._escHtml(tiendaNombre) + '">' + this._escHtml(tiendaNombre) + '</option>';
+                tiendaSel.value = tiendaNombre;
+            } else {
+                tiendaSel.innerHTML = '<option value="">El promotor no tiene una tienda asignada</option>';
+            }
             tiendaSel.disabled = true;
             const promo = activos.find(p => p.id === promoSession.id);
-            promotorSel.innerHTML = '<option value="' + this._escHtml(promoSession.id) + '">' + this._escHtml(promo ? promo.nombre : promoSession.id) + '</option>';
+            const nombrePromotor = promoSession.nombre || (promo ? promo.nombre : promoSession.id);
+            promotorSel.innerHTML = '<option value="' + this._escHtml(promoSession.id) + '">' + this._escHtml(nombrePromotor) + '</option>';
             promotorSel.disabled = true;
             if (sessionBar) {
                 sessionBar.style.display = 'flex';
-                sessionBar.innerHTML = '<div class="venta-session-user">👤 ' + this._escHtml(promoSession.id) + '</div>' +
+                sessionBar.innerHTML = '<div class="venta-session-user">👤 ' + this._escHtml(nombrePromotor) + '</div>' +
                     '<button type="button" class="venta-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesión</button>';
             }
         } else {
@@ -43,8 +47,9 @@ const VentasModule = {
                 activos.map(p => '<option value="' + p.id + '">' + this._escHtml(p.nombre) + (p.dni ? ' · ' + this._escHtml(p.dni) : '') + '</option>').join('');
             if (sessionBar) {
                 if (promoSession) {
+                    const nombrePromotor = promoSession.nombre || promoSession.id;
                     sessionBar.style.display = 'flex';
-                    sessionBar.innerHTML = '<div class="venta-session-user">👤 ' + this._escHtml(promoSession.id) + '</div>' +
+                    sessionBar.innerHTML = '<div class="venta-session-user">👤 ' + this._escHtml(nombrePromotor) + '</div>' +
                         '<button type="button" class="venta-session-logout" onclick="cerrarSesionPromotor()">Cerrar sesión</button>';
                 } else {
                     sessionBar.style.display = 'none';
